@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movimientos · Romero S.A.</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script type="module" src="js/paginaMovimientos.js" defer></script>
+  </head>
+  <body class="pagina-secundaria">
+    <header>
+      <h1>Movimientos del pañol</h1>
+      <div class="meta">
+        <a href="index.html">Volver al inventario</a>
+        <button id="boton-actualizar" type="button">Actualizar</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-group">
+        <label class="field">
+          <span>Buscar</span>
+          <input
+            id="buscador-movimientos"
+            type="search"
+            placeholder="Referencia o detalle"
+            autocomplete="off"
+          />
+        </label>
+        <label class="field">
+          <span>Tipo</span>
+          <select id="filtro-tipo-movimientos">
+            <option value="todos">Todos</option>
+            <option value="ingreso">Ingresos</option>
+            <option value="egreso">Egresos</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Detalle de movimientos</h2>
+      <table id="tabla-movimientos">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Referencia</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Costo unidad</th>
+            <th>Total</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Indicadores</h2>
+      <div class="filtros-graficos">
+        <label class="field">
+          <span>Tipo de producto</span>
+          <select id="selector-tipo-grafico">
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Producto</span>
+          <select id="selector-producto-grafico">
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid-graficos">
+        <article>
+          <h3>Ingresos vs egresos (unidades)</h3>
+          <canvas id="grafico-cantidades" height="200"></canvas>
+        </article>
+        <article>
+          <h3>Inversión y consumo ($)</h3>
+          <canvas id="grafico-gastos" height="200"></canvas>
+        </article>
+        <article>
+          <h3>Egresos por referencia</h3>
+          <canvas id="grafico-top" height="200"></canvas>
+        </article>
+        <article>
+          <h3>Ingresos y egresos por tipo</h3>
+          <canvas id="grafico-tipos" height="200"></canvas>
+        </article>
+      </div>
+    </section>
+  </body>
+</html>
+

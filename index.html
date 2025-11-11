@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Romero S.A. | Control de Stock</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Inventario de pañol · Romero S.A.</h1>
+      <div class="meta">
+        <span id="ultima-sincronizacion">Sincronizado: nunca</span>
+        <a id="ver-movimientos" href="movimientos.html">Ver movimientos</a>
+        <button id="boton-restaurar" type="button">Restablecer datos</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-group">
+        <label class="field">
+          <span>Buscar</span>
+          <input
+            id="buscador"
+            type="search"
+            placeholder="Referencia, producto o equipo"
+            autocomplete="off"
+          />
+        </label>
+        <label class="field">
+          <span>Tipo</span>
+          <select id="filtro-tipo">
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Mostrar</span>
+          <select id="filtro-stock">
+            <option value="todos">Todo</option>
+            <option value="criticos">Críticos (≤4)</option>
+            <option value="bajo">Bajo stock (&lt;10)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <main>
+      <table id="tabla-inventario">
+        <thead>
+          <tr>
+            <th>Referencia</th>
+            <th>Descripción</th>
+            <th>Equipo</th>
+            <th>Disponibles</th>
+            <th>Detalle</th>
+            <th>Tipo</th>
+            <th>Costo unidad</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </main>
+
+    <section class="panel">
+      <h2>Registrar movimiento</h2>
+      <form id="formulario-movimiento" autocomplete="off">
+        <div class="panel-group">
+          <label class="field">
+            <span>Producto *</span>
+            <select id="movimiento-referencia" name="referencia" required></select>
+          </label>
+          <label class="field">
+            <span>Tipo *</span>
+            <select id="movimiento-tipo" name="tipo" required>
+              <option value="ingreso">Ingreso</option>
+              <option value="egreso">Egreso</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Cantidad *</span>
+            <input
+              id="movimiento-cantidad"
+              name="cantidad"
+              type="number"
+              min="1"
+              step="1"
+              required
+            />
+          </label>
+        </div>
+        <div class="panel-group">
+          <label class="field">
+            <span>Costo unitario</span>
+            <input
+              id="movimiento-costo"
+              name="costoUnitario"
+              type="number"
+              min="0"
+              step="0.01"
+            />
+          </label>
+          <label class="field">
+            <span>Detalle</span>
+            <input id="movimiento-nota" name="nota" placeholder="Factura, orden, motivo..." />
+          </label>
+        </div>
+        <button type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Nuevo producto</h2>
+      <form id="formulario-producto" autocomplete="off">
+        <div class="panel-group">
+          <label class="field">
+            <span>Referencia *</span>
+            <input name="referencia" required />
+          </label>
+          <label class="field">
+            <span>Descripción *</span>
+            <input name="nombre" required />
+          </label>
+          <label class="field">
+            <span>Equipo</span>
+            <input name="equipo" />
+          </label>
+        </div>
+        <div class="panel-group">
+          <label class="field">
+            <span>Stock inicial *</span>
+            <input
+              name="existencia"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Detalle</span>
+            <input name="detalle" />
+          </label>
+          <label class="field">
+            <span>Tipo</span>
+            <input name="tipo" />
+          </label>
+          <label class="field">
+            <span>Costo unitario</span>
+            <input
+              name="costoUnitario"
+              type="number"
+              min="0"
+              step="0.01"
+            />
+          </label>
+        </div>
+        <button type="submit">Guardar producto</button>
+      </form>
+    </section>
+
+    <aside id="avisos"></aside>
+
+    <script type="module" src="js/paginaInventario.js"></script>
+  </body>
+</html>
+
