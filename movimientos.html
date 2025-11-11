@@ -4,94 +4,173 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Movimientos · Romero S.A.</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script type="module" src="js/paginaMovimientos.js" defer></script>
   </head>
   <body class="pagina-secundaria">
-    <header>
-      <h1>Movimientos del pañol</h1>
-      <div class="meta">
-        <a href="index.html">Volver al inventario</a>
-        <button id="boton-actualizar" type="button">Actualizar</button>
-      </div>
-    </header>
+    <div class="container-fluid py-4 px-3 px-md-5">
+      <header class="hero hero--secondary card border-0 shadow-lg text-white mb-4">
+        <div class="card-body">
+          <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3"
+          >
+            <div>
+              <h1 class="hero__title mb-2">Movimientos del pañol</h1>
+              <p class="hero__subtitle mb-0">
+                Seguimiento de ingresos, egresos e indicadores
+              </p>
+            </div>
+            <div class="d-flex flex-wrap gap-3 hero__meta">
+              <a href="index.html" class="btn btn-outline-light btn-sm px-3"
+                >Volver al inventario</a
+              >
+              <button
+                id="boton-actualizar"
+                type="button"
+                class="btn btn-warning btn-sm text-dark fw-semibold"
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-    <section class="panel">
-      <div class="panel-group">
-        <label class="field">
-          <span>Buscar</span>
-          <input
-            id="buscador-movimientos"
-            type="search"
-            placeholder="Referencia o detalle"
-            autocomplete="off"
-          />
-        </label>
-        <label class="field">
-          <span>Tipo</span>
-          <select id="filtro-tipo-movimientos">
-            <option value="todos">Todos</option>
-            <option value="ingreso">Ingresos</option>
-            <option value="egreso">Egresos</option>
-          </select>
-        </label>
-      </div>
-    </section>
+      <section class="panel card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label fw-semibold text-primary"
+                >Buscar</label
+              >
+              <input
+                id="buscador-movimientos"
+                type="search"
+                class="form-control form-control-lg"
+                placeholder="Referencia o detalle"
+                autocomplete="off"
+              />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label fw-semibold text-primary">Tipo</label>
+              <select
+                id="filtro-tipo-movimientos"
+                class="form-select form-select-lg text-capitalize"
+              >
+                <option value="todos">Todos</option>
+                <option value="ingreso">Ingresos</option>
+                <option value="egreso">Egresos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <section class="panel">
-      <h2>Detalle de movimientos</h2>
-      <table id="tabla-movimientos">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Referencia</th>
-            <th>Tipo</th>
-            <th>Cantidad</th>
-            <th>Costo unidad</th>
-            <th>Total</th>
-            <th>Detalle</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+      <section class="panel card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h2 class="panel-title mb-3">Detalle de movimientos</h2>
+          <div class="table-responsive">
+            <table
+              id="tabla-movimientos"
+              class="table table-hover align-middle mb-0"
+            >
+              <thead class="table-dark">
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Referencia</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Cantidad</th>
+                  <th scope="col">Costo unidad</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Detalle</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
-    <section class="panel">
-      <h2>Indicadores</h2>
-      <div class="filtros-graficos">
-        <label class="field">
-          <span>Tipo de producto</span>
-          <select id="selector-tipo-grafico">
-            <option value="todos">Todos</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Producto</span>
-          <select id="selector-producto-grafico">
-            <option value="todos">Todos</option>
-          </select>
-        </label>
-      </div>
-      <div class="grid-graficos">
-        <article>
-          <h3>Ingresos vs egresos (unidades)</h3>
-          <canvas id="grafico-cantidades" height="200"></canvas>
-        </article>
-        <article>
-          <h3>Inversión y consumo ($)</h3>
-          <canvas id="grafico-gastos" height="200"></canvas>
-        </article>
-        <article>
-          <h3>Egresos por referencia</h3>
-          <canvas id="grafico-top" height="200"></canvas>
-        </article>
-        <article>
-          <h3>Ingresos y egresos por tipo</h3>
-          <canvas id="grafico-tipos" height="200"></canvas>
-        </article>
-      </div>
-    </section>
+      <section class="panel card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <div class="d-flex flex-column flex-lg-row justify-content-between">
+            <h2 class="panel-title mb-3">Indicadores</h2>
+          </div>
+          <div class="row g-3 align-items-end mb-3 filtros-graficos">
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label fw-semibold text-primary"
+                >Tipo de producto</label
+              >
+              <select
+                id="selector-tipo-grafico"
+                class="form-select form-select-lg text-capitalize"
+              >
+                <option value="todos">Todos</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label fw-semibold text-primary"
+                >Producto</label
+              >
+              <select
+                id="selector-producto-grafico"
+                class="form-select form-select-lg text-capitalize"
+              >
+                <option value="todos">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-graficos">
+            <article class="card border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="card-title fs-6 text-primary">
+                  Ingresos vs egresos (unidades)
+                </h3>
+                <canvas id="grafico-cantidades" height="200"></canvas>
+              </div>
+            </article>
+            <article class="card border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="card-title fs-6 text-primary">
+                  Inversión y consumo ($)
+                </h3>
+                <canvas id="grafico-gastos" height="200"></canvas>
+              </div>
+            </article>
+            <article class="card border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="card-title fs-6 text-primary">
+                  Egresos por referencia
+                </h3>
+                <canvas id="grafico-top" height="200"></canvas>
+              </div>
+            </article>
+            <article class="card border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="card-title fs-6 text-primary">
+                  Ingresos y egresos por tipo
+                </h3>
+                <canvas id="grafico-tipos" height="200"></canvas>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+      defer
+    ></script>
   </body>
 </html>
 
