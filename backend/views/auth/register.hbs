@@ -1,0 +1,110 @@
+<div class="card shadow-lg border-0">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="card-title text-center mb-4 fw-bold">Registrar Usuario</h2>
+    
+    <form action="/auth/register" method="POST" id="registerForm">
+      <div class="mb-3">
+        <label for="nombre" class="form-label fw-semibold">Nombre</label>
+        <input 
+          type="text" 
+          class="form-control form-control-lg" 
+          id="nombre" 
+          name="nombre" 
+          required 
+          autofocus
+          placeholder="Nombre completo"
+        >
+      </div>
+      
+      <div class="mb-3">
+        <label for="email" class="form-label fw-semibold">Email</label>
+        <input 
+          type="email" 
+          class="form-control form-control-lg" 
+          id="email" 
+          name="email" 
+          required 
+          placeholder="tu@email.com"
+        >
+      </div>
+      
+      <div class="mb-3">
+        <label for="password" class="form-label fw-semibold">Contraseña</label>
+        <input 
+          type="password" 
+          class="form-control form-control-lg" 
+          id="password" 
+          name="password" 
+          required
+          placeholder="Mínimo 6 caracteres"
+          minlength="6"
+        >
+        <small class="form-text text-muted">Debe contener al menos una mayúscula, una minúscula y un número</small>
+      </div>
+      
+      <div class="mb-4">
+        <label for="rol" class="form-label fw-semibold">Rol *</label>
+        <select class="form-select form-select-lg" id="rol" name="rol" required>
+          <option value="">Seleccione un rol</option>
+          <option value="usuario_comun">Usuario Común - Solo descarga y visualización</option>
+          <option value="visor">Visor - Carga/descarga, agregar productos, no borra registros</option>
+          <option value="administrador">Administrador - Acceso total</option>
+        </select>
+        <small class="form-text text-muted">
+          El rol determina los permisos del usuario en el sistema
+        </small>
+      </div>
+      
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mb-3">
+        <i class="bi bi-person-plus me-2"></i>
+        Registrar Usuario
+      </button>
+      
+      <div class="text-center">
+        <a href="/dashboard" class="text-decoration-none">← Volver al dashboard</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData);
+  
+  // Validación básica
+  if (!data.rol) {
+    alert('Por favor seleccione un rol');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      alert('✅ Usuario registrado correctamente');
+      this.reset();
+      // No redirigir, solo limpiar el formulario para permitir crear más usuarios
+    } else {
+      const errorMsg = result.message || result.errors?.[0]?.msg || 'Error al registrar usuario';
+      alert('❌ Error: ' + errorMsg);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('❌ Error de conexión. Por favor intenta nuevamente.');
+  }
+});
+</script>
+

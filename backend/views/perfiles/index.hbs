@@ -1,0 +1,279 @@
+<header class="hero card border-0 shadow-lg text-white mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-12 col-lg-8">
+        <h1 class="hero__title mb-3">
+          <i class="bi bi-people-fill me-2"></i>Perfiles y Roles
+        </h1>
+        <p class="hero__subtitle mb-0 fs-5">Descripción de roles, funciones y permisos del sistema</p>
+      </div>
+      <div class="col-12 col-lg-4 text-center text-lg-end mt-3 mt-lg-0">
+        <span class="badge bg-warning text-dark fs-6 px-4 py-2 text-capitalize">{{usuario.rol}}</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="row g-4 mb-4">
+  {{#each perfiles}}
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-{{this.color}} text-white py-3">
+        <div class="d-flex align-items-center">
+          <i class="bi {{this.icono}} fs-3 me-3"></i>
+          <div>
+            <h4 class="mb-0 fw-bold">{{this.nombre}}</h4>
+            <small class="opacity-75">Rol del sistema</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-4">{{this.descripcion}}</p>
+        
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-list-check me-2 text-{{this.color}}"></i>Funciones Principales
+        </h5>
+        <ul class="list-unstyled mb-4">
+          {{#each this.funciones}}
+          <li class="mb-2">
+            <i class="bi bi-check-circle-fill text-{{../color}} me-2"></i>
+            <span>{{this}}</span>
+          </li>
+          {{/each}}
+        </ul>
+
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-shield-lock me-2 text-{{this.color}}"></i>Permisos Detallados
+        </h5>
+        
+        <div class="accordion accordion-flush" id="accordion{{@index}}">
+          <!-- Inventario -->
+          <div class="accordion-item border-0">
+            <h6 class="accordion-header">
+              <button class="accordion-button collapsed bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#inventario{{@index}}">
+                <i class="bi bi-box-seam me-2"></i>Inventario
+              </button>
+            </h6>
+            <div id="inventario{{@index}}" class="accordion-collapse collapse" data-bs-parent="#accordion{{@index}}">
+              <div class="accordion-body">
+                <ul class="list-unstyled mb-0 small">
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.inventario.ver}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Ver inventario
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.inventario.crear}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Crear productos
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.inventario.editar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Editar productos
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.inventario.eliminar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Eliminar productos
+                  </li>
+                  <li class="mb-0">
+                    <i class="bi {{#if this.permisos.inventario.descargar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Descargar planillas
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Movimientos -->
+          <div class="accordion-item border-0">
+            <h6 class="accordion-header">
+              <button class="accordion-button collapsed bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#movimientos{{@index}}">
+                <i class="bi bi-arrow-left-right me-2"></i>Movimientos
+              </button>
+            </h6>
+            <div id="movimientos{{@index}}" class="accordion-collapse collapse" data-bs-parent="#accordion{{@index}}">
+              <div class="accordion-body">
+                <ul class="list-unstyled mb-0 small">
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.movimientos.ver}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Ver movimientos
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.movimientos.crear}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Registrar movimientos
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.movimientos.editar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Editar movimientos
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.movimientos.eliminar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Eliminar movimientos
+                  </li>
+                  <li class="mb-0">
+                    <i class="bi {{#if this.permisos.movimientos.descargar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Descargar reportes
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Usuarios -->
+          <div class="accordion-item border-0">
+            <h6 class="accordion-header">
+              <button class="accordion-button collapsed bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#usuarios{{@index}}">
+                <i class="bi bi-people me-2"></i>Usuarios
+              </button>
+            </h6>
+            <div id="usuarios{{@index}}" class="accordion-collapse collapse" data-bs-parent="#accordion{{@index}}">
+              <div class="accordion-body">
+                <ul class="list-unstyled mb-0 small">
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.usuarios.ver}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Ver usuarios
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.usuarios.crear}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Crear usuarios
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.usuarios.editar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Editar usuarios
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.usuarios.eliminar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Eliminar usuarios
+                  </li>
+                  <li class="mb-0">
+                    <i class="bi {{#if this.permisos.usuarios.activarDesactivar}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Activar/Desactivar usuarios
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Otras Funcionalidades -->
+          <div class="accordion-item border-0">
+            <h6 class="accordion-header">
+              <button class="accordion-button collapsed bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#otros{{@index}}">
+                <i class="bi bi-gear me-2"></i>Otras Funcionalidades
+              </button>
+            </h6>
+            <div id="otros{{@index}}" class="accordion-collapse collapse" data-bs-parent="#accordion{{@index}}">
+              <div class="accordion-body">
+                <ul class="list-unstyled mb-0 small">
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.dashboard.acceso}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Acceso al dashboard
+                  </li>
+                  <li class="mb-1">
+                    <i class="bi {{#if this.permisos.notificaciones.ver}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Ver notificaciones
+                  </li>
+                  <li class="mb-0">
+                    <i class="bi {{#if this.permisos.notificaciones.marcarLeidas}}bi-check-circle-fill text-success{{else}}bi-x-circle-fill text-danger{{/if}} me-2"></i>
+                    Gestionar notificaciones
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-light">
+        <div class="text-center">
+          {{#if (eq ../usuario.rol @key)}}
+          <span class="badge bg-success px-3 py-2">
+            <i class="bi bi-person-check me-1"></i>Tu rol actual
+          </span>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/each}}
+</div>
+
+<!-- Comparación de Roles -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0 fw-bold">
+          <i class="bi bi-table me-2"></i>Comparación de Permisos
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Funcionalidad</th>
+                <th class="text-center">
+                  <span class="badge bg-danger">Administrador</span>
+                </th>
+                <th class="text-center">
+                  <span class="badge bg-primary">Visor</span>
+                </th>
+                <th class="text-center">
+                  <span class="badge bg-secondary">Usuario Común</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Ver inventario</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Crear/Editar productos</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Eliminar productos</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Registrar movimientos</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Eliminar movimientos</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Gestionar usuarios</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Ver notificaciones</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-x-circle-fill text-danger fs-5"></i></td>
+              </tr>
+              <tr>
+                <td><strong>Descargar planillas</strong></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+                <td class="text-center"><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

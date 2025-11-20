@@ -1,0 +1,142 @@
+<div class="card shadow-lg border-0">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="card-title text-center mb-4 fw-bold">Iniciar Sesión</h2>
+    
+    <form action="/auth/login" method="POST" id="loginForm">
+      <div class="mb-3">
+        <label for="email" class="form-label fw-semibold">Email</label>
+        <input 
+          type="email" 
+          class="form-control form-control-lg" 
+          id="email" 
+          name="email" 
+          required 
+          autofocus
+          placeholder="tu@email.com"
+        >
+      </div>
+      
+      <div class="mb-4">
+        <label for="password" class="form-label fw-semibold">Contraseña</label>
+        <div class="input-group">
+          <input 
+            type="password" 
+            class="form-control form-control-lg" 
+            id="password" 
+            name="password" 
+            required
+            placeholder="••••••••"
+          >
+          <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+            <i class="bi bi-eye" id="togglePasswordIcon"></i>
+          </button>
+        </div>
+        <small class="form-text text-muted d-block mt-2">
+          🔍 DEBUG: Ver contraseña activado para desarrollo
+        </small>
+      </div>
+      
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mb-3">
+        Ingresar
+      </button>
+      
+      <div class="text-center">
+        <p class="text-muted small mb-0">
+          ¿Problemas para ingresar? Contacta al administrador
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Toggle para mostrar/ocultar contraseña
+document.getElementById('togglePassword')?.addEventListener('click', function() {
+  const passwordInput = document.getElementById('password');
+  const icon = document.getElementById('togglePasswordIcon');
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    icon.classList.remove('bi-eye');
+    icon.classList.add('bi-eye-slash');
+  } else {
+    passwordInput.type = 'password';
+    icon.classList.remove('bi-eye-slash');
+    icon.classList.add('bi-eye');
+  }
+});
+
+// Login
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  console.log('═══════════════════════════════════════');
+  console.log('🔐 INICIO DE PROCESO DE LOGIN');
+  console.log('═══════════════════════════════════════');
+  
+  const formData = new FormData(this);
+  const emailOriginal = formData.get('email');
+  const email = emailOriginal?.toLowerCase().trim() || '';
+  const password = formData.get('password') || '';
+  
+  console.log('📋 DATOS DEL FORMULARIO:');
+  console.log('   📧 Email original:', emailOriginal);
+  console.log('   📧 Email normalizado:', email);
+  console.log('   🔑 Contraseña:', password);
+  console.log('   📏 Longitud contraseña:', password.length);
+  console.log('   🔍 Tipo de email:', typeof email);
+  console.log('   🔍 Tipo de password:', typeof password);
+  
+  const payload = { email, password };
+  console.log('📦 PAYLOAD A ENVIAR:', JSON.stringify(payload));
+  
+  try {
+    console.log('\n🌐 ENVIANDO PETICIÓN AL SERVIDOR...');
+    console.log('   URL: /auth/login');
+    console.log('   Método: POST');
+    
+    const response = await fetch('/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    
+    console.log('\n📥 RESPUESTA DEL SERVIDOR:');
+    console.log('   Status:', response.status);
+    console.log('   Status Text:', response.statusText);
+    console.log('   Headers:', Object.fromEntries(response.headers.entries()));
+    
+    const result = await response.json();
+    console.log('   Body:', JSON.stringify(result, null, 2));
+    
+    if (result.success) {
+      console.log('\n✅ LOGIN EXITOSO');
+      console.log('   Redirigiendo a /dashboard');
+      window.location.href = '/dashboard';
+    } else {
+      console.log('\n❌ LOGIN FALLIDO');
+      let errorMsg = result.message || 'Error al iniciar sesión';
+      if (result.errors && result.errors.length > 0) {
+        errorMsg = result.errors.map(e => e.msg).join(', ');
+        console.log('   Errores de validación:', result.errors);
+      }
+      console.log('   Mensaje de error:', errorMsg);
+      alert('❌ Error: ' + errorMsg);
+    }
+  } catch (error) {
+    console.log('\n💥 ERROR DE CONEXIÓN:');
+    console.error('   Error completo:', error);
+    console.error('   Mensaje:', error.message);
+    console.error('   Stack:', error.stack);
+    alert('❌ Error de conexión. Por favor intenta nuevamente.');
+  }
+  
+  console.log('═══════════════════════════════════════');
+  console.log('🔐 FIN DE PROCESO DE LOGIN');
+  console.log('═══════════════════════════════════════\n');
+});
+</script>
+

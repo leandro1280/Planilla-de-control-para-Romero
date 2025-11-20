@@ -1,0 +1,282 @@
+<header class="hero card border-0 shadow-lg text-white mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+      <div>
+        <h1 class="hero__title mb-2">Movimientos del pañol</h1>
+        <p class="hero__subtitle mb-0">Historial y estadísticas de ingresos y egresos</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-3 hero__meta text-nowrap">
+        <a href="/inventario" class="btn btn-outline-light btn-sm px-3">Volver al inventario</a>
+        <a href="/movimientos/descargar" class="btn btn-success btn-sm px-3">Descargar Excel</a>
+        <button id="boton-actualizar" type="button" class="btn btn-warning btn-sm text-dark fw-semibold">
+          Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-semibold text-primary">Buscar</label>
+        <input id="buscador-movimientos" type="search" class="form-control form-control-lg" 
+               placeholder="Referencia o detalle" autocomplete="off" value="{{busqueda}}">
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label fw-semibold text-primary">Tipo</label>
+        <select id="filtro-tipo-movimientos" class="form-select form-select-lg">
+          <option value="todos" {{#if (eq tipoFiltro 'todos')}}selected{{/if}}>Todos</option>
+          <option value="ingreso" {{#if (eq tipoFiltro 'ingreso')}}selected{{/if}}>Ingresos</option>
+          <option value="egreso" {{#if (eq tipoFiltro 'egreso')}}selected{{/if}}>Egresos</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label fw-semibold text-primary">Tipo producto</label>
+        <select id="selector-tipo-grafico" class="form-select form-select-lg">
+          <option value="todos" {{#if (eq tipoProductoFiltro 'todos')}}selected{{/if}}>Todos</option>
+          {{#each tipos}}
+          <option value="{{this}}" {{#if (eq ../tipoProductoFiltro this)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label fw-semibold text-primary">Producto</label>
+        <select id="selector-producto-grafico" class="form-select form-select-lg">
+          <option value="todos" {{#if (eq referenciaFiltro 'todos')}}selected{{/if}}>Todos</option>
+          {{#each referencias}}
+          <option value="{{this}}" {{#if (eq ../referenciaFiltro this)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label fw-semibold text-primary">Mes</label>
+        <select id="filtro-mes" class="form-select form-select-lg">
+          <option value="">Todos</option>
+          {{#each meses}}
+          <option value="{{this.value}}" {{#if (eq ../mesFiltro this.value)}}selected{{/if}}>{{this.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col-12 col-md-1">
+        <label class="form-label fw-semibold text-primary">Año</label>
+        <select id="filtro-anio" class="form-select form-select-lg">
+          <option value="">Todos</option>
+          {{#each años}}
+          <option value="{{this}}" {{#if (eq ../anioFiltro this)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="panel-title mb-4">Detalle de movimientos</h2>
+    <div class="table-responsive">
+      <table id="tabla-movimientos" class="table table-hover mb-0">
+        <thead class="table-primary">
+          <tr>
+            <th>Fecha</th>
+            <th>Referencia</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Costo unidad</th>
+            <th>Total</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#if movements.length}}
+            {{#each movements}}
+            <tr>
+              <td>{{formatDate this.createdAt}}</td>
+              <td class="fw-semibold">{{this.referencia}}</td>
+              <td>
+                <span class="badge {{#if (eq this.tipo 'ingreso')}}bg-success{{else}}bg-danger{{/if}} text-capitalize">
+                  {{this.tipo}}
+                </span>
+              </td>
+              <td class="text-end">{{formatNumber this.cantidad}}</td>
+              <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
+              <td class="text-end fw-semibold">$ {{formatCurrency this.costoTotal}}</td>
+              <td>{{this.nota}}</td>
+            </tr>
+            {{/each}}
+          {{else}}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">No hay movimientos para mostrar</td>
+            </tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="panel-title mb-4">Indicadores</h2>
+    <div class="row g-4">
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 bg-light">
+          <div class="card-body text-center">
+            <h3 class="h5 text-primary mb-2">Ingresos (unidades)</h3>
+            <p class="h3 text-success mb-0">{{formatNumber stats.totalIngresos}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 bg-light">
+          <div class="card-body text-center">
+            <h3 class="h5 text-primary mb-2">Egresos (unidades)</h3>
+            <p class="h3 text-danger mb-0">{{formatNumber stats.totalEgresos}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 bg-light">
+          <div class="card-body text-center">
+            <h3 class="h5 text-primary mb-2">Invertido ($)</h3>
+            <p class="h3 text-info mb-0">$ {{formatCurrency stats.totalInvertido}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 bg-light">
+          <div class="card-body text-center">
+            <h3 class="h5 text-primary mb-2">Consumido ($)</h3>
+            <p class="h3 text-warning mb-0">$ {{formatCurrency stats.totalConsumido}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row g-4 mt-2">
+      <!-- Gráfico 1: Ingresos vs Egresos -->
+      <div class="col-12 col-lg-6">
+        <article class="card border-0 bg-light">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="h5 text-primary mb-0">Ingresos vs egresos (unidades)</h3>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-grafico="cantidades" data-tipo="bar" title="Gráfico de barras">
+                  <i class="bi bi-bar-chart"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="cantidades" data-tipo="line" title="Gráfico de línea">
+                  <i class="bi bi-graph-up"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="cantidades" data-tipo="pie" title="Gráfico circular">
+                  <i class="bi bi-pie-chart"></i>
+                </button>
+              </div>
+            </div>
+            <canvas id="grafico-cantidades" height="200"></canvas>
+          </div>
+        </article>
+      </div>
+      
+      <!-- Gráfico 2: Inversión y Consumo -->
+      <div class="col-12 col-lg-6">
+        <article class="card border-0 bg-light">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="h5 text-primary mb-0">Inversión y consumo ($)</h3>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-grafico="gastos" data-tipo="doughnut" title="Gráfico de rosquilla">
+                  <i class="bi bi-circle"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="gastos" data-tipo="line" title="Gráfico de línea">
+                  <i class="bi bi-graph-up"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="gastos" data-tipo="bar" title="Gráfico de barras">
+                  <i class="bi bi-bar-chart"></i>
+                </button>
+              </div>
+            </div>
+            <canvas id="grafico-gastos" height="200"></canvas>
+          </div>
+        </article>
+      </div>
+      
+      <!-- Gráfico 3: Egresos por Referencia -->
+      <div class="col-12 col-lg-6">
+        <article class="card border-0 bg-light">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="h5 text-primary mb-0">Egresos por referencia</h3>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-grafico="top" data-tipo="bar" title="Gráfico de barras">
+                  <i class="bi bi-bar-chart"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="top" data-tipo="line" title="Gráfico de línea">
+                  <i class="bi bi-graph-up"></i>
+                </button>
+              </div>
+            </div>
+            <canvas id="grafico-top" height="200"></canvas>
+          </div>
+        </article>
+      </div>
+      
+      <!-- Gráfico 4: Ingresos y Egresos por Tipo -->
+      <div class="col-12 col-lg-6">
+        <article class="card border-0 bg-light">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="h5 text-primary mb-0">Ingresos y egresos por tipo</h3>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-grafico="tipos" data-tipo="bar" title="Gráfico de barras">
+                  <i class="bi bi-bar-chart"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" data-grafico="tipos" data-tipo="line" title="Gráfico de línea">
+                  <i class="bi bi-graph-up"></i>
+                </button>
+              </div>
+            </div>
+            <canvas id="grafico-tipos" height="200"></canvas>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<script>
+  // Pasar datos de movimientos al JavaScript
+  window.movimientosData = [
+    {{#each movements}}
+    {
+      tipo: '{{this.tipo}}',
+      cantidad: {{this.cantidad}},
+      costoTotal: {{this.costoTotal}},
+      referencia: '{{this.referencia}}',
+      tipoProducto: '{{this.tipoProducto}}'
+    }{{#unless @last}},{{/unless}}
+    {{/each}}
+  ];
+  
+  // Pasar estadísticas también
+  window.statsData = {
+    totalIngresos: {{stats.totalIngresos}},
+    totalEgresos: {{stats.totalEgresos}},
+    totalInvertido: {{stats.totalInvertido}},
+    totalConsumido: {{stats.totalConsumido}},
+    topEgresos: [
+      {{#each stats.topEgresos}}
+      { referencia: '{{this.referencia}}', cantidad: {{this.cantidad}} }{{#unless @last}},{{/unless}}
+      {{/each}}
+    ],
+    porTipo: {
+      {{#each stats.porTipo}}
+      '{{@key}}': { ingresos: {{this.ingresos}}, egresos: {{this.egresos}} }{{#unless @last}},{{/unless}}
+      {{/each}}
+    }
+  };
+</script>
+<script src="/js/movimientos.js"></script>
+
