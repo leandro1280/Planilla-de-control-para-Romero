@@ -133,34 +133,70 @@ exports.initDatabase = async () => {
   try {
     // Verificar si ya hay usuarios
     const userCount = await User.countDocuments();
+    const productCount = await Product.countDocuments();
     
+    let usuariosCreados = 0;
+    let productosCreados = 0;
+    
+    // Crear usuarios si no existen
     if (userCount === 0) {
-      console.log('📝 Inicializando base de datos...');
+      console.log('📝 Inicializando usuarios...');
       
-      // Crear usuarios
       for (const userData of usuariosIniciales) {
-        const user = await User.create(userData);
-        console.log(`✅ Usuario creado: ${user.nombre} (${user.email})`);
+        try {
+          const existeUsuario = await User.findOne({ email: userData.email });
+          if (!existeUsuario) {
+            const user = await User.create(userData);
+            console.log(`✅ Usuario creado: ${user.nombre} (${user.email})`);
+            usuariosCreados++;
+          }
+        } catch (error) {
+          console.log(`⚠️  Usuario ${userData.email} ya existe o error: ${error.message}`);
+        }
       }
+    }
+    
+    // Crear productos si no existen (independientemente de si hay usuarios)
+    if (productCount === 0) {
+      console.log('📝 Inicializando productos...');
       
       // Obtener el primer administrador para asignar como creador
-      const admin = await User.findOne({ rol: 'administrador' });
+      let admin = await User.findOne({ rol: 'administrador' });
       
-      // Crear productos
-      for (const productData of productosIniciales) {
-        productData.creadoPor = admin._id;
-        productData.actualizadoPor = admin._id;
-        const product = await Product.create(productData);
-        console.log(`✅ Producto creado: ${product.referencia}`);
+      // Si no hay admin, usar el primer usuario o null
+      if (!admin) {
+        admin = await User.findOne();
       }
       
-      console.log('✅ Base de datos inicializada correctamente');
-      console.log('⚠️  IMPORTANTE: Cambia las contraseñas de los usuarios en producción');
+      for (const productData of productosIniciales) {
+        try {
+          const existeProducto = await Product.findOne({ referencia: productData.referencia });
+          if (!existeProducto) {
+            productData.creadoPor = admin ? admin._id : null;
+            productData.actualizadoPor = admin ? admin._id : null;
+            const product = await Product.create(productData);
+            console.log(`✅ Producto creado: ${product.referencia}`);
+            productosCreados++;
+          } else {
+            console.log(`⚠️  Producto ${productData.referencia} ya existe`);
+          }
+        } catch (error) {
+          console.log(`⚠️  Error creando producto ${productData.referencia}: ${error.message}`);
+        }
+      }
+    }
+    
+    if (usuariosCreados > 0 || productosCreados > 0) {
+      console.log(`✅ Base de datos inicializada: ${usuariosCreados} usuarios, ${productosCreados} productos`);
+      if (usuariosCreados > 0) {
+        console.log('⚠️  IMPORTANTE: Cambia las contraseñas de los usuarios en producción');
+      }
     } else {
-      console.log(`📊 Base de datos ya tiene ${userCount} usuarios`);
+      console.log(`📊 Base de datos ya tiene ${userCount} usuarios y ${productCount} productos`);
     }
   } catch (error) {
     console.error('❌ Error inicializando base de datos:', error.message);
+    console.error('Stack:', error.stack);
   }
 };
 
