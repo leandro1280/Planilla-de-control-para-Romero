@@ -10,6 +10,9 @@ router.use(protect);
 // Vista principal del inventario
 router.get('/', inventarioController.getProducts);
 
+// Exportar a Excel
+router.get('/exportar', inventarioController.exportToExcel);
+
 // CRUD de productos
 router.post('/productos', canCreate, validateProduct, handleValidationErrors, inventarioController.createProduct);
 router.put('/productos/:id', canCreate, validateProduct, handleValidationErrors, inventarioController.updateProduct);

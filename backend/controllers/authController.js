@@ -41,7 +41,7 @@ exports.register = async (req, res) => {
           }
         );
       }
-      
+
       // No generar token ni cookie para el nuevo usuario
       // Solo retornar éxito ya que el admin ya está logueado
       return res.status(201).json({
@@ -76,17 +76,15 @@ exports.login = async (req, res) => {
   console.log('🔐 LOGIN REQUEST RECIBIDA');
   console.log('═══════════════════════════════════════');
   console.log('📋 REQ.BODY:', JSON.stringify(req.body, null, 2));
-  
+
   try {
     // El email ya viene normalizado del middleware de validación
     const { email, password } = req.body;
-    
+
     console.log('\n📥 DATOS RECIBIDOS:');
     console.log('   📧 Email:', email);
-    console.log('   🔑 Password:', password);
+    // console.log('   🔑 Password:', password); // REMOVED FOR SECURITY
     console.log('   📏 Password length:', password?.length || 0);
-    console.log('   🔍 Email type:', typeof email);
-    console.log('   🔍 Password type:', typeof password);
 
     // Validar email y password
     if (!email || !password) {
@@ -108,27 +106,27 @@ exports.login = async (req, res) => {
     // Verificar usuario y contraseña
     console.log('\n🔍 BUSCANDO USUARIO EN BD...');
     console.log('   Query 1 (normalizado):', { email: emailNormalizado });
-    
+
     let user = await User.findOne({ email: emailNormalizado }).select('+password');
-    
+
     if (!user) {
       console.log('   ❌ No encontrado con email normalizado');
       console.log('   Query 2 (original del req.body):', { email: email });
-      
+
       // Intentar buscar con el email original del req.body
       user = await User.findOne({ email: email }).select('+password');
-      
+
       if (!user) {
         console.log('   ❌ No encontrado con email original');
         console.log('   Query 3 (case-insensitive): Buscando todos los usuarios...');
-        
+
         // Buscar todos los usuarios para debug
         const allUsers = await User.find({}).select('email');
         console.log('   📋 Usuarios en BD:');
         allUsers.forEach(u => {
           console.log(`      - "${u.email}" (igual?: ${u.email === emailNormalizado}, igual case?: ${u.email.toLowerCase() === emailNormalizado})`);
         });
-        
+
         console.log('\n❌ USUARIO NO ENCONTRADO');
         return res.status(401).json({
           success: false,
@@ -147,7 +145,8 @@ exports.login = async (req, res) => {
     console.log('   Email:', user.email);
     console.log('   Rol:', user.rol);
     console.log('   Activo:', user.activo);
-    console.log('   Password hash (primeros 30 chars):', user.password?.substring(0, 30) + '...');
+    console.log('   Activo:', user.activo);
+    // console.log('   Password hash (primeros 30 chars):', user.password?.substring(0, 30) + '...'); // REMOVED FOR SECURITY
 
     if (!user.activo) {
       console.log('\n❌ USUARIO INACTIVO');
@@ -159,18 +158,17 @@ exports.login = async (req, res) => {
 
     // Verificar contraseña
     console.log('\n🔐 VERIFICANDO CONTRASEÑA...');
-    console.log('   Contraseña recibida:', password);
-    console.log('   Hash en BD:', user.password?.substring(0, 30) + '...');
-    
+    // console.log('   Contraseña recibida:', password); // REMOVED FOR SECURITY
+    // console.log('   Hash en BD:', user.password?.substring(0, 30) + '...'); // REMOVED FOR SECURITY
+
     const passwordMatch = await user.matchPassword(password);
     console.log('   Resultado de matchPassword:', passwordMatch);
-    
+
     if (!passwordMatch) {
       console.log('\n❌ CONTRASEÑA INCORRECTA');
       console.log('   Email:', emailNormalizado);
-      console.log('   Contraseña recibida:', password);
-      console.log('   Longitud:', password.length);
-      
+      // console.log('   Contraseña recibida:', password); // REMOVED FOR SECURITY
+
       // Intentar con diferentes variantes
       console.log('   🔍 Probando variantes...');
       const variants = [
@@ -178,14 +176,14 @@ exports.login = async (req, res) => {
         password.trim() + ' ',
         ' ' + password.trim(),
       ];
-      
+
       for (const variant of variants) {
         if (variant !== password) {
           const match = await user.matchPassword(variant);
           console.log(`   Variante "${variant}": ${match ? '✅ MATCH' : '❌ No match'}`);
         }
       }
-      
+
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
@@ -216,10 +214,10 @@ exports.login = async (req, res) => {
         token
       }
     };
-    
+
     console.log('\n📤 ENVIANDO RESPUESTA EXITOSA');
     console.log('═══════════════════════════════════════\n');
-    
+
     res.status(200).json(responseData);
   } catch (error) {
     console.log('\n💥 ERROR EN LOGIN:');
@@ -227,7 +225,7 @@ exports.login = async (req, res) => {
     console.error('   Message:', error.message);
     console.error('   Stack:', error.stack);
     console.log('═══════════════════════════════════════\n');
-    
+
     return res.status(500).json({
       success: false,
       message: error.message
@@ -290,7 +288,7 @@ exports.renderLogin = (req, res) => {
 exports.renderRegister = async (req, res) => {
   try {
     const usuario = req.user;
-    
+
     res.render('auth/register', {
       title: 'Registro de Usuario - Romero Panificados',
       layout: 'main',

@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const Movement = require('../models/Movement');
 const { createNotificationForAdmins } = require('./notificationController');
+const XLSX = require('xlsx');
 
 // @desc    Obtener todos los productos
 // @route   GET /inventario
@@ -11,9 +12,9 @@ exports.getProducts = async (req, res) => {
     const paginaActual = parseInt(pagina);
     const limite = parseInt(porPagina);
     const salto = (paginaActual - 1) * limite;
-    
+
     const query = {};
-    
+
     // Filtro de búsqueda
     if (busqueda) {
       query.$or = [
@@ -23,12 +24,12 @@ exports.getProducts = async (req, res) => {
         { detalle: { $regex: busqueda, $options: 'i' } }
       ];
     }
-    
+
     // Filtro por tipo
     if (tipo && tipo !== 'todos') {
       query.tipo = tipo;
     }
-    
+
     // Filtro por stock
     if (stock === 'sin-stock') {
       query.existencia = { $eq: 0 };
@@ -37,27 +38,27 @@ exports.getProducts = async (req, res) => {
     } else if (stock === 'bajo') {
       query.existencia = { $lt: 10, $gt: 4 };
     }
-    
+
     // Contar total de productos con los filtros aplicados
     const totalProductos = await Product.countDocuments(query);
     const totalPaginas = Math.ceil(totalProductos / limite);
-    
+
     // Obtener productos paginados
     const products = await Product.find(query)
       .sort({ referencia: 1 })
       .skip(salto)
       .limit(limite)
       .lean();
-    
+
     // Obtener TODOS los productos (sin paginación) para el selector del formulario
     const todosLosProductos = await Product.find({}).sort({ referencia: 1 }).select('referencia nombre').lean();
-    
+
     // Extraer tipos únicos de TODOS los productos (no solo los filtrados) para el selector
     const todosLosTipos = await Product.find({}).select('tipo').lean();
     const tipos = [...new Set(todosLosTipos.map(p => p.tipo).filter(Boolean))].sort();
-    
+
     console.log(`📊 Inventario - Productos encontrados: ${totalProductos}, Mostrando: ${products.length}, Página: ${paginaActual}/${totalPaginas}`);
-    
+
     res.render('inventario/index', {
       title: 'Inventario - Romero Panificados',
       currentPage: 'inventario',
@@ -102,9 +103,9 @@ exports.createProduct = async (req, res) => {
       costoUnitario: parseFloat(req.body.costoUnitario) || 0,
       creadoPor: req.user._id
     };
-    
+
     const product = await Product.create(productData);
-    
+
     // Crear notificación para administradores
     await createNotificationForAdmins(
       'producto_creado',
@@ -116,7 +117,7 @@ exports.createProduct = async (req, res) => {
       },
       product.referencia
     );
-    
+
     res.status(201).json({
       success: true,
       data: product
@@ -128,7 +129,7 @@ exports.createProduct = async (req, res) => {
         message: 'La referencia ya existe'
       });
     }
-    
+
     res.status(400).json({
       success: false,
       message: error.message
@@ -142,14 +143,14 @@ exports.createProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     let product = await Product.findById(req.params.id);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Producto no encontrado'
       });
     }
-    
+
     const updateData = {
       ...req.body,
       referencia: req.body.referencia ? req.body.referencia.toUpperCase() : product.referencia,
@@ -157,12 +158,12 @@ exports.updateProduct = async (req, res) => {
       costoUnitario: req.body.costoUnitario !== undefined ? parseFloat(req.body.costoUnitario) : product.costoUnitario,
       actualizadoPor: req.user._id
     };
-    
+
     product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     });
-    
+
     res.status(200).json({
       success: true,
       data: product
@@ -181,14 +182,14 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Producto no encontrado'
       });
     }
-    
+
     // Verificar si hay movimientos asociados
     const movements = await Movement.find({ producto: product._id });
     if (movements.length > 0) {
@@ -197,9 +198,9 @@ exports.deleteProduct = async (req, res) => {
         message: 'No se puede eliminar un producto con movimientos asociados'
       });
     }
-    
+
     await Product.findByIdAndDelete(req.params.id);
-    
+
     res.status(200).json({
       success: true,
       message: 'Producto eliminado correctamente'
@@ -218,7 +219,7 @@ exports.deleteProduct = async (req, res) => {
 exports.createMovement = async (req, res) => {
   try {
     const { referencia, tipo, cantidad, costoUnitario, nota } = req.body;
-    
+
     // Buscar producto
     const product = await Product.findOne({ referencia: referencia.toUpperCase() });
     if (!product) {
@@ -227,9 +228,9 @@ exports.createMovement = async (req, res) => {
         message: 'Producto no encontrado'
       });
     }
-    
+
     const cantidadNum = parseInt(cantidad);
-    
+
     // El costo unitario es completamente opcional: puede ser null si no se conoce
     let costoNum = null;
     if (costoUnitario !== undefined && costoUnitario !== null && costoUnitario !== '') {
@@ -239,7 +240,7 @@ exports.createMovement = async (req, res) => {
       }
     }
     // Si no se proporciona costo, dejamos null (se puede agregar después)
-    
+
     // Validar egreso
     if (tipo === 'egreso' && product.existencia < cantidadNum) {
       return res.status(400).json({
@@ -247,7 +248,7 @@ exports.createMovement = async (req, res) => {
         message: 'No hay stock suficiente para realizar el egreso'
       });
     }
-    
+
     // Calcular nuevo stock
     let nuevaExistencia;
     if (tipo === 'ingreso') {
@@ -259,7 +260,7 @@ exports.createMovement = async (req, res) => {
     } else {
       nuevaExistencia = product.existencia - cantidadNum;
     }
-    
+
     // Actualizar producto
     product.existencia = nuevaExistencia;
     product.actualizadoPor = req.user._id;
@@ -268,7 +269,7 @@ exports.createMovement = async (req, res) => {
       product.costoUnitario = costoNum;
     }
     await product.save();
-    
+
     // Crear movimiento (el costo puede ser null si no se proporciona)
     const movimiento = await Movement.create({
       referencia: product.referencia,
@@ -281,7 +282,7 @@ exports.createMovement = async (req, res) => {
       usuario: req.user._id,
       tipoProducto: product.tipo || ''
     });
-    
+
     // Crear notificación para administradores
     const tipoMovimiento = tipo === 'ingreso' ? 'ingreso' : 'egreso';
     await createNotificationForAdmins(
@@ -296,7 +297,7 @@ exports.createMovement = async (req, res) => {
       },
       product.referencia
     );
-    
+
     res.status(201).json({
       success: true,
       data: {
@@ -309,6 +310,54 @@ exports.createMovement = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// @desc    Exportar inventario a Excel
+// @route   GET /inventario/exportar
+// @access  Private
+exports.exportToExcel = async (req, res) => {
+  try {
+    const products = await Product.find({}).sort({ referencia: 1 }).lean();
+
+    const datos = products.map(p => ({
+      Referencia: p.referencia,
+      Nombre: p.nombre,
+      Equipo: p.equipo || '',
+      Existencia: p.existencia,
+      Tipo: p.tipo || '',
+      'Costo Unitario': p.costoUnitario || 0,
+      'Valor Total': (p.existencia * (p.costoUnitario || 0))
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+
+    // Ajustar ancho de columnas
+    const wscols = [
+      { wch: 20 }, // Referencia
+      { wch: 40 }, // Nombre
+      { wch: 20 }, // Equipo
+      { wch: 10 }, // Existencia
+      { wch: 15 }, // Tipo
+      { wch: 15 }, // Costo Unitario
+      { wch: 15 }  // Valor Total
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    const fecha = new Date().toISOString().split('T')[0];
+
+    res.setHeader('Content-Disposition', `attachment; filename=inventario_${fecha}.xlsx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error exportando excel:', error);
+    res.status(500).send('Error al generar el archivo Excel');
   }
 };
 

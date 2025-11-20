@@ -26,12 +26,15 @@ exports.protect = async (req, res, next) => {
 
     try {
       // Verificar token
-      const secret = process.env.JWT_SECRET || 'romero_panificados_secret_key_default_cambiar_en_produccion_2024';
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error('JWT_SECRET no está configurado');
+      }
       const decoded = jwt.verify(token, secret);
-      
+
       // Obtener usuario
       req.user = await User.findById(decoded.id).select('-password');
-      
+
       if (!req.user || !req.user.activo) {
         // Si es una petición API, retornar JSON
         if (req.path.startsWith('/api/')) {

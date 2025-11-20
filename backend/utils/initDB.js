@@ -6,31 +6,31 @@ const usuariosIniciales = [
   {
     nombre: 'Sergio Franco',
     email: 'sergio.franco@romero.com',
-    password: 'Admin123!', // Cambiar en producción
+    password: process.env.ADMIN_PASSWORD || 'Admin123!', // Se recomienda usar variable de entorno
     rol: 'administrador'
   },
   {
     nombre: 'Nahuel Romero',
     email: 'nahuel.romero@romero.com',
-    password: 'Admin123!', // Cambiar en producción
+    password: process.env.ADMIN_PASSWORD || 'Admin123!',
     rol: 'administrador'
   },
   {
     nombre: 'Escuela Técnica',
     email: 'escuela@romero.com',
-    password: 'Admin123!', // Cambiar en producción
+    password: process.env.ADMIN_PASSWORD || 'Admin123!',
     rol: 'administrador'
   },
   {
     nombre: 'Guillermo Kleimbielen',
     email: 'guillermo.kleimbielen@romero.com',
-    password: 'User1123!', // Cambiar en producción
+    password: process.env.USER_PASSWORD || 'User1123!',
     rol: 'visor'
   },
   {
     nombre: 'Javier Speroni',
     email: 'javier.speroni@romero.com',
-    password: 'User1123!', // Cambiar en producción
+    password: process.env.USER_PASSWORD || 'User1123!',
     rol: 'visor'
   }
 ];
@@ -134,14 +134,14 @@ exports.initDatabase = async () => {
     // Verificar si ya hay usuarios
     const userCount = await User.countDocuments();
     const productCount = await Product.countDocuments();
-    
+
     let usuariosCreados = 0;
     let productosCreados = 0;
-    
+
     // Crear usuarios si no existen
     if (userCount === 0) {
       console.log('📝 Inicializando usuarios...');
-      
+
       for (const userData of usuariosIniciales) {
         try {
           const existeUsuario = await User.findOne({ email: userData.email });
@@ -155,19 +155,19 @@ exports.initDatabase = async () => {
         }
       }
     }
-    
+
     // Crear productos si no existen (independientemente de si hay usuarios)
     if (productCount === 0) {
       console.log('📝 Inicializando productos...');
-      
+
       // Obtener el primer administrador para asignar como creador
       let admin = await User.findOne({ rol: 'administrador' });
-      
+
       // Si no hay admin, usar el primer usuario o null
       if (!admin) {
         admin = await User.findOne();
       }
-      
+
       for (const productData of productosIniciales) {
         try {
           const existeProducto = await Product.findOne({ referencia: productData.referencia });
@@ -185,7 +185,7 @@ exports.initDatabase = async () => {
         }
       }
     }
-    
+
     if (usuariosCreados > 0 || productosCreados > 0) {
       console.log(`✅ Base de datos inicializada: ${usuariosCreados} usuarios, ${productosCreados} productos`);
       if (usuariosCreados > 0) {

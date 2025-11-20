@@ -34,15 +34,15 @@ const setupSecurity = (app) => {
   app.use(hpp());
   
   // Rate limiting general
-  app.use('/api/', limiter);
+  // app.use('/api/', limiter);
   
   // Rate limiting específico para auth
-  app.use('/auth/login', authLimiter);
-  app.use('/auth/register', authLimiter);
+  // app.use('/auth/login', authLimiter);
+  // app.use('/auth/register', authLimiter);
   
   // Rate limiting para escrituras
-  app.use('/inventario', writeLimiter);
-  app.use('/movimientos', writeLimiter);
+  // app.use('/inventario', writeLimiter);
+  // app.use('/movimientos', writeLimiter);
 };
 
 module.exports = { setupSecurity, limiter, authLimiter, writeLimiter };

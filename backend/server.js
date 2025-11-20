@@ -70,10 +70,10 @@ app.engine('hbs', hbs.engine({
     buildPaginationUrl: (paginaActual, cambio, baseUrl) => {
       if (typeof paginaActual !== 'number') paginaActual = parseInt(paginaActual) || 1;
       if (typeof cambio !== 'number') cambio = parseInt(cambio) || 0;
-      
+
       const nuevaPagina = paginaActual + cambio;
       if (nuevaPagina < 1) return '#';
-      
+
       const params = new URLSearchParams(baseUrl || '');
       params.set('pagina', nuevaPagina.toString());
       const urlParams = params.toString();
@@ -83,22 +83,22 @@ app.engine('hbs', hbs.engine({
     generatePaginationPages: (paginaActual, totalPaginas, baseUrl) => {
       if (typeof paginaActual !== 'number') paginaActual = parseInt(paginaActual) || 1;
       if (typeof totalPaginas !== 'number') totalPaginas = parseInt(totalPaginas) || 1;
-      
+
       const paginas = [];
       const maxPaginas = 7; // Máximo de números de página a mostrar
-      
+
       if (totalPaginas <= 1) {
         return paginas; // No mostrar paginación si hay 1 o menos páginas
       }
-      
+
       let inicio = Math.max(1, paginaActual - Math.floor(maxPaginas / 2));
       let fin = Math.min(totalPaginas, inicio + maxPaginas - 1);
-      
+
       // Ajustar inicio si nos acercamos al final
       if (fin - inicio < maxPaginas - 1) {
         inicio = Math.max(1, fin - maxPaginas + 1);
       }
-      
+
       for (let i = inicio; i <= fin; i++) {
         const params = new URLSearchParams(baseUrl || '');
         params.set('pagina', i.toString());
@@ -110,9 +110,10 @@ app.engine('hbs', hbs.engine({
           url: urlParams ? '?' + urlParams : '?pagina=' + i
         });
       }
-      
+
       return paginas;
-    }
+    },
+    json: (context) => JSON.stringify(context)
   }
 }));
 
