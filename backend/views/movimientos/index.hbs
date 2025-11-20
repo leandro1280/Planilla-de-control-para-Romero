@@ -253,7 +253,7 @@
     {
       tipo: '{{this.tipo}}',
       cantidad: {{this.cantidad}},
-      costoTotal: {{this.costoTotal}},
+      costoTotal: {{#if this.costoTotal}}{{this.costoTotal}}{{else}}null{{/if}},
       referencia: '{{this.referencia}}',
       tipoProducto: '{{this.tipoProducto}}'
     }{{#unless @last}},{{/unless}}

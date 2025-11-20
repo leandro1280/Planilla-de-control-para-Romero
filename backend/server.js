@@ -37,8 +37,11 @@ app.engine('hbs', hbs.engine({
       return Number(num).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     },
     formatCurrency: (num) => {
+      if (num === null || num === undefined) return '-';
       if (!num && num !== 0) return '-';
-      return Number(num).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const numValue = Number(num);
+      if (isNaN(numValue)) return '-';
+      return numValue.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     },
     formatDate: (date) => {
       if (!date) return '-';

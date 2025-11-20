@@ -173,8 +173,8 @@ exports.downloadMovements = async (req, res) => {
       'Producto': mov.producto?.nombre || '-',
       'Tipo': mov.tipo,
       'Cantidad': mov.cantidad,
-      'Costo Unitario': mov.costoUnitario,
-      'Costo Total': mov.costoTotal,
+      'Costo Unitario': mov.costoUnitario !== null && mov.costoUnitario !== undefined ? mov.costoUnitario : '-',
+      'Costo Total': mov.costoTotal !== null && mov.costoTotal !== undefined ? mov.costoTotal : '-',
       'Tipo Producto': mov.tipoProducto || '-',
       'Equipo': mov.producto?.equipo || '-',
       'Nota': mov.nota || '-',
@@ -227,8 +227,8 @@ function calculateStats(movements) {
   const totalIngresos = ingresos.reduce((acc, m) => acc + m.cantidad, 0);
   const totalEgresos = egresos.reduce((acc, m) => acc + m.cantidad, 0);
   
-  const totalInvertido = ingresos.reduce((acc, m) => acc + m.costoTotal, 0);
-  const totalConsumido = egresos.reduce((acc, m) => acc + m.costoTotal, 0);
+  const totalInvertido = ingresos.reduce((acc, m) => acc + (m.costoTotal || 0), 0);
+  const totalConsumido = egresos.reduce((acc, m) => acc + (m.costoTotal || 0), 0);
   
   // Agrupar por tipo de producto
   const porTipo = {};
@@ -239,10 +239,10 @@ function calculateStats(movements) {
     }
     if (mov.tipo === 'ingreso') {
       porTipo[tipo].ingresos += mov.cantidad;
-      porTipo[tipo].invertido += mov.costoTotal;
+      porTipo[tipo].invertido += (mov.costoTotal || 0);
     } else {
       porTipo[tipo].egresos += mov.cantidad;
-      porTipo[tipo].consumido += mov.costoTotal;
+      porTipo[tipo].consumido += (mov.costoTotal || 0);
     }
   });
   

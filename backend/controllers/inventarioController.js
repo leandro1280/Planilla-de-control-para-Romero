@@ -230,14 +230,15 @@ exports.createMovement = async (req, res) => {
     
     const cantidadNum = parseInt(cantidad);
     
-    // El costo unitario es opcional: si no se proporciona, usar el del producto o 0
-    let costoNum = 0;
+    // El costo unitario es completamente opcional: puede ser null si no se conoce
+    let costoNum = null;
     if (costoUnitario !== undefined && costoUnitario !== null && costoUnitario !== '') {
-      costoNum = parseFloat(costoUnitario) || 0;
-    } else {
-      // Si no se proporciona costo, usar el costo del producto (si existe)
-      costoNum = product.costoUnitario || 0;
+      const parsed = parseFloat(costoUnitario);
+      if (!isNaN(parsed) && parsed >= 0) {
+        costoNum = parsed;
+      }
     }
+    // Si no se proporciona costo, dejamos null (se puede agregar después)
     
     // Validar egreso
     if (tipo === 'egreso' && product.existencia < cantidadNum) {
@@ -262,15 +263,19 @@ exports.createMovement = async (req, res) => {
     // Actualizar producto
     product.existencia = nuevaExistencia;
     product.actualizadoPor = req.user._id;
+    // Solo actualizar el costo del producto si se proporciona un costo y es mayor a 0 (en ingresos)
+    if (tipo === 'ingreso' && costoNum !== null && costoNum > 0) {
+      product.costoUnitario = costoNum;
+    }
     await product.save();
     
-    // Crear movimiento (el costo puede ser 0 si no se proporciona)
+    // Crear movimiento (el costo puede ser null si no se proporciona)
     const movimiento = await Movement.create({
       referencia: product.referencia,
       tipo,
       cantidad: cantidadNum,
-      costoUnitario: costoNum,
-      costoTotal: Math.round((costoNum * cantidadNum) * 100) / 100,
+      costoUnitario: costoNum, // Puede ser null
+      costoTotal: costoNum !== null ? Math.round((costoNum * cantidadNum) * 100) / 100 : null,
       nota: nota || '',
       producto: product._id,
       usuario: req.user._id,

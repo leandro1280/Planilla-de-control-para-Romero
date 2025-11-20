@@ -26,15 +26,15 @@ const movementSchema = new mongoose.Schema({
   },
   costoUnitario: {
     type: Number,
-    required: true,
+    required: false,
     min: [0, 'El costo unitario no puede ser negativo'],
-    default: 0
+    default: null
   },
   costoTotal: {
     type: Number,
-    required: true,
+    required: false,
     min: [0, 'El costo total no puede ser negativo'],
-    default: 0
+    default: null
   },
   nota: {
     type: String,
@@ -61,7 +61,11 @@ const movementSchema = new mongoose.Schema({
 
 // Calcular costoTotal antes de guardar
 movementSchema.pre('save', function(next) {
-  this.costoTotal = Math.round((this.costoUnitario * this.cantidad) * 100) / 100;
+  if (this.costoUnitario !== null && this.costoUnitario !== undefined) {
+    this.costoTotal = Math.round((this.costoUnitario * this.cantidad) * 100) / 100;
+  } else {
+    this.costoTotal = null;
+  }
   next();
 });
 

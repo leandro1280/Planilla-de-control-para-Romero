@@ -99,6 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const formData = new FormData(formularioMovimiento);
       const data = Object.fromEntries(formData);
       
+      // Si el costo está vacío, no enviarlo (será null)
+      if (!data.costoUnitario || data.costoUnitario.trim() === '') {
+        delete data.costoUnitario;
+      } else {
+        data.costoUnitario = parseFloat(data.costoUnitario);
+      }
+      
       try {
         const response = await fetch('/inventario/movimientos', {
           method: 'POST',
