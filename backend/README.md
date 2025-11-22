@@ -1,103 +1,82 @@
-# Romero Panificados - Sistema de Control de Stock
+# Sistema de Gestión de Stock - Romero Panificados
 
-Sistema completo de gestión de inventario para Romero Panificados con autenticación, permisos y reportes.
+Sistema de control de inventario interno desarrollado para Maquinarias de Romero. Permite gestionar productos, registrar movimientos de entrada/salida, visualizar estadísticas en tiempo real y generar reportes.
 
-## 🚀 Instalación y Configuración
+## 🚀 Características Principales
 
-### 1. Instalar dependencias
-```bash
-npm install
-```
+-   **Dashboard Interactivo**: Visualización gráfica de la distribución de productos y tarjetas con métricas clave (stock crítico, movimientos del mes).
+-   **Gestión de Inventario**: Alta, baja y modificación de productos con categorización y control de stock.
+-   **Control de Movimientos**: Registro detallado de ingresos y egresos de mercadería.
+-   **Alertas de Stock**: Identificación automática de productos con stock bajo o crítico.
+-   **Exportación a Excel**: Descarga de reportes completos de inventario con un solo clic.
+-   **Seguridad**: Autenticación de usuarios y roles (Administrador, Visor).
 
-### 2. Configurar variables de entorno
-Copia el archivo `.env.example` a `.env` y configura:
+## 🛠️ Tecnologías Utilizadas
 
-```env
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/romero_stock
-JWT_SECRET=tu_secreto_jwt_muy_seguro_cambiar_en_produccion
-JWT_EXPIRE=7d
-NODE_ENV=development
-```
+-   **Backend**: Node.js, Express
+-   **Base de Datos**: MongoDB (Mongoose)
+-   **Frontend**: Handlebars (HBS), Bootstrap 5, Chart.js
+-   **Herramientas**: `xlsx` (Reportes), `bcryptjs` (Seguridad)
 
-### 3. Iniciar MongoDB
-Asegúrate de que MongoDB esté corriendo localmente o usa MongoDB Atlas.
+## 📋 Requisitos Previos
 
-### 4. Ejecutar la aplicación
+-   Node.js (v14 o superior)
+-   MongoDB (Instancia local o Atlas)
 
-**Desarrollo:**
-```bash
-npm run dev
-```
+## ⚙️ Instalación y Configuración
 
-**Producción:**
-```bash
-npm start
-```
+1.  **Clonar el repositorio** (o descargar el código):
+    ```bash
+    git clone <url-del-repo>
+    cd backend
+    ```
 
-## 👥 Usuarios por defecto
+2.  **Instalar dependencias**:
+    ```bash
+    npm install
+    ```
 
-El sistema crea automáticamente estos usuarios:
+3.  **Configurar Variables de Entorno**:
+    Crea un archivo `.env` en la raíz de la carpeta `backend` basándote en el archivo `.env.example`.
+    ```env
+    PORT=3000
+    MONGODB_URI=mongodb://localhost:27017/romero_stock
+    JWT_SECRET=tu_clave_secreta_segura
+    ADMIN_PASSWORD=Admin123!
+    ```
 
-### Administradores:
-- **Sergio Franco**: sergio.franco@romero.com / Admin123!
-- **Nahuel Romero**: nahuel.romero@romero.com / Admin123!
-- **Escuela Técnica**: escuela@romero.com / Admin123!
+4.  **Iniciar la aplicación**:
+    *   Modo desarrollo (con recarga automática):
+        ```bash
+        npm run dev
+        ```
+    *   Modo producción:
+        ```bash
+        npm start
+        ```
 
-### Usuarios Nivel 1:
-- **Guillermo Kleimbielen**: guillermo.kleimbielen@romero.com / User1123!
-- **Javier Speroni**: javier.speroni@romero.com / User1123!
+5.  **Acceder al sistema**:
+    Abre tu navegador en `http://localhost:3000`.
+    *   **Usuario Admin por defecto**: `admin@romero.com`
+    *   **Contraseña**: La que definiste en `ADMIN_PASSWORD` (o `Admin123!` por defecto).
 
-⚠️ **IMPORTANTE**: Cambia estas contraseñas en producción.
+## 📱 Uso del Sistema
 
-## 🔐 Sistema de Permisos
+### Dashboard
+Panel principal con resumen del estado del inventario y gráficos de distribución.
 
-- **Administrador**: Acceso total (modificación, carga, borrado)
-- **Usuario 1**: Carga/descarga, agregado de componentes, NO borra registros
-- **Usuario Común**: Solo descarga y visualización para búsqueda
+### Inventario
+Listado completo de productos.
+-   Usa los filtros para buscar por nombre, referencia o estado de stock.
+-   Usa el botón **"Exportar Excel"** para descargar el reporte.
 
-## 📁 Estructura del Proyecto
+### Movimientos
+Registra entradas y salidas de productos. El sistema validará que haya stock suficiente para los egresos.
 
-```
-backend/
-├── config/          # Configuración (base de datos)
-├── controllers/     # Controladores de rutas
-├── middleware/      # Middlewares (auth, security, errors)
-├── models/          # Modelos de MongoDB
-├── routes/          # Definición de rutas
-├── utils/           # Utilidades (validators, token)
-├── views/           # Vistas Handlebars
-│   ├── auth/       # Login, registro
-│   ├── inventario/ # Vista de inventario
-│   ├── movimientos/# Vista de movimientos
-│   ├── layouts/    # Layouts principales
-│   └── partials/   # Componentes reutilizables
-└── public/          # Archivos estáticos (CSS, JS)
-```
+## 🔒 Roles de Usuario
 
-## 🛡️ Seguridad
+-   **Administrador**: Acceso total (Crear/Editar/Eliminar productos, Registrar movimientos, Crear usuarios).
+-   **Visor**: Solo lectura de inventario y movimientos (No puede modificar datos).
 
-- JWT para autenticación
-- bcrypt para hash de contraseñas
-- Rate limiting (protección contra saturación)
-- express-mongo-sanitize (protección NoSQL injection)
-- express-validator (validación de datos)
-- Helmet (headers de seguridad)
-
-## 📊 Funcionalidades
-
-- ✅ Gestión de productos (CRUD)
-- ✅ Registro de movimientos (ingresos/egresos)
-- ✅ Filtros y búsqueda avanzada
-- ✅ Gráficos y estadísticas
-- ✅ Descarga de planillas Excel
-- ✅ Alertas de stock bajo/crítico
-- ✅ Sistema de permisos granular
-
-## 🌐 Despliegue en Render
-
-1. Conecta tu repositorio a Render
-2. Configura las variables de entorno
-3. Usa MongoDB Atlas para la base de datos
-4. Deploy automático en cada push
-
+---
+Desarrollado para Romero Panificados.

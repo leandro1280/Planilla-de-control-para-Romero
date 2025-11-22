@@ -72,7 +72,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 /* Asegurar que el contenido no tape el navbar */
 .container-fluid {
   position: relative;
-  z-index: 1;
+  /* z-index: 1; Removed to fix modal stacking context */
   max-width: 1600px; /* Un poco más ancho para pantallas grandes */
 }
 

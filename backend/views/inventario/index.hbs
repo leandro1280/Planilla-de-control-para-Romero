@@ -1,17 +1,23 @@
-<header class="hero card border-0 shadow-lg text-white mb-4">
-  <div class="card-body">
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-      <div>
-        <h1 class="hero__title mb-2">Inventario de pañol · Romero S.A.</h1>
-        <p class="hero__subtitle mb-0">Control inteligente de stock en tiempo real</p>
+<header class="hero card border-0 shadow-lg text-white mb-4 bg-primary">
+  <div class="card-body p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+      <div class="text-center text-lg-start">
+        <h1 class="hero__title fw-bold mb-2">Inventario de pañol · Romero S.A.</h1>
+        <p class="hero__subtitle mb-0 opacity-75 fs-5">Control inteligente de stock en tiempo real</p>
       </div>
-      <div class="d-flex flex-wrap align-items-center gap-3 hero__meta text-nowrap">
-        <a href="/movimientos" class="btn btn-outline-light btn-sm px-3">Ver movimientos</a>
-        <a href="/inventario/exportar" class="btn btn-success btn-sm px-3 text-white">
+      <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
+        <a href="/movimientos" class="btn btn-outline-light px-3">
+          Ver movimientos
+        </a>
+        <button type="button" class="btn btn-light text-primary px-3 fw-semibold" data-bs-toggle="modal"
+          data-bs-target="#importModal">
+          <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar Excel
+        </button>
+        <a href="/inventario/exportar" class="btn btn-success px-3 text-white">
           <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
         </a>
         {{#if (eq usuario.rol 'administrador')}}
-        <button id="boton-restaurar" type="button" class="btn btn-warning btn-sm text-dark fw-semibold">
+        <button id="boton-restaurar" type="button" class="btn btn-warning px-3 text-dark fw-semibold">
           Restablecer datos
         </button>
         {{/if}}
@@ -25,13 +31,13 @@
     <div class="row g-3">
       <div class="col-12 col-md-4 col-lg-3">
         <label class="form-label fw-semibold text-primary">Buscar</label>
-        <input id="buscador" type="search" class="form-control form-control-lg" 
-               placeholder="Referencia, producto o equipo" autocomplete="off" value="{{busqueda}}">
+        <input id="buscador" type="search" class="form-control form-control-lg"
+          placeholder="Referencia, producto o equipo" autocomplete="off" value="{{busqueda}}">
       </div>
       <div class="col-12 col-md-4 col-lg-3">
         <label class="form-label fw-semibold text-primary">Tipo</label>
         <select id="filtro-tipo" class="form-select form-select-lg text-capitalize">
-          <option value="todos" {{#if (eq tipoFiltro 'todos')}}selected{{/if}}>Todos</option>
+          <option value="todos" {{#if (eq tipoFiltro 'todos' )}}selected{{/if}}>Todos</option>
           {{#each tipos}}
           <option value="{{this}}" {{#if (eq ../tipoFiltro this)}}selected{{/if}}>{{this}}</option>
           {{/each}}
@@ -40,134 +46,143 @@
       <div class="col-12 col-md-4 col-lg-3">
         <label class="form-label fw-semibold text-primary">Mostrar</label>
         <select id="filtro-stock" class="form-select form-select-lg text-capitalize">
-          <option value="todos" {{#if (eq stockFiltro 'todos')}}selected{{/if}}>Todo</option>
-          <option value="sin-stock" {{#if (eq stockFiltro 'sin-stock')}}selected{{/if}}>Sin stock (=0)</option>
-          <option value="criticos" {{#if (eq stockFiltro 'criticos')}}selected{{/if}}>Críticos (≤4)</option>
-          <option value="bajo" {{#if (eq stockFiltro 'bajo')}}selected{{/if}}>Bajo stock (&lt;10)</option>
+          <option value="todos" {{#if (eq stockFiltro 'todos' )}}selected{{/if}}>Todo</option>
+          <option value="sin-stock" {{#if (eq stockFiltro 'sin-stock' )}}selected{{/if}}>Sin stock (=0)</option>
+          <option value="criticos" {{#if (eq stockFiltro 'criticos' )}}selected{{/if}}>Críticos (≤4)</option>
+          <option value="bajo" {{#if (eq stockFiltro 'bajo' )}}selected{{/if}}>Bajo stock (&lt;10)</option>
         </select>
       </div>
     </div>
   </div>
 </section>
 
-<main class="mb-4">
-  <div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table id="tabla-inventario" class="table table-hover mb-0">
-          <thead class="table-primary">
-            <tr>
-              <th>Referencia</th>
-              <th>Descripción</th>
-              <th>Equipo</th>
-              <th>Disponibles</th>
-              <th>Detalle</th>
-              <th>Tipo</th>
-              <th>Costo unidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#if products}}
-              {{#if (gt products.length 0)}}
-                {{#each products}}
-                <tr class="{{#if (eq this.existencia 0)}}table-danger opacity-75{{else if (lte this.existencia 4)}}table-danger{{else if (lt this.existencia 10)}}table-warning{{/if}}">
-                  <td class="fw-semibold">
-                    {{this.referencia}}
-                    {{#if (eq this.existencia 0)}}
-                    <span class="badge bg-danger ms-2" title="Producto sin stock">Sin stock</span>
-                    {{/if}}
-                  </td>
-                  <td>{{this.nombre}}</td>
-                  <td>{{this.equipo}}</td>
-                  <td class="text-end fw-bold">
-                    {{#if (eq this.existencia 0)}}
-                      <span class="text-danger">0</span>
-                    {{else}}
-                      {{formatNumber this.existencia}}
-                    {{/if}}
-                  </td>
-                  <td>{{this.detalle}}</td>
-                  <td class="text-capitalize">{{this.tipo}}</td>
-                  <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
-                </tr>
-                {{/each}}
-              {{else}}
-                <tr>
-                  <td colspan="7" class="text-center text-muted py-4">
-                    No hay productos para mostrar con los filtros seleccionados
-                  </td>
-                </tr>
-              {{/if}}
-            {{else}}
-              <tr>
-                <td colspan="7" class="text-center text-muted py-4">No hay productos en el inventario</td>
-              </tr>
-            {{/if}}
-          </tbody>
-        </table>
-      </div>
-      {{#if paginacion}}
-      {{#if (gt paginacion.totalPaginas 1)}}
-      <div class="card-footer bg-light d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 py-3">
-        <div class="text-muted small">
-          {{#if (gt paginacion.totalProductos 0)}}
-          Mostrando {{paginacion.desde}} a {{paginacion.hasta}} de {{paginacion.totalProductos}} productos
-          {{else}}
-          No hay productos para mostrar
+<div class="table-responsive">
+  <table id="tabla-inventario" class="table table-hover mb-0">
+    <thead class="table-primary">
+      <tr>
+        <th>Referencia</th>
+        <th>Descripción</th>
+        <th>Equipo</th>
+        <th>Disponibles</th>
+        <th>Detalle</th>
+        <th>Tipo</th>
+        <th>Costo unidad</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#if products}}
+      {{#if (gt products.length 0)}}
+      {{#each products}}
+      <tr
+        class="{{#if (eq this.existencia 0)}}table-danger opacity-75{{else if (lte this.existencia 4)}}table-danger{{else if (lt this.existencia 10)}}table-warning{{/if}}">
+        <td class="fw-semibold">
+          {{this.referencia}}
+          {{#if (eq this.existencia 0)}}
+          <span class="badge bg-danger ms-2" title="Producto sin stock">Sin stock</span>
           {{/if}}
-        </div>
-        <nav aria-label="Paginación de inventario">
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
-              <a class="page-link {{#unless paginacion.tieneAnterior}}disabled{{/unless}}" 
-                 href="{{buildPaginationUrl paginacion.paginaActual -1 paginacion.baseUrl}}" 
-                 aria-label="Anterior"{{#unless paginacion.tieneAnterior}} tabindex="-1" aria-disabled="true"{{/unless}}>
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            {{#each (generatePaginationPages paginacion.paginaActual paginacion.totalPaginas paginacion.baseUrl)}}
-            <li class="page-item {{#if this.active}}active{{/if}} {{#if this.disabled}}disabled{{/if}}">
-              <a class="page-link" href="{{this.url}}" aria-label="Página {{this.numero}}"{{#if this.active}} aria-current="page"{{/if}}>{{this.numero}}</a>
-            </li>
-            {{/each}}
-            <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
-              <a class="page-link {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}" 
-                 href="{{buildPaginationUrl paginacion.paginaActual 1 paginacion.baseUrl}}" 
-                 aria-label="Siguiente"{{#unless paginacion.tieneSiguiente}} tabindex="-1" aria-disabled="true"{{/unless}}>
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+        </td>
+        <td>{{this.nombre}}</td>
+        <td>{{this.equipo}}</td>
+        <td class="text-end fw-bold">
+          {{#if (eq this.existencia 0)}}
+          <span class="text-danger">0</span>
+          {{else}}
+          {{formatNumber this.existencia}}
+          {{/if}}
+        </td>
+        <td>{{this.detalle}}</td>
+        <td class="text-capitalize">{{this.tipo}}</td>
+        <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-dark btn-qr" data-referencia="{{this.referencia}}"
+            data-nombre="{{this.nombre}}" title="Ver QR">
+            <i class="bi bi-qr-code"></i>
+          </button>
+        </td>
+      </tr>
+      {{/each}}
+      {{else}}
+      <tr>
+        <td colspan="8" class="text-center text-muted py-4">
+          No hay productos para mostrar con los filtros seleccionados
+        </td>
+      </tr>
       {{/if}}
       {{else}}
-      {{#if paginacion}}
-      <div class="card-footer bg-light py-3">
-        <div class="text-muted small text-center">
-          Total: {{paginacion.totalProductos}} productos
-        </div>
-      </div>
+      <tr>
+        <td colspan="8" class="text-center text-muted py-4">No hay productos en el inventario</td>
+      </tr>
       {{/if}}
-      {{/if}}
-    </div>
+    </tbody>
+  </table>
+</div>
+
+{{#if paginacion}}
+{{#if (gt paginacion.totalPaginas 1)}}
+<div class="card-footer bg-light d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 py-3">
+  <div class="text-muted small">
+    {{#if (gt paginacion.totalProductos 0)}}
+    Mostrando {{paginacion.desde}} a {{paginacion.hasta}} de {{paginacion.totalProductos}} productos
+    {{else}}
+    No hay productos para mostrar
+    {{/if}}
   </div>
-</main>
+  <nav aria-label="Paginación de inventario">
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+        <a class="page-link {{#unless paginacion.tieneAnterior}}disabled{{/unless}}"
+          href="{{buildPaginationUrl paginacion.paginaActual -1 paginacion.baseUrl}}" aria-label="Anterior" {{#unless
+          paginacion.tieneAnterior}} tabindex="-1" aria-disabled="true" {{/unless}}>
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {{#each (generatePaginationPages paginacion.paginaActual paginacion.totalPaginas paginacion.baseUrl)}}
+      <li class="page-item {{#if this.active}}active{{/if}} {{#if this.disabled}}disabled{{/if}}">
+        <a class="page-link" href="{{this.url}}" aria-label="Página {{this.numero}}" {{#if this.active}}
+          aria-current="page" {{/if}}>{{this.numero}}</a>
+      </li>
+      {{/each}}
+      <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+        <a class="page-link {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}"
+          href="{{buildPaginationUrl paginacion.paginaActual 1 paginacion.baseUrl}}" aria-label="Siguiente" {{#unless
+          paginacion.tieneSiguiente}} tabindex="-1" aria-disabled="true" {{/unless}}>
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+{{/if}}
+{{else}}
+{{#if paginacion}}
+<div class="card-footer bg-light py-3">
+  <div class="text-muted small text-center">
+    Total: {{paginacion.totalProductos}} productos
+  </div>
+</div>
+{{/if}}
+{{/if}}
 
 {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'visor'))}}
-<section class="panel card border-0 shadow-sm mb-4">
+<section class="panel card border-0 shadow-sm mb-4 mt-4">
   <div class="card-body">
     <h2 class="panel-title mb-4">Registrar movimiento</h2>
     <form id="formulario-movimiento" autocomplete="off">
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-4">
           <label class="form-label fw-semibold text-primary">Producto *</label>
-          <select id="movimiento-referencia" name="referencia" class="form-select form-select-lg" required>
-            <option value="">Seleccione un producto</option>
-            {{#each todosLosProductos}}
-            <option value="{{this.referencia}}">{{this.referencia}} · {{this.nombre}}</option>
-            {{/each}}
-          </select>
+          <div class="input-group">
+            <select id="movimiento-referencia" name="referencia" class="form-select form-select-lg" required>
+              <option value="">Seleccione un producto</option>
+              {{#each todosLosProductos}}
+              <option value="{{this.referencia}}">{{this.referencia}} · {{this.nombre}}</option>
+              {{/each}}
+            </select>
+            <button class="btn btn-outline-secondary" type="button" id="btn-scan-qr" title="Escanear QR">
+              <i class="bi bi-qr-code-scan"></i>
+            </button>
+          </div>
         </div>
         <div class="col-12 col-md-3">
           <label class="form-label fw-semibold text-primary">Tipo *</label>
@@ -178,21 +193,22 @@
         </div>
         <div class="col-12 col-md-2">
           <label class="form-label fw-semibold text-primary">Cantidad *</label>
-          <input id="movimiento-cantidad" name="cantidad" type="number" min="1" step="1" 
-                 class="form-control form-control-lg" required>
+          <input id="movimiento-cantidad" name="cantidad" type="number" min="1" step="1"
+            class="form-control form-control-lg" required>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label fw-semibold text-primary">Costo unitario <small class="text-muted">(opcional)</small></label>
-          <input id="movimiento-costo" name="costoUnitario" type="number" min="0" step="0.01" 
-                 class="form-control form-control-lg" placeholder="Opcional - Puede agregarse después">
+          <label class="form-label fw-semibold text-primary">Costo unitario <small
+              class="text-muted">(opcional)</small></label>
+          <input id="movimiento-costo" name="costoUnitario" type="number" min="0" step="0.01"
+            class="form-control form-control-lg" placeholder="Opcional - Puede agregarse después">
           <small class="form-text text-muted">Puede dejarse vacío y definirse más tarde</small>
         </div>
       </div>
       <div class="row g-3 mb-3">
         <div class="col-12">
           <label class="form-label fw-semibold text-primary">Detalle</label>
-          <input id="movimiento-nota" name="nota" type="text" class="form-control form-control-lg" 
-                 placeholder="Factura, orden, motivo...">
+          <input id="movimiento-nota" name="nota" type="text" class="form-control form-control-lg"
+            placeholder="Factura, orden, motivo...">
         </div>
       </div>
       <button type="submit" class="btn btn-primary btn-lg">Registrar</button>
@@ -207,7 +223,12 @@
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-4">
           <label class="form-label fw-semibold text-primary">Referencia *</label>
-          <input name="referencia" type="text" class="form-control form-control-lg" required>
+          <div class="input-group">
+            <input name="referencia" type="text" class="form-control form-control-lg" required>
+            <button class="btn btn-outline-secondary" type="button" id="btn-scan-qr-new" title="Escanear QR">
+              <i class="bi bi-qr-code-scan"></i>
+            </button>
+          </div>
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label fw-semibold text-primary">Descripción *</label>
@@ -242,5 +263,78 @@
 </section>
 {{/if}}
 
-<script src="/js/inventario.js"></script>
+<!-- Modal Ver QR -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">Código QR del Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div id="qr-code-container" class="d-flex justify-content-center mb-3"></div>
+        <h4 id="qr-referencia" class="fw-bold text-primary mb-1"></h4>
+        <p id="qr-nombre" class="text-muted mb-0"></p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+          <i class="bi bi-printer me-2"></i>Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- Modal Escanear QR -->
+<div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">Escanear Código QR</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="reader" style="width: 100%; min-height: 300px; background: #000;"></div>
+      </div>
+      <div class="modal-footer border-0">
+        <p class="text-muted small mb-0 w-100 text-center">Apunta la cámara al código QR</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Importar Excel -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">Importar Productos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-importar" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="archivoExcel" class="form-label">Seleccionar archivo Excel (.xlsx)</label>
+            <input class="form-control" type="file" id="archivoExcel" name="archivo" accept=".xlsx, .xls, .csv"
+              required>
+          </div>
+          <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-1"></i>
+            El archivo debe tener las columnas: <strong>Referencia, Nombre, Equipo, Existencia, Tipo, Costo</strong>.
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-cloud-upload me-2"></i>Subir e Importar
+            </button>
+          </div>
+        </form>
+        <div id="import-result" class="mt-3 d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="/js/inventario.js"></script>
+<script src="/js/qr-logic.js"></script>

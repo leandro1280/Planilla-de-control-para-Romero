@@ -1,25 +1,27 @@
 const express = require('express');
-const router = express.Router();
 const { protect, canCreate, canDelete } = require('../middleware/auth');
-const { validateProduct, validateMovement, handleValidationErrors } = require('../utils/validators');
-const inventarioController = require('../controllers/inventarioController');
+const upload = require('../middleware/upload');
+const { validateProduct, validateMovement } = require('../utils/validators');
+const {
+    getProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createMovement,
+    exportToExcel,
+    importFromExcel
+} = require('../controllers/inventarioController');
 
-// Todas las rutas requieren autenticación
+const router = express.Router();
+
 router.use(protect);
 
-// Vista principal del inventario
-router.get('/', inventarioController.getProducts);
-
-// Exportar a Excel
-router.get('/exportar', inventarioController.exportToExcel);
-
-// CRUD de productos
-router.post('/productos', canCreate, validateProduct, handleValidationErrors, inventarioController.createProduct);
-router.put('/productos/:id', canCreate, validateProduct, handleValidationErrors, inventarioController.updateProduct);
-router.delete('/productos/:id', canDelete, inventarioController.deleteProduct);
-
-// Crear movimiento
-router.post('/movimientos', canCreate, validateMovement, handleValidationErrors, inventarioController.createMovement);
+router.get('/', getProducts);
+router.get('/exportar', exportToExcel);
+router.post('/importar', upload.single('archivo'), importFromExcel);
+router.post('/productos', canCreate, validateProduct, createProduct);
+router.put('/productos/:id', canCreate, validateProduct, updateProduct);
+router.delete('/productos/:id', canDelete, deleteProduct);
+router.post('/movimientos', canCreate, validateMovement, createMovement);
 
 module.exports = router;
-

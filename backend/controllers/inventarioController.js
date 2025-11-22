@@ -346,7 +346,6 @@ exports.exportToExcel = async (req, res) => {
     ws['!cols'] = wscols;
 
     XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     const fecha = new Date().toISOString().split('T')[0];
@@ -361,3 +360,101 @@ exports.exportToExcel = async (req, res) => {
   }
 };
 
+// @desc    Importar productos desde Excel
+// @route   POST /inventario/importar
+// @access  Private (administrador)
+exports.importFromExcel = async (req, res) => {
+  console.log('--> Inicio de importación de Excel');
+  try {
+    if (!req.file) {
+      console.log('Error: No se subió ningún archivo');
+      return res.status(400).json({
+        success: false,
+        message: 'No se subió ningún archivo'
+      });
+    }
+    console.log('Archivo recibido:', req.file.path);
+
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    // El archivo del usuario tiene un título en la primera fila, los encabezados están en la segunda (índice 1)
+    const data = XLSX.utils.sheet_to_json(sheet, { range: 1 });
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El archivo está vacío o no tiene datos válidos'
+      });
+    }
+
+    let creados = 0;
+    let actualizados = 0;
+    let errores = 0;
+    const erroresDetalle = [];
+
+    for (const row of data) {
+      try {
+        // Mapear columnas del Excel a campos del modelo
+        // Columnas esperadas: REFERENCIA, DESCRIPCIÓN DE PRODUCTO, EQUIPO DONDE SE APLICA, DISPONIBLES, DETALLE, TIPO
+        const referencia = (row['REFERENCIA'] || row['Referencia'] || row['referencia'] || '').toString().toUpperCase().trim();
+
+        if (!referencia) continue; // Saltar filas sin referencia
+
+        const productData = {
+          referencia: referencia,
+          nombre: row['DESCRIPCIÓN DE PRODUCTO'] || row['DESCRIPCION DE PRODUCTO'] || row['Nombre'] || row['nombre'] || '',
+          equipo: row['EQUIPO DONDE SE APLICA'] || row['Equipo'] || row['equipo'] || '',
+          existencia: parseInt(row['DISPONIBLES'] || row['Existencia'] || row['existencia'] || 0),
+          tipo: row['TIPO'] || row['Tipo'] || row['tipo'] || 'Sin tipo',
+          detalle: row['DETALLE'] || row['Detalle'] || '',
+          costoUnitario: parseFloat(row['Costo'] || row['Costo Unitario'] || row['costo'] || 0),
+          actualizadoPor: req.user._id
+        };
+
+        // Buscar si existe
+        let product = await Product.findOne({ referencia: referencia });
+
+        if (product) {
+          // Actualizar
+          product.nombre = productData.nombre || product.nombre;
+          product.equipo = productData.equipo || product.equipo;
+          if (row['Existencia'] !== undefined || row['existencia'] !== undefined) {
+            product.existencia = productData.existencia;
+          }
+          product.tipo = productData.tipo || product.tipo;
+          if (productData.costoUnitario > 0) product.costoUnitario = productData.costoUnitario;
+          product.actualizadoPor = req.user._id;
+
+          await product.save();
+          actualizados++;
+        } else {
+          // Crear nuevo
+          productData.creadoPor = req.user._id;
+          await Product.create(productData);
+          creados++;
+        }
+      } catch (error) {
+        errores++;
+        erroresDetalle.push(`Fila ${data.indexOf(row) + 2}: ${error.message}`);
+      }
+    }
+
+    // Eliminar archivo subido
+    const fs = require('fs');
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).json({
+      success: true,
+      message: `Proceso completado. Creados: ${creados}, Actualizados: ${actualizados}, Errores: ${errores}`,
+      detalles: erroresDetalle
+    });
+
+  } catch (error) {
+    console.error('Error importando excel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al procesar el archivo: ' + error.message
+    });
+  }
+};

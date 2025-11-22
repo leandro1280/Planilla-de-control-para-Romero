@@ -3,10 +3,10 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const User = require('../models/User');
 
-// URI de MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://sirleo1280_db_user:Frida1280@romero.gdd47wm.mongodb.net/romero_stock';
+// URI de MongoDB (Usar variable de entorno)
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Productos del inventario real
+// Productos del inventario real (Proporcionados por el usuario)
 const productosReal = [
   // Cadenas
   { referencia: 'CAD-40-SIMPLE', nombre: 'ASA 40 simple', equipo: 'en varias maq-trasp-horno', existencia: 0, tipo: 'Cadena' },
@@ -20,7 +20,7 @@ const productosReal = [
   { referencia: 'CAD-06B-2', nombre: '06-B2 doble', equipo: 'cinta-mesa de apile (tapas)', existencia: 0, tipo: 'Cadena' },
   { referencia: 'CAD-06-SIMPLE', nombre: '06-B1 simple', equipo: '', existencia: 0, tipo: 'Cadena' },
   { referencia: 'CAD-120-DOBLE', nombre: 'Cadena ASA 120 Doble', equipo: 'Enfriador', existencia: 0, tipo: 'Cadena' },
-  
+
   // Uniones y medios eslabones
   { referencia: 'MEDIO-UNION-CAD-06B1-SIMPLE', nombre: 'Medio eslabon', equipo: '', existencia: 0, tipo: 'Unión' },
   { referencia: 'MEDIO-UNION-CAD-06B1-DOBLE', nombre: 'Medio eslabon', equipo: '', existencia: 0, tipo: 'Unión' },
@@ -41,10 +41,10 @@ const productosReal = [
   { referencia: 'UNION-CAD-120-DOBLE', nombre: 'Union Cadena ASA 120 doble', equipo: 'Enfriador', existencia: 0, tipo: 'Unión' },
   { referencia: 'UNION-CAD-S55', nombre: 'S55 Union', equipo: 'Estibador', existencia: 0, tipo: 'Unión' },
   { referencia: 'MED-UNION-CAD-S55', nombre: 'S55 medio eslabon', equipo: 'Estibador', existencia: 0, tipo: 'Unión' },
-  
+
   // Pernos
   { referencia: 'PERNOS-ESTIBA', nombre: 'Pernos Para Bandejas Estibador', equipo: 'Estibador L-GA3000', existencia: 14, tipo: 'Perno' },
-  
+
   // Rodamientos
   { referencia: 'ROD-CF1-1/8-S', nombre: 'CF 1 1/8 S', equipo: 'LEVA ENBOLS-AMF', existencia: 5, tipo: 'Rodamiento' },
   { referencia: 'ROD-UCT208', nombre: 'UCT208', equipo: 'banda desmoldador', existencia: 0, tipo: 'Rodamiento' },
@@ -89,7 +89,7 @@ const productosReal = [
   { referencia: 'ROD-32015-JR', nombre: '32015 JR', equipo: 'Ejes de sinfín maq margarina', existencia: 0, tipo: 'Rodamiento' },
   { referencia: 'ROD-1212', nombre: '1212 doble bolilla cilindrico', equipo: '', existencia: 0, tipo: 'Rodamiento' },
   { referencia: 'ROD-32017-X', nombre: '32017 X', equipo: '', existencia: 0, tipo: 'Rodamiento' },
-  
+
   // SET (asumo que son rodamientos o componentes especiales)
   { referencia: 'SET328', nombre: 'SET328', equipo: '', existencia: 8, tipo: 'Rodamiento' },
 ];
@@ -97,18 +97,22 @@ const productosReal = [
 // Función para crear productos
 async function seedProducts() {
   try {
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI no está definida en las variables de entorno');
+    }
+
     console.log('🔌 Conectando a MongoDB...');
     await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB conectado\n');
 
     // Obtener un administrador para asignar como creador
     const admin = await User.findOne({ rol: 'administrador' });
-    
+
     if (!admin) {
       console.error('❌ No se encontró ningún administrador. Ejecuta primero npm run seed:users');
       process.exit(1);
     }
-    
+
     console.log(`✅ Usando administrador: ${admin.nombre} (${admin.email})\n`);
 
     console.log('📝 Creando productos...\n');
@@ -121,10 +125,10 @@ async function seedProducts() {
       try {
         // Normalizar referencia a mayúsculas
         const referenciaNormalizada = productoData.referencia.toUpperCase().trim();
-        
+
         // Verificar si el producto ya existe
         const existe = await Product.findOne({ referencia: referenciaNormalizada });
-        
+
         if (existe) {
           console.log(`⚠️  Producto ya existe: ${referenciaNormalizada} - ${productoData.nombre}`);
           existentes++;
@@ -162,7 +166,7 @@ async function seedProducts() {
       { $group: { _id: '$tipo', count: { $sum: 1 } } },
       { $sort: { _id: 1 } }
     ]);
-    
+
     tipos.forEach(tipo => {
       console.log(`   ${tipo._id}: ${tipo.count}`);
     });
@@ -171,14 +175,14 @@ async function seedProducts() {
     const conStock = await Product.countDocuments({ existencia: { $gt: 0 } });
     const sinStock = await Product.countDocuments({ existencia: 0 });
     const stockCritico = await Product.countDocuments({ existencia: { $lte: 4, $gt: 0 } });
-    
+
     console.log('\n📊 Estadísticas de stock:');
     console.log(`   ✅ Con stock: ${conStock}`);
     console.log(`   ⚠️  Sin stock: ${sinStock}`);
     console.log(`   🔴 Stock crítico (≤4): ${stockCritico}\n`);
 
     console.log('✨ Proceso completado\n');
-    
+
     await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
@@ -190,4 +194,3 @@ async function seedProducts() {
 
 // Ejecutar
 seedProducts();
-
