@@ -199,4 +199,229 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
+  // ============================================
+  // FUNCIONALIDAD DE EDICIÓN DE PRODUCTOS
+  // ============================================
+  const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+  const newTypeModal = new bootstrap.Modal(document.getElementById('newTypeModal'));
+  const editButtons = document.querySelectorAll('.btn-edit');
+  const formEditProduct = document.getElementById('form-edit-product');
+  const formNewType = document.getElementById('form-new-type');
+  const btnNuevoTipo = document.getElementById('btn-nuevo-tipo');
+  const editTipoSelect = document.getElementById('edit-tipo');
+
+  // Botones de edición
+  editButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const productId = this.dataset.id;
+      const referencia = this.dataset.referencia;
+      const nombre = this.dataset.nombre;
+      const equipo = this.dataset.equipo || '';
+      const existencia = this.dataset.existencia || '0';
+      const detalle = this.dataset.detalle || '';
+      const tipo = this.dataset.tipo || '';
+      const costo = this.dataset.costo || '';
+
+      // Llenar formulario
+      document.getElementById('edit-product-id').value = productId;
+      document.getElementById('edit-referencia').value = referencia;
+      document.getElementById('edit-nombre').value = nombre;
+      document.getElementById('edit-equipo').value = equipo;
+      document.getElementById('edit-existencia').value = existencia;
+      document.getElementById('edit-detalle').value = detalle;
+      document.getElementById('edit-tipo').value = tipo;
+      document.getElementById('edit-costo').value = costo;
+
+      // Limpiar mensajes anteriores
+      document.getElementById('edit-result').className = 'mt-3 d-none';
+
+      // Mostrar modal
+      editModal.show();
+    });
+  });
+
+  // Formulario de edición
+  if (formEditProduct) {
+    formEditProduct.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const productId = document.getElementById('edit-product-id').value;
+      const formData = new FormData(formEditProduct);
+      const data = Object.fromEntries(formData);
+
+      // Preparar datos
+      const updateData = {
+        nombre: data.nombre,
+        equipo: data.equipo || '',
+        existencia: parseInt(data.existencia) || 0,
+        detalle: data.detalle || '',
+        tipo: data.tipo || null,
+        costoUnitario: data.costoUnitario ? parseFloat(data.costoUnitario) : null
+      };
+
+      const resultDiv = document.getElementById('edit-result');
+      // Usar e.submitter para obtener el botón que hizo el submit (compatible con formularios externos)
+      const submitBtn = e.submitter || document.querySelector('#editModal button[form="form-edit-product"]');
+
+      // Deshabilitar botón y mostrar spinner
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+      }
+
+      try {
+        const response = await fetch(`/inventario/productos/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        const result = await response.json();
+
+        resultDiv.classList.remove('d-none');
+
+        if (result.success) {
+          resultDiv.className = 'mt-3 alert alert-success';
+          resultDiv.innerHTML = `
+            <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Producto actualizado</h6>
+            <p class="mb-0">Los cambios se han guardado correctamente.</p>
+          `;
+
+          // Recargar la página después de 1.5 segundos
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          resultDiv.className = 'mt-3 alert alert-danger';
+          resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${result.message || 'Error al actualizar producto'}`;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.classList.remove('d-none');
+        resultDiv.className = 'mt-3 alert alert-danger';
+        resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>Error de conexión`;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';
+        }
+      }
+    });
+  }
+
+  // Botones para crear nuevo tipo (desde modal de edición y formulario nuevo producto)
+  const btnNuevoTipoNuevoProducto = document.getElementById('btn-nuevo-tipo-nuevo-producto');
+  const nuevoProductoTipoSelect = document.getElementById('nuevo-producto-tipo');
+
+  function openNewTypeModal(sourceSelect) {
+    // Guardar referencia al select que lo llamó
+    window.currentTypeSelect = sourceSelect;
+    
+    // Limpiar formulario
+    document.getElementById('new-type-name').value = '';
+    document.getElementById('new-type-result').className = 'mt-3 d-none';
+    
+    // Mostrar modal
+    newTypeModal.show();
+  }
+
+  if (btnNuevoTipo) {
+    btnNuevoTipo.addEventListener('click', function () {
+      openNewTypeModal(editTipoSelect);
+    });
+  }
+
+  if (btnNuevoTipoNuevoProducto) {
+    btnNuevoTipoNuevoProducto.addEventListener('click', function () {
+      openNewTypeModal(nuevoProductoTipoSelect);
+    });
+  }
+
+  // Formulario para crear nuevo tipo
+  if (formNewType) {
+    formNewType.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tipoName = document.getElementById('new-type-name').value.trim();
+      const resultDiv = document.getElementById('new-type-result');
+      // Usar e.submitter para obtener el botón que hizo el submit (compatible con formularios externos)
+      const submitBtn = e.submitter || document.querySelector('#newTypeModal button[form="form-new-type"]');
+
+      if (!tipoName) {
+        resultDiv.classList.remove('d-none');
+        resultDiv.className = 'mt-3 alert alert-warning';
+        resultDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor ingresa un nombre para el tipo';
+        return;
+      }
+
+      // Verificar si el tipo ya existe
+      const tipoExists = Array.from(editTipoSelect.options).some(opt => 
+        opt.value.toLowerCase() === tipoName.toLowerCase()
+      );
+
+      if (tipoExists) {
+        resultDiv.classList.remove('d-none');
+        resultDiv.className = 'mt-3 alert alert-warning';
+        resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>El tipo "${tipoName}" ya existe`;
+        return;
+      }
+
+      // Deshabilitar botón y mostrar spinner
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creando...';
+      }
+
+      // Agregar el nuevo tipo a todos los selectores relevantes
+      const selectsToUpdate = [
+        editTipoSelect,
+        nuevoProductoTipoSelect,
+        document.getElementById('filtro-tipo')
+      ].filter(s => s !== null);
+
+      selectsToUpdate.forEach(select => {
+        // Verificar si ya existe
+        const exists = Array.from(select.options).some(opt => 
+          opt.value.toLowerCase() === tipoName.toLowerCase()
+        );
+        
+        if (!exists) {
+          const newOption = document.createElement('option');
+          newOption.value = tipoName;
+          newOption.textContent = tipoName;
+          select.appendChild(newOption);
+        }
+      });
+
+      // Seleccionar el nuevo tipo en el select que lo llamó
+      if (window.currentTypeSelect) {
+        window.currentTypeSelect.value = tipoName;
+      }
+
+      resultDiv.classList.remove('d-none');
+      resultDiv.className = 'mt-3 alert alert-success';
+      resultDiv.innerHTML = `
+        <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Tipo creado</h6>
+        <p class="mb-0">El tipo "${tipoName}" ha sido agregado y seleccionado.</p>
+      `;
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Crear Tipo';
+      }
+
+      // Cerrar modal después de 1 segundo
+      setTimeout(() => {
+        newTypeModal.hide();
+        // Enfocar el campo de tipo en el modal de edición
+        editTipoSelect.focus();
+      }, 1000);
+    });
+  }
 });

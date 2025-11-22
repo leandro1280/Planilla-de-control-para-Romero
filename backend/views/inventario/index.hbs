@@ -95,10 +95,26 @@
         <td class="text-capitalize">{{this.tipo}}</td>
         <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-dark btn-qr" data-referencia="{{this.referencia}}"
-            data-nombre="{{this.nombre}}" title="Ver QR">
-            <i class="bi bi-qr-code"></i>
-          </button>
+          <div class="btn-group" role="group">
+            {{#if (or (eq ../usuario.rol 'administrador') (eq ../usuario.rol 'visor'))}}
+            <button class="btn btn-sm btn-outline-primary btn-edit" 
+              data-id="{{this._id}}"
+              data-referencia="{{this.referencia}}"
+              data-nombre="{{this.nombre}}"
+              data-equipo="{{this.equipo}}"
+              data-existencia="{{this.existencia}}"
+              data-detalle="{{this.detalle}}"
+              data-tipo="{{this.tipo}}"
+              data-costo="{{this.costoUnitario}}"
+              title="Editar producto">
+              <i class="bi bi-pencil"></i>
+            </button>
+            {{/if}}
+            <button class="btn btn-sm btn-outline-dark btn-qr" data-referencia="{{this.referencia}}"
+              data-nombre="{{this.nombre}}" title="Ver QR">
+              <i class="bi bi-qr-code"></i>
+            </button>
+          </div>
         </td>
       </tr>
       {{/each}}
@@ -246,7 +262,17 @@
         </div>
         <div class="col-12 col-md-3">
           <label class="form-label fw-semibold text-primary">Tipo</label>
-          <input name="tipo" type="text" class="form-control form-control-lg">
+          <div class="input-group">
+            <select name="tipo" id="nuevo-producto-tipo" class="form-select form-select-lg">
+              <option value="">Sin tipo</option>
+              {{#each tipos}}
+              <option value="{{this}}">{{this}}</option>
+              {{/each}}
+            </select>
+            <button class="btn btn-outline-secondary" type="button" id="btn-nuevo-tipo-nuevo-producto" title="Crear nuevo tipo">
+              <i class="bi bi-plus-circle"></i>
+            </button>
+          </div>
         </div>
         <div class="col-12 col-md-3">
           <label class="form-label fw-semibold text-primary">Costo unitario</label>
@@ -285,19 +311,29 @@
   </div>
 </div>
 
-<!-- Modal Escanear QR -->
+<!-- Modal Escanear QR (Bootstrap Optimizado) -->
 <div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold">Escanear Código QR</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content bg-dark text-white border-0 shadow">
+      <div class="modal-header border-0 position-absolute w-100 p-3" style="z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);">
+        <h5 class="modal-title fw-bold fs-6 text-uppercase letter-spacing-1">
+          <i class="bi bi-qr-code-scan me-2"></i>Escanear
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body p-0">
-        <div id="reader" style="width: 100%; min-height: 300px; background: #000;"></div>
-      </div>
-      <div class="modal-footer border-0">
-        <p class="text-muted small mb-0 w-100 text-center">Apunta la cámara al código QR</p>
+      <div class="modal-body p-0 position-relative d-flex align-items-center justify-content-center bg-black">
+        <!-- Contenedor del video -->
+        <div id="reader" class="w-100 h-100" style="object-fit: cover;"></div>
+        
+        <!-- Overlay Visual (Guía de enfoque) -->
+        <div class="qr-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center pe-none">
+          <div class="qr-box"></div>
+        </div>
+        
+        <!-- Mensaje de ayuda flotante -->
+        <div class="position-absolute bottom-0 w-100 text-center p-4 pb-5" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+          <small class="text-white-50">Apunta la cámara al código QR del producto</small>
+        </div>
       </div>
     </div>
   </div>
@@ -329,6 +365,113 @@
           </div>
         </form>
         <div id="import-result" class="mt-3 d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 bg-primary text-white">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-pencil-square me-2"></i>Editar Producto
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-edit-product" autocomplete="off">
+          <input type="hidden" id="edit-product-id" name="id">
+          
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Referencia *</label>
+              <input type="text" id="edit-referencia" name="referencia" class="form-control form-control-lg" required readonly>
+              <small class="text-muted">La referencia no se puede modificar</small>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Nombre/Descripción *</label>
+              <input type="text" id="edit-nombre" name="nombre" class="form-control form-control-lg" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Equipo</label>
+              <input type="text" id="edit-equipo" name="equipo" class="form-control form-control-lg">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Stock Disponible *</label>
+              <input type="number" id="edit-existencia" name="existencia" min="0" step="1" class="form-control form-control-lg" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Tipo de Producto</label>
+              <div class="input-group">
+                <select id="edit-tipo" name="tipo" class="form-select form-select-lg">
+                  <option value="">Sin tipo</option>
+                  {{#each tipos}}
+                  <option value="{{this}}">{{this}}</option>
+                  {{/each}}
+                </select>
+                <button type="button" class="btn btn-outline-secondary" id="btn-nuevo-tipo" title="Crear nuevo tipo">
+                  <i class="bi bi-plus-circle"></i>
+                </button>
+              </div>
+              <small class="text-muted">Selecciona un tipo existente o crea uno nuevo</small>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold text-primary">Costo Unitario</label>
+              <input type="number" id="edit-costo" name="costoUnitario" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-primary">Detalle/Notas</label>
+            <textarea id="edit-detalle" name="detalle" class="form-control form-control-lg" rows="3" placeholder="Información adicional..."></textarea>
+          </div>
+
+          <div id="edit-result" class="mt-3 d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" form="form-edit-product" class="btn btn-primary">
+          <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear Nuevo Tipo -->
+<div class="modal fade" id="newTypeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 bg-success text-white">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Tipo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-new-type">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nombre del Tipo *</label>
+            <input type="text" id="new-type-name" class="form-control form-control-lg" placeholder="Ej: Herramienta, Eléctrico, etc." required autofocus>
+            <small class="text-muted">El tipo se agregará a la lista y podrá ser usado en todos los productos</small>
+          </div>
+          <div id="new-type-result" class="mt-3 d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" form="form-new-type" class="btn btn-success">
+          <i class="bi bi-check-circle me-2"></i>Crear Tipo
+        </button>
       </div>
     </div>
   </div>

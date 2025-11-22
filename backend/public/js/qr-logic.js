@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // --- GENERACIÓN DE QR ---
+    // --- GENERACIÓN DE QR (Visualización) ---
     const qrButtons = document.querySelectorAll('.btn-qr');
     const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
     const qrContainer = document.getElementById('qr-code-container');
@@ -31,100 +31,139 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- ESCANEO DE QR ---
+    // --- ESCANEO DE QR (Lógica Pro "Apunta y Dispara") ---
     const scanModalEl = document.getElementById('scanModal');
-    const scanModal = new bootstrap.Modal(scanModalEl);
+    // Configuración Bootstrap del modal (keyboard: false evita cierres accidentales)
+    const scanModal = new bootstrap.Modal(scanModalEl, { keyboard: false });
+    
     const btnScanMovimiento = document.getElementById('btn-scan-qr');
     const btnScanNuevo = document.getElementById('btn-scan-qr-new');
-    let html5QrcodeScanner = null;
-    let targetInput = null; // Elemento donde se pondrá el valor escaneado
+    
+    let html5QrCode = null;
+    let targetInput = null;
+    let isScanning = false;
 
-    function startScanner(inputElement) {
+    // Iniciar el escáner
+    async function startScanner(inputElement) {
         targetInput = inputElement;
         scanModal.show();
 
-        // Esperar a que el modal se muestre para iniciar el scanner
-        scanModalEl.addEventListener('shown.bs.modal', initScanner, { once: true });
+        // Esperar a que el modal esté visible para iniciar la cámara
+        // Esto es CRÍTICO para que el contenedor tenga dimensiones reales
+        scanModalEl.addEventListener('shown.bs.modal', initCamera, { once: true });
     }
 
-    function initScanner() {
-        if (html5QrcodeScanner) {
-            // Si ya existe, nos aseguramos de que esté limpio
-            html5QrcodeScanner.clear();
+    async function initCamera() {
+        if (isScanning) return;
+
+        try {
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0 
+            };
+
+            // Preferir cámara trasera
+            await html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess, 
+                onScanFailure
+            );
+            
+            isScanning = true;
+            document.body.classList.add('qr-scanning-active'); // Para efectos CSS opcionales
+
+        } catch (err) {
+            console.error("Error iniciando cámara: ", err);
+            alert("No se pudo acceder a la cámara. Asegúrate de dar permisos.");
+            scanModal.hide();
         }
+    }
 
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            /* verbose= */ false
-        );
-
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    async function stopCamera() {
+        if (html5QrCode && isScanning) {
+            try {
+                await html5QrCode.stop();
+                html5QrCode.clear();
+                isScanning = false;
+                document.body.classList.remove('qr-scanning-active');
+            } catch (err) {
+                console.error("Error deteniendo cámara: ", err);
+            }
+        }
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-        // Detener el scanner
-        html5QrcodeScanner.clear().then(() => {
+        // Éxito: Vibrar si el dispositivo lo soporta
+        if (navigator.vibrate) navigator.vibrate(200);
+
+        stopCamera().then(() => {
             scanModal.hide();
-
-            if (targetInput) {
-                // Si es un select (movimiento), buscar la opción
-                if (targetInput.tagName === 'SELECT') {
-                    const options = Array.from(targetInput.options);
-                    const matchingOption = options.find(opt => opt.value === decodedText);
-
-                    if (matchingOption) {
-                        targetInput.value = decodedText;
-                        // Disparar evento change por si hay lógica dependiente
-                        targetInput.dispatchEvent(new Event('change'));
-
-                        // Feedback visual
-                        targetInput.classList.add('is-valid');
-                        setTimeout(() => targetInput.classList.remove('is-valid'), 2000);
-                    } else {
-                        alert(`El producto con referencia "${decodedText}" no se encuentra en la lista.`);
-                    }
-                } else {
-                    // Si es input normal (nuevo producto)
-                    targetInput.value = decodedText;
-                    targetInput.classList.add('is-valid');
-                    setTimeout(() => targetInput.classList.remove('is-valid'), 2000);
-                }
-            }
-        }).catch(err => {
-            console.error("Error al detener el scanner", err);
-            scanModal.hide();
+            processResult(decodedText);
         });
     }
 
     function onScanFailure(error) {
-        // handle scan failure, usually better to ignore and keep scanning.
-        // console.warn(`Code scan error = ${error}`);
+        // Ignorar errores de frame vacíos, es normal mientras busca
     }
 
-    // Event Listeners para botones de escaneo
+    function processResult(text) {
+        if (!targetInput) return;
+
+        // Caso 1: Es un SELECT (Formulario Movimientos)
+        if (targetInput.tagName === 'SELECT') {
+            const options = Array.from(targetInput.options);
+            // Búsqueda exacta
+            let matchingOption = options.find(opt => opt.value === text);
+            
+            // Si no encuentra exacto, buscar si el texto contiene la referencia (para URLs completas)
+            if (!matchingOption) {
+                 matchingOption = options.find(opt => text.includes(opt.value) && opt.value.length > 3);
+            }
+
+            if (matchingOption) {
+                targetInput.value = matchingOption.value;
+                targetInput.dispatchEvent(new Event('change')); // Activar lógica dependiente
+                flashSuccess(targetInput);
+            } else {
+                alert(`Producto no encontrado: ${text}`);
+            }
+        } 
+        // Caso 2: Es un INPUT (Formulario Nuevo Producto)
+        else {
+            targetInput.value = text;
+            flashSuccess(targetInput);
+        }
+    }
+
+    // Efecto visual de éxito en el input
+    function flashSuccess(element) {
+        element.classList.add('is-valid', 'bg-success', 'text-white', 'bg-opacity-25');
+        setTimeout(() => {
+            element.classList.remove('is-valid', 'bg-success', 'text-white', 'bg-opacity-25');
+        }, 2000);
+    }
+
+    // Event Listeners Botones
     if (btnScanMovimiento) {
         btnScanMovimiento.addEventListener('click', () => {
-            const select = document.getElementById('movimiento-referencia');
-            startScanner(select);
+            startScanner(document.getElementById('movimiento-referencia'));
         });
     }
 
     if (btnScanNuevo) {
         btnScanNuevo.addEventListener('click', () => {
-            // Buscar el input de referencia dentro del formulario de nuevo producto
-            // El botón está dentro de un input-group, el input es el hermano anterior
+            // El botón está junto al input en un input-group
             const input = btnScanNuevo.previousElementSibling;
             startScanner(input);
         });
     }
 
-    // Limpiar scanner al cerrar modal (por si el usuario cierra manual)
+    // Limpieza al cerrar el modal
     scanModalEl.addEventListener('hidden.bs.modal', () => {
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(error => {
-                console.error("Failed to clear html5QrcodeScanner. ", error);
-            });
-        }
+        stopCamera();
     });
 });

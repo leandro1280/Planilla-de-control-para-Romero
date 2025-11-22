@@ -152,10 +152,14 @@ exports.updateProduct = async (req, res) => {
     }
 
     const updateData = {
-      ...req.body,
-      referencia: req.body.referencia ? req.body.referencia.toUpperCase() : product.referencia,
+      nombre: req.body.nombre !== undefined ? req.body.nombre.trim() : product.nombre,
+      equipo: req.body.equipo !== undefined ? req.body.equipo.trim() : product.equipo,
       existencia: req.body.existencia !== undefined ? parseInt(req.body.existencia) : product.existencia,
-      costoUnitario: req.body.costoUnitario !== undefined ? parseFloat(req.body.costoUnitario) : product.costoUnitario,
+      detalle: req.body.detalle !== undefined ? req.body.detalle.trim() : product.detalle,
+      tipo: req.body.tipo !== undefined && req.body.tipo.trim() !== '' ? req.body.tipo.trim() : product.tipo,
+      costoUnitario: req.body.costoUnitario !== undefined && req.body.costoUnitario !== '' 
+        ? parseFloat(req.body.costoUnitario) || null 
+        : product.costoUnitario,
       actualizadoPor: req.user._id
     };
 
@@ -364,21 +368,19 @@ exports.exportToExcel = async (req, res) => {
 // @route   POST /inventario/importar
 // @access  Private (administrador)
 exports.importFromExcel = async (req, res) => {
-  console.log('--> Inicio de importación de Excel');
   try {
     if (!req.file) {
-      console.log('Error: No se subió ningún archivo');
       return res.status(400).json({
         success: false,
         message: 'No se subió ningún archivo'
       });
     }
-    console.log('Archivo recibido:', req.file.path);
 
-    const workbook = XLSX.readFile(req.file.path);
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    // El archivo del usuario tiene un título en la primera fila, los encabezados están en la segunda (índice 1)
+    
+    // range: 1 salta la primera fila (índice 0) y usa la fila 2 (índice 1) como encabezados
     const data = XLSX.utils.sheet_to_json(sheet, { range: 1 });
 
     if (!data || data.length === 0) {
@@ -395,20 +397,20 @@ exports.importFromExcel = async (req, res) => {
 
     for (const row of data) {
       try {
-        // Mapear columnas del Excel a campos del modelo
-        // Columnas esperadas: REFERENCIA, DESCRIPCIÓN DE PRODUCTO, EQUIPO DONDE SE APLICA, DISPONIBLES, DETALLE, TIPO
-        const referencia = (row['REFERENCIA'] || row['Referencia'] || row['referencia'] || '').toString().toUpperCase().trim();
+        // Mapear columnas según lo especificado
+        const referencia = (row['REFERENCIA'] || row['Referencia'] || '').toString().toUpperCase().trim();
 
-        if (!referencia) continue; // Saltar filas sin referencia
+        if (!referencia) continue;
 
         const productData = {
           referencia: referencia,
-          nombre: row['DESCRIPCIÓN DE PRODUCTO'] || row['DESCRIPCION DE PRODUCTO'] || row['Nombre'] || row['nombre'] || '',
-          equipo: row['EQUIPO DONDE SE APLICA'] || row['Equipo'] || row['equipo'] || '',
-          existencia: parseInt(row['DISPONIBLES'] || row['Existencia'] || row['existencia'] || 0),
-          tipo: row['TIPO'] || row['Tipo'] || row['tipo'] || 'Sin tipo',
+          nombre: row['DESCRIPCIÓN DE PRODUCTO'] || row['Nombre'] || '',
+          equipo: row['EQUIPO DONDE SE APLICA'] || row['Equipo'] || '',
+          existencia: parseInt(row['DISPONIBLES'] || row['Existencia'] || 0),
           detalle: row['DETALLE'] || row['Detalle'] || '',
-          costoUnitario: parseFloat(row['Costo'] || row['Costo Unitario'] || row['costo'] || 0),
+          tipo: row['TIPO'] || row['Tipo'] || 'General',
+          // Si quieres capturar costo si viene en el excel:
+          // costoUnitario: parseFloat(row['COSTO'] || 0), 
           actualizadoPor: req.user._id
         };
 
@@ -416,14 +418,16 @@ exports.importFromExcel = async (req, res) => {
         let product = await Product.findOne({ referencia: referencia });
 
         if (product) {
-          // Actualizar
+          // Actualizar (upsert logic)
           product.nombre = productData.nombre || product.nombre;
           product.equipo = productData.equipo || product.equipo;
-          if (row['Existencia'] !== undefined || row['existencia'] !== undefined) {
-            product.existencia = productData.existencia;
+          // Actualizamos existencia solo si es válida en el excel? O sumamos? 
+          // Generalmente en importación masiva de inventario inicial se sobrescribe.
+          if (!isNaN(productData.existencia)) {
+             product.existencia = productData.existencia;
           }
+          product.detalle = productData.detalle || product.detalle;
           product.tipo = productData.tipo || product.tipo;
-          if (productData.costoUnitario > 0) product.costoUnitario = productData.costoUnitario;
           product.actualizadoPor = req.user._id;
 
           await product.save();
@@ -436,18 +440,19 @@ exports.importFromExcel = async (req, res) => {
         }
       } catch (error) {
         errores++;
-        erroresDetalle.push(`Fila ${data.indexOf(row) + 2}: ${error.message}`);
+        erroresDetalle.push(`Ref: ${row['REFERENCIA']} - Error: ${error.message}`);
       }
     }
 
-    // Eliminar archivo subido
-    const fs = require('fs');
-    fs.unlinkSync(req.file.path);
-
     res.status(200).json({
       success: true,
-      message: `Proceso completado. Creados: ${creados}, Actualizados: ${actualizados}, Errores: ${errores}`,
-      detalles: erroresDetalle
+      message: `Importación finalizada`,
+      stats: {
+        creados,
+        actualizados,
+        errores
+      },
+      erroresDetalle
     });
 
   } catch (error) {
