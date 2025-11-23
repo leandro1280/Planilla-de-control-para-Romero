@@ -41,6 +41,12 @@ const productSchema = new mongoose.Schema({
     min: [0, 'El costo unitario no puede ser negativo'],
     default: 0
   },
+  codigoFabricante: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'El código de fabricante no puede exceder 200 caracteres'],
+    default: null
+  },
   creadoPor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

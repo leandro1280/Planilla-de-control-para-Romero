@@ -3,6 +3,49 @@ const Movement = require('../models/Movement');
 const { createNotificationForAdmins } = require('./notificationController');
 const XLSX = require('xlsx');
 
+// @desc    Buscar producto por código (referencia o código de fabricante)
+// @route   GET /inventario/productos/buscar
+// @access  Private
+exports.buscarProductoPorCodigo = async (req, res) => {
+  try {
+    const { codigo } = req.query;
+
+    if (!codigo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Código es requerido'
+      });
+    }
+
+    // Buscar por referencia o código de fabricante
+    const producto = await Product.findOne({
+      $or: [
+        { referencia: codigo.toUpperCase().trim() },
+        { codigoFabricante: codigo.trim() }
+      ]
+    }).lean();
+
+    if (producto) {
+      return res.status(200).json({
+        success: true,
+        producto: producto
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado',
+        codigo: codigo
+      });
+    }
+  } catch (error) {
+    console.error('Error al buscar producto:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al buscar producto'
+    });
+  }
+};
+
 // @desc    Obtener todos los productos
 // @route   GET /inventario
 // @access  Private
@@ -160,6 +203,9 @@ exports.updateProduct = async (req, res) => {
       costoUnitario: req.body.costoUnitario !== undefined && req.body.costoUnitario !== '' 
         ? parseFloat(req.body.costoUnitario) || null 
         : product.costoUnitario,
+      codigoFabricante: req.body.codigoFabricante !== undefined && req.body.codigoFabricante.trim() !== '' 
+        ? req.body.codigoFabricante.trim() 
+        : (req.body.codigoFabricante === '' ? null : product.codigoFabricante),
       actualizadoPor: req.user._id
     };
 
@@ -199,7 +245,7 @@ exports.deleteProduct = async (req, res) => {
     if (movements.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar un producto con movimientos asociados'
+        message: `No se puede eliminar este producto porque tiene ${movements.length} movimiento(s) asociado(s) en el historial. Para mantener la integridad de los datos, solo se pueden eliminar productos sin movimientos.`
       });
     }
 

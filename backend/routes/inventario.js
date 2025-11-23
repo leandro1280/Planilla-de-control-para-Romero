@@ -9,7 +9,8 @@ const {
     deleteProduct,
     createMovement,
     exportToExcel,
-    importFromExcel
+    importFromExcel,
+    buscarProductoPorCodigo
 } = require('../controllers/inventarioController');
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.use(protect);
 
 router.get('/', getProducts);
 router.get('/exportar', exportToExcel);
+router.get('/productos/buscar', buscarProductoPorCodigo);
 router.post('/importar', upload.single('archivo'), importFromExcel);
 router.post('/productos', canCreate, validateProduct, createProduct);
 router.put('/productos/:id', canCreate, validateProduct, updateProduct);

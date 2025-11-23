@@ -44,6 +44,13 @@
       </ul>
 
       <ul class="navbar-nav align-items-lg-center ms-auto">
+        <!-- Botón QR Universal para escanear códigos de fabricantes -->
+        <li class="nav-item me-lg-2 mb-2 mb-lg-0">
+          <button class="btn btn-link text-white p-2" type="button" id="btn-qr-universal" title="Escanear código QR">
+            <i class="bi bi-qr-code-scan fs-5 d-none d-lg-inline"></i>
+            <span class="d-lg-none"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</span>
+          </button>
+        </li>
         {{#if (eq usuario.rol 'administrador')}}
         <li class="nav-item me-lg-3 mb-2 mb-lg-0">
           <div class="dropdown dropdown-notifications">

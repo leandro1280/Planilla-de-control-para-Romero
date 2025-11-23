@@ -8,6 +8,35 @@ document.addEventListener('DOMContentLoaded', function () {
   const botonRestaurar = document.getElementById('boton-restaurar');
   const formImportar = document.getElementById('form-importar');
 
+  // Prellenar formulario de nuevo producto si hay un código en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const nuevoCodigo = urlParams.get('nuevo');
+  if (nuevoCodigo && formularioProducto) {
+    const referenciaInput = formularioProducto.querySelector('input[name="referencia"]');
+    const codigoFabricanteInput = formularioProducto.querySelector('input[name="codigoFabricante"]');
+    
+    if (referenciaInput) {
+      // Si el código parece ser de fabricante (URL, texto largo, etc.), ponerlo en codigoFabricante
+      if (nuevoCodigo.includes('http') || nuevoCodigo.length > 30) {
+        if (codigoFabricanteInput) {
+          codigoFabricanteInput.value = nuevoCodigo;
+        }
+      } else {
+        // Si es un código corto, ponerlo como referencia
+        referenciaInput.value = nuevoCodigo;
+      }
+      
+      // Scroll suave al formulario
+      formularioProducto.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Resaltar el campo
+      referenciaInput.focus();
+      referenciaInput.classList.add('border-primary', 'border-2');
+      setTimeout(() => {
+        referenciaInput.classList.remove('border-primary', 'border-2');
+      }, 2000);
+    }
+  }
+
   // Filtros
   if (buscador) {
     buscador.addEventListener('input', () => aplicarFiltros());
@@ -222,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const detalle = this.dataset.detalle || '';
       const tipo = this.dataset.tipo || '';
       const costo = this.dataset.costo || '';
+      const codigoFabricante = this.dataset.codigoFabricante || '';
 
       // Llenar formulario
       document.getElementById('edit-product-id').value = productId;
@@ -232,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('edit-detalle').value = detalle;
       document.getElementById('edit-tipo').value = tipo;
       document.getElementById('edit-costo').value = costo;
+      document.getElementById('edit-codigo-fabricante').value = codigoFabricante;
 
       // Limpiar mensajes anteriores
       document.getElementById('edit-result').className = 'mt-3 d-none';
@@ -257,7 +288,8 @@ document.addEventListener('DOMContentLoaded', function () {
         existencia: parseInt(data.existencia) || 0,
         detalle: data.detalle || '',
         tipo: data.tipo || null,
-        costoUnitario: data.costoUnitario ? parseFloat(data.costoUnitario) : null
+        costoUnitario: data.costoUnitario ? parseFloat(data.costoUnitario) : null,
+        codigoFabricante: data.codigoFabricante || null
       };
 
       const resultDiv = document.getElementById('edit-result');
@@ -422,6 +454,113 @@ document.addEventListener('DOMContentLoaded', function () {
         // Enfocar el campo de tipo en el modal de edición
         editTipoSelect.focus();
       }, 1000);
+    });
+  }
+
+  // ============================================
+  // FUNCIONALIDAD DE ELIMINACIÓN DE PRODUCTOS
+  // ============================================
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+  const deleteButtons = document.querySelectorAll('.btn-delete');
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+  let currentDeleteId = null;
+
+  // Botones de eliminar
+  deleteButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const productId = this.dataset.id;
+      const referencia = this.dataset.referencia;
+      const nombre = this.dataset.nombre;
+
+      // Guardar ID del producto a eliminar
+      currentDeleteId = productId;
+
+      // Llenar modal de confirmación
+      document.getElementById('delete-referencia').textContent = referencia;
+      document.getElementById('delete-nombre').textContent = nombre;
+
+      // Limpiar mensajes anteriores
+      const resultDiv = document.getElementById('delete-result');
+      resultDiv.className = 'mt-3 d-none';
+      resultDiv.innerHTML = '';
+
+      // Mostrar modal
+      deleteModal.show();
+    });
+  });
+
+  // Confirmar eliminación
+  if (btnConfirmDelete) {
+    btnConfirmDelete.addEventListener('click', async function () {
+      if (!currentDeleteId) return;
+
+      const resultDiv = document.getElementById('delete-result');
+      const deleteBtn = this;
+
+      // Deshabilitar botón y mostrar spinner
+      deleteBtn.disabled = true;
+      deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Eliminando...';
+
+      try {
+        const response = await fetch(`/inventario/productos/${currentDeleteId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const result = await response.json();
+
+        resultDiv.classList.remove('d-none');
+
+        if (result.success) {
+          resultDiv.className = 'mt-3 alert alert-success';
+          resultDiv.innerHTML = `
+            <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Producto eliminado</h6>
+            <p class="mb-0">El producto ha sido eliminado correctamente.</p>
+          `;
+
+          // Recargar la página después de 1.5 segundos
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          resultDiv.className = 'mt-3 alert alert-danger';
+          resultDiv.innerHTML = `
+            <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error</h6>
+            <p class="mb-0">${result.message || 'No se pudo eliminar el producto'}</p>
+          `;
+          deleteBtn.disabled = false;
+          deleteBtn.innerHTML = '<i class="bi bi-trash-fill me-2"></i>Sí, Eliminar';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.classList.remove('d-none');
+        resultDiv.className = 'mt-3 alert alert-danger';
+        resultDiv.innerHTML = `
+          <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de conexión</h6>
+          <p class="mb-0">No se pudo conectar con el servidor. Intenta nuevamente.</p>
+        `;
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = '<i class="bi bi-trash-fill me-2"></i>Sí, Eliminar';
+      }
+    });
+  }
+
+  // Limpiar ID al cerrar el modal
+  const deleteModalElement = document.getElementById('deleteModal');
+  if (deleteModalElement) {
+    deleteModalElement.addEventListener('hidden.bs.modal', function () {
+      currentDeleteId = null;
+      const resultDiv = document.getElementById('delete-result');
+      if (resultDiv) {
+        resultDiv.className = 'mt-3 d-none';
+        resultDiv.innerHTML = '';
+      }
+      if (btnConfirmDelete) {
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.innerHTML = '<i class="bi bi-trash-fill me-2"></i>Sí, Eliminar';
+      }
     });
   }
 });
