@@ -1,10 +1,9 @@
 {{#if usuario}}
 <nav class="navbar navbar-expand-lg mb-4 rounded-3 shadow-lg custom-navbar">
   <div class="container-fluid px-3 px-md-4">
-    <a class="navbar-brand d-flex align-items-center text-white fw-bold" href="/inventario">
+    <a class="navbar-brand d-flex align-items-center text-white fw-bold" href="/inventario" title="Ir al inicio">
       <img src="/img/logo-romero.png" alt="Romero Panificados" class="me-2 logo-navbar"
-        style="height: 55px; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-      <span class="d-none d-sm-inline"><i class="bi bi-house-door me-2"></i>Inicio</span>
+        style="height: 45px; max-width: 180px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
     </a>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -15,31 +14,44 @@
     <div class="collapse navbar-collapse mt-3 mt-lg-0" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link {{#if (eq currentPage 'dashboard')}}active{{/if}}" href="/dashboard">
-            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          <a class="nav-link {{#if (eq currentPage 'inventario')}}active{{/if}}" href="/inventario" title="Inventario">
+            <i class="bi bi-box-seam me-1"></i><span class="d-none d-md-inline">Inventario</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {{#if (eq currentPage 'inventario')}}active{{/if}}" href="/inventario">
-            <i class="bi bi-box-seam me-2"></i>Inventario
+          <a class="nav-link {{#if (eq currentPage 'movimientos')}}active{{/if}}" href="/movimientos" title="Movimientos">
+            <i class="bi bi-list-check me-1"></i><span class="d-none d-md-inline">Movimientos</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {{#if (eq currentPage 'movimientos')}}active{{/if}}" href="/movimientos">
-            <i class="bi bi-list-check me-2"></i>Movimientos
+          <a class="nav-link {{#if (eq currentPage 'mantenimientos')}}active{{/if}}" href="/mantenimientos" title="Mantenimientos">
+            <i class="bi bi-tools me-1"></i><span class="d-none d-md-inline">Mantenimientos</span>
           </a>
         </li>
-        {{#if (eq usuario.rol 'administrador')}}
         <li class="nav-item">
-          <a class="nav-link {{#if (eq currentPage 'usuarios')}}active{{/if}}" href="/auth/register">
-            <i class="bi bi-person-plus me-2"></i>Usuarios
+          <a class="nav-link {{#if (eq currentPage 'dashboard')}}active{{/if}}" href="/dashboard" title="Dashboard">
+            <i class="bi bi-speedometer2 me-1"></i><span class="d-none d-xl-inline">Dashboard</span>
           </a>
         </li>
-        {{/if}}
-        <li class="nav-item">
-          <a class="nav-link {{#if (eq currentPage 'perfiles')}}active{{/if}}" href="/perfiles">
-            <i class="bi bi-people me-2"></i>Perfiles
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="configMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-gear-fill me-1"></i><span class="d-none d-xl-inline">Más</span>
           </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {{#if (eq usuario.rol 'administrador')}}
+            <li>
+              <a class="dropdown-item {{#if (eq currentPage 'usuarios')}}active{{/if}}" href="/auth/register">
+                <i class="bi bi-person-plus me-2"></i>Gestionar Usuarios
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            {{/if}}
+            <li>
+              <a class="dropdown-item {{#if (eq currentPage 'perfiles')}}active{{/if}}" href="/perfiles">
+                <i class="bi bi-people me-2"></i>Perfiles y Roles
+              </a>
+            </li>
+          </ul>
         </li>
       </ul>
 

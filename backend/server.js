@@ -66,6 +66,8 @@ app.engine('hbs', hbs.engine({
     year: () => new Date().getFullYear(),
     and: (a, b) => a && b,
     gte: (a, b) => a >= b,
+    add: (a, b) => (parseInt(a) || 0) + (parseInt(b) || 0),
+    subtract: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
     // Helper para construir URL de paginación preservando filtros
     buildPaginationUrl: (paginaActual, cambio, baseUrl) => {
       if (typeof paginaActual !== 'number') paginaActual = parseInt(paginaActual) || 1;
@@ -131,6 +133,7 @@ app.use('/auth', require('./routes/auth'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/inventario', require('./routes/inventario'));
 app.use('/movimientos', require('./routes/movimientos'));
+app.use('/mantenimientos', require('./routes/mantenimientos'));
 app.use('/perfiles', require('./routes/perfiles'));
 app.use('/api', require('./routes/api'));
 

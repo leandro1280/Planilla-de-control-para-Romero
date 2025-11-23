@@ -76,25 +76,31 @@
       {{#each products}}
       <tr
         class="{{#if (eq this.existencia 0)}}table-danger opacity-75{{else if (lte this.existencia 4)}}table-danger{{else if (lt this.existencia 10)}}table-warning{{/if}}">
-        <td class="fw-semibold">
+        <td class="fw-semibold" data-label="Referencia:">
           {{this.referencia}}
           {{#if (eq this.existencia 0)}}
           <span class="badge bg-danger ms-2" title="Producto sin stock">Sin stock</span>
           {{/if}}
         </td>
-        <td>{{this.nombre}}</td>
-        <td>{{this.equipo}}</td>
-        <td class="text-end fw-bold">
+        <td data-label="Descripción:">{{this.nombre}}</td>
+        <td data-label="Equipo:">{{#if this.equipo}}{{this.equipo}}{{else}}<span class="text-muted">-</span>{{/if}}</td>
+        <td class="text-end fw-bold" data-label="Stock:">
           {{#if (eq this.existencia 0)}}
           <span class="text-danger">0</span>
           {{else}}
           {{formatNumber this.existencia}}
           {{/if}}
         </td>
-        <td>{{this.detalle}}</td>
-        <td class="text-capitalize">{{this.tipo}}</td>
-        <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
-        <td class="text-end">
+        <td data-label="Detalle:">{{#if this.detalle}}{{this.detalle}}{{else}}<span class="text-muted">-</span>{{/if}}</td>
+        <td class="text-capitalize" data-label="Tipo:">{{#if this.tipo}}{{this.tipo}}{{else}}<span class="text-muted">Sin tipo</span>{{/if}}</td>
+        <td class="text-end" data-label="Costo unitario:">
+          {{#if this.costoUnitario}}
+          $ {{formatCurrency this.costoUnitario}}
+          {{else}}
+          <span class="text-muted">-</span>
+          {{/if}}
+        </td>
+        <td class="text-end" data-label="">
           <div class="btn-group" role="group">
             {{#if (or (eq ../usuario.rol 'administrador') (eq ../usuario.rol 'visor'))}}
             <button class="btn btn-sm btn-outline-primary btn-edit" 
@@ -274,12 +280,19 @@
         </div>
       </div>
       <div class="row g-3 mb-3">
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-6">
           <label class="form-label fw-semibold text-primary">Stock inicial *</label>
           <input name="existencia" type="number" min="0" step="1" class="form-control form-control-lg" required>
         </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label fw-semibold text-primary">Tipo</label>
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Costo unitario</label>
+          <input name="costoUnitario" type="number" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Tipo de Producto</label>
           <div class="input-group">
             <select name="tipo" id="nuevo-producto-tipo" class="form-select form-select-lg">
               <option value="">Sin tipo</option>
@@ -291,17 +304,22 @@
               <i class="bi bi-plus-circle"></i>
             </button>
           </div>
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label fw-semibold text-primary">Costo unitario</label>
-          <input name="costoUnitario" type="number" min="0" step="0.01" class="form-control form-control-lg">
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label fw-semibold text-primary">Detalle</label>
-          <input name="detalle" type="text" class="form-control form-control-lg">
+          <small class="text-muted">Selecciona un tipo existente o crea uno nuevo</small>
         </div>
       </div>
-      <button type="submit" class="btn btn-success btn-lg">Guardar producto</button>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <label class="form-label fw-semibold text-primary">Detalle/Notas</label>
+          <textarea name="detalle" class="form-control form-control-lg" rows="3" placeholder="Información adicional..."></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-success btn-lg">
+          <i class="bi bi-check-circle me-2"></i>Guardar producto
+        </button>
+      </div>
     </form>
   </div>
 </section>
@@ -545,6 +563,5 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="/js/inventario.js"></script>
 <script src="/js/qr-logic.js"></script>

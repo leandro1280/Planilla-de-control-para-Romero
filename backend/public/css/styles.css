@@ -477,32 +477,207 @@ footer {
 }
 
 /* Media Queries */
+/* ============================================
+   RESPONSIVE DESIGN - MOBILE FIRST
+   ============================================ */
+
 @media (max-width: 768px) {
+  /* Container adjustments */
+  .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Hero/Header improvements */
   .hero {
-    padding: 1.5rem 1rem;
-    border-radius: var(--radius-md);
-    margin-bottom: 1.5rem;
+    padding: 1.25rem 1rem !important;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+  }
+
+  .hero .card-body {
+    padding: 1rem !important;
   }
 
   .hero__title {
-    font-size: 1.6rem;
-    line-height: 1.2;
-    word-wrap: break-word;
+    font-size: 1.25rem !important;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
   }
 
   .hero__subtitle {
-    font-size: 0.95rem;
+    font-size: 0.875rem !important;
+    opacity: 0.9;
   }
 
   /* Stack buttons on mobile */
   .hero .d-flex {
     flex-direction: column;
     gap: 0.5rem;
+    width: 100%;
   }
 
   .hero .btn {
     width: 100%;
     justify-content: center;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Cards and panels */
+  .panel.card,
+  .card {
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  .panel-title {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Form controls mobile */
+  .form-control-lg,
+  .form-select-lg {
+    font-size: 1rem;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .form-label {
+    font-size: 0.875rem;
+    margin-bottom: 0.375rem;
+  }
+
+  /* Table to cards conversion on mobile */
+  .table-responsive {
+    border-radius: var(--radius-sm);
+    margin: 0;
+    border: none;
+  }
+
+  /* Hide table headers on mobile */
+  .table thead {
+    display: none;
+  }
+
+  /* Convert table rows to cards */
+  .table tbody tr {
+    display: block;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .table tbody tr.table-danger {
+    border-left: 3px solid #dc3545;
+  }
+
+  .table tbody tr.table-warning {
+    border-left: 3px solid #ffc107;
+  }
+
+  /* Make table cells stack vertically */
+  .table tbody td {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem 0 !important;
+    border: none;
+    text-align: left !important;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  /* Add labels before each cell */
+  .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: inline-block;
+    min-width: 90px;
+    font-size: 0.8rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  /* Hide label for empty data-label */
+  .table tbody td[data-label=""]::before {
+    display: none;
+  }
+
+  /* Special styling for reference cell */
+  .table tbody td:first-child {
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0.75rem !important;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 0.25rem;
+  }
+
+  .table tbody td:first-child::before {
+    font-size: 0.875rem;
+    margin-bottom: 0;
+  }
+
+  /* Special handling for action buttons */
+  .table tbody td:last-child {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 0.75rem !important;
+    margin-top: 0.5rem;
+    text-align: center !important;
+  }
+
+  .table tbody td:last-child::before {
+    content: "Acciones:";
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: block !important;
+    margin-bottom: 0.5rem;
+    text-align: left;
+  }
+
+  .table tbody td:last-child .btn-group {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .table tbody td:last-child .btn {
+    flex: 1;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    max-width: 80px;
+  }
+
+  /* Badge adjustments */
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Navbar improvements */
+  .custom-navbar {
+    padding: 0.5rem 0 !important;
+  }
+
+  .custom-navbar .navbar-brand {
+    font-size: 1rem;
+  }
+
+  .custom-navbar .logo-navbar {
+    height: 40px !important;
+  }
+
+  .custom-navbar .nav-link {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem !important;
   }
 
   .custom-navbar .dropdown-menu {
@@ -511,10 +686,12 @@ footer {
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05) !important;
     margin: 0.5rem 0 !important;
+    width: 100%;
   }
 
   .custom-navbar .dropdown-item {
     color: rgba(255, 255, 255, 0.8) !important;
+    padding: 0.75rem 1rem;
   }
 
   .custom-navbar .dropdown-item:hover {
@@ -522,19 +699,97 @@ footer {
     color: white !important;
   }
 
-  /* Better table spacing on mobile */
+  /* Pagination mobile */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  /* Input groups mobile */
+  .input-group .btn {
+    padding: 0.625rem 0.75rem;
+  }
+
+  /* Buttons mobile */
+  .btn-lg {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* Forms mobile */
+  .row.g-3 > [class*="col-"] {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Filters section */
+  .panel .row.g-3 {
+    margin-bottom: 0;
+  }
+
+  .panel .row.g-3 > [class*="col-"] {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Remove horizontal scroll */
   .table-responsive {
-    border-radius: var(--radius-sm);
+    -webkit-overflow-scrolling: touch;
+    overflow-x: visible;
   }
 
-  .table thead th {
-    font-size: 0.7rem;
-    padding: 0.75rem 0.5rem;
+  /* Better spacing in forms */
+  .row.g-3 {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
   }
 
-  .table tbody td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.85rem;
+  .row.g-3 > [class*="col-"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Textarea adjustments */
+  textarea.form-control-lg {
+    min-height: 80px;
+  }
+
+  /* Pagination improvements */
+  .pagination {
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Better hero spacing */
+  .hero__meta {
+    width: 100%;
+  }
+
+  .hero__meta .btn {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 576px) {
+  .hero__title {
+    font-size: 1.125rem !important;
+  }
+
+  .hero__subtitle {
+    font-size: 0.8rem !important;
+  }
+
+  .panel-title {
+    font-size: 1rem;
+  }
+
+  .btn {
+    font-size: 0.875rem;
   }
 }
 

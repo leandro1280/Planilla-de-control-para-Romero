@@ -1,0 +1,298 @@
+<header class="hero card border-0 shadow-lg text-white mb-4 bg-primary">
+  <div class="card-body p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+      <div class="text-center text-lg-start">
+        <h1 class="hero__title fw-bold mb-2">Mantenimientos Preventivos</h1>
+        <p class="hero__subtitle mb-0 opacity-75 fs-5">Registro de instalaciones y mantenimientos de piezas</p>
+      </div>
+      <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
+        <a href="/inventario" class="btn btn-outline-light px-3">
+          <i class="bi bi-box-seam me-1"></i>Inventario
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label fw-semibold text-primary">Buscar por Referencia</label>
+        <input id="buscador-referencia" type="search" class="form-control form-control-lg" 
+               placeholder="Referencia..." autocomplete="off" value="{{referenciaFiltro}}">
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label fw-semibold text-primary">Buscar por Equipo</label>
+        <select id="filtro-equipo" class="form-select form-select-lg">
+          <option value="">Todos los equipos</option>
+          {{#each equipos}}
+          <option value="{{this}}" {{#if (eq ../equipoFiltro this)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label fw-semibold text-primary">Estado</label>
+        <select id="filtro-estado" class="form-select form-select-lg">
+          <option value="todos" {{#if (eq estadoFiltro 'todos')}}selected{{/if}}>Todos</option>
+          <option value="activo" {{#if (eq estadoFiltro 'activo')}}selected{{/if}}>Activos</option>
+          <option value="completado" {{#if (eq estadoFiltro 'completado')}}selected{{/if}}>Completados</option>
+          <option value="cancelado" {{#if (eq estadoFiltro 'cancelado')}}selected{{/if}}>Cancelados</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="panel-title mb-4">
+      <i class="bi bi-tools me-2"></i>Registrar Mantenimiento
+    </h2>
+    <p class="text-muted mb-3">Cuando colocas una pieza en un equipo, regístralo aquí. El stock se descontará automáticamente.</p>
+    
+    <form id="formulario-mantenimiento" autocomplete="off">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Producto *</label>
+          <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg" required>
+            <option value="">Seleccione una pieza del inventario</option>
+            {{#each productos}}
+            <option value="{{this._id}}" 
+                    data-referencia="{{this.referencia}}" 
+                    data-stock="{{this.existencia}}"
+                    data-tipo="{{this.tipo}}"
+                    data-nombre="{{this.nombre}}">
+              {{this.referencia}} - {{this.nombre}} (Stock: {{this.existencia}}){{#if (eq this.existencia 0)}} ⚠️{{/if}}
+            </option>
+            {{/each}}
+          </select>
+          <small class="text-muted">Selecciona una pieza del inventario. Si tiene stock, se descontará automáticamente al registrar el mantenimiento.</small>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Tipo de Mantenimiento *</label>
+          <select id="mantenimiento-tipo" name="tipo" class="form-select form-select-lg" required>
+            <option value="preventivo">Preventivo</option>
+            <option value="correctivo">Correctivo</option>
+            <option value="instalacion">Instalación</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Máquina/Equipo *</label>
+          <input type="text" id="mantenimiento-equipo" name="equipo" class="form-control form-control-lg" 
+                 placeholder="Ej: Horno 1, Mezcladora 2, Amasadora..." required list="equipos-sugeridos">
+          <datalist id="equipos-sugeridos">
+            <option value="Horno 1">
+            <option value="Horno 2">
+            <option value="Mezcladora 1">
+            <option value="Mezcladora 2">
+            <option value="Amasadora">
+            <option value="Túnel de enfriado">
+            <option value="Cortadora">
+            <option value="Empacadora">
+          </datalist>
+          <small class="text-muted">Ingresa o selecciona la máquina donde se instala la pieza</small>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Fecha de Instalación *</label>
+          <input type="date" id="mantenimiento-fecha-instalacion" name="fechaInstalacion" 
+                 class="form-control form-control-lg" required>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Horas de Vida Útil de la Pieza *</label>
+          <input type="number" id="mantenimiento-horas" name="horasVidaUtil" min="0" step="1" 
+                 class="form-control form-control-lg" placeholder="Ej: 200, 500, 1000..." required>
+          <small class="text-muted">¿Cada cuántas horas de uso debe cambiarse esta pieza?</small>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Horas de Trabajo Diarias de la Máquina</label>
+          <input type="number" id="mantenimiento-horas-diarias" name="horasDiarias" min="1" max="24" step="0.5" 
+                 class="form-control form-control-lg" placeholder="Ej: 12" value="12">
+          <small class="text-muted">Cuántas horas por día trabaja esta máquina</small>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <div class="alert alert-info">
+            <h6 class="alert-heading"><i class="bi bi-calculator me-2"></i>Cálculo Automático de Próximo Cambio</h6>
+            <div id="calculo-mantenimiento" class="mb-3">
+              <small class="text-muted">Completa las horas de vida útil de la pieza y las horas diarias de trabajo de la máquina para calcular automáticamente cuándo debe cambiarse.</small>
+            </div>
+            <label class="form-label fw-semibold text-primary mb-2">Fecha de Próximo Cambio (Calculada automáticamente)</label>
+            <input type="date" id="mantenimiento-fecha-vencimiento" name="fechaVencimiento" 
+                   class="form-control form-control-lg bg-light" readonly>
+            <small class="text-muted d-block mt-1"><i class="bi bi-info-circle me-1"></i>Esta fecha se calcula automáticamente: <strong>Horas de vida útil ÷ Horas diarias de trabajo</strong></small>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-semibold text-primary">Costo (Opcional)</label>
+          <input type="number" id="mantenimiento-costo" name="costo" min="0" step="0.01" 
+                 class="form-control form-control-lg" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <label class="form-label fw-semibold text-primary">Observaciones</label>
+          <textarea id="mantenimiento-observaciones" name="observaciones" class="form-control form-control-lg" 
+                    rows="3" placeholder="Notas sobre la instalación o mantenimiento..."></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-check-circle me-2"></i>Registrar Mantenimiento
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="panel card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="panel-title mb-4">Historial de Mantenimientos ({{totalMaintenances}})</h2>
+    <div class="table-responsive">
+      <table id="tabla-mantenimientos" class="table table-hover mb-0">
+        <thead class="table-primary">
+          <tr>
+            <th>Referencia</th>
+            <th>Producto</th>
+            <th>Tipo</th>
+            <th>Equipo</th>
+            <th>Fecha Instalación</th>
+            <th>Fecha Vencimiento</th>
+            <th>Técnico</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#if maintenances}}
+          {{#if (gt maintenances.length 0)}}
+          {{#each maintenances}}
+          <tr class="{{#if (eq this.estado 'activo')}}table-success{{else if (eq this.estado 'completado')}}table-secondary{{else}}table-danger{{/if}}">
+            <td class="fw-semibold">{{this.referencia}}</td>
+            <td>
+              {{#if this.producto}}
+              {{this.producto.nombre}}
+              {{else}}
+              <span class="text-muted">Producto eliminado</span>
+              {{/if}}
+            </td>
+            <td class="text-capitalize">{{this.tipo}}</td>
+            <td>{{this.equipo}}</td>
+            <td>{{formatDate this.fechaInstalacion}}</td>
+            <td>
+              {{#if this.fechaVencimiento}}
+              {{formatDate this.fechaVencimiento}}
+              {{else}}
+              <span class="text-muted">-</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.tecnico}}
+              {{this.tecnico.nombre}}
+              {{else}}
+              <span class="text-muted">-</span>
+              {{/if}}
+            </td>
+            <td>
+              <span class="badge {{#if (eq this.estado 'activo')}}bg-success{{else if (eq this.estado 'completado')}}bg-secondary{{else}}bg-danger{{/if}} text-capitalize">
+                {{this.estado}}
+              </span>
+            </td>
+            <td class="text-end">
+              {{#if (or (eq ../../usuario.rol 'administrador') (eq ../../usuario.rol 'visor'))}}
+              <button class="btn btn-sm btn-outline-primary btn-editar-mantenimiento" 
+                data-id="{{this._id}}"
+                data-producto="{{this.producto._id}}"
+                data-tipo="{{this.tipo}}"
+                data-equipo="{{this.equipo}}"
+                data-fecha-instalacion="{{this.fechaInstalacion}}"
+                data-fecha-vencimiento="{{this.fechaVencimiento}}"
+                data-horas="{{this.horasVidaUtil}}"
+                data-observaciones="{{this.observaciones}}"
+                data-costo="{{this.costo}}"
+                data-estado="{{this.estado}}"
+                title="Editar mantenimiento">
+                <i class="bi bi-pencil"></i>
+              </button>
+              {{/if}}
+              {{#if (eq ../../usuario.rol 'administrador')}}
+              <button class="btn btn-sm btn-outline-danger btn-eliminar-mantenimiento" 
+                data-id="{{this._id}}"
+                data-referencia="{{this.referencia}}"
+                data-equipo="{{this.equipo}}"
+                title="Eliminar mantenimiento">
+                <i class="bi bi-trash"></i>
+              </button>
+              {{/if}}
+            </td>
+          </tr>
+          {{/each}}
+          {{else}}
+          <tr>
+            <td colspan="9" class="text-center text-muted py-4">
+              No hay mantenimientos registrados con los filtros seleccionados
+            </td>
+          </tr>
+          {{/if}}
+          {{else}}
+          <tr>
+            <td colspan="9" class="text-center text-muted py-4">No hay mantenimientos registrados</td>
+          </tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{{#if (gt totalPaginas 1)}}
+<nav aria-label="Paginación de mantenimientos">
+  <ul class="pagination justify-content-center">
+    {{#if (gt paginaActual 1)}}
+    <li class="page-item">
+      <a class="page-link" href="/mantenimientos?pagina={{subtract paginaActual 1}}{{#if estadoFiltro}}&estado={{estadoFiltro}}{{/if}}{{#if equipoFiltro}}&equipo={{equipoFiltro}}{{/if}}{{#if referenciaFiltro}}&referencia={{referenciaFiltro}}{{/if}}">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+    </li>
+    {{/if}}
+
+    {{#each (generatePaginationPages paginaActual totalPaginas "")}}
+    <li class="page-item {{#if this.active}}active{{/if}}">
+      <a class="page-link" href="/mantenimientos?pagina={{this.numero}}{{#if ../estadoFiltro}}&estado={{../estadoFiltro}}{{/if}}{{#if ../equipoFiltro}}&equipo={{../equipoFiltro}}{{/if}}{{#if ../referenciaFiltro}}&referencia={{../referenciaFiltro}}{{/if}}">{{this.numero}}</a>
+    </li>
+    {{/each}}
+
+    {{#if (lt paginaActual totalPaginas)}}
+    <li class="page-item">
+      <a class="page-link" href="/mantenimientos?pagina={{add paginaActual 1}}{{#if estadoFiltro}}&estado={{estadoFiltro}}{{/if}}{{#if equipoFiltro}}&equipo={{equipoFiltro}}{{/if}}{{#if referenciaFiltro}}&referencia={{referenciaFiltro}}{{/if}}">
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+    </li>
+    {{/if}}
+  </ul>
+</nav>
+{{/if}}
+
+<script src="/js/mantenimientos.js"></script>
+
