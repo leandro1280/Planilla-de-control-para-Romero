@@ -1,0 +1,44 @@
+# Render Blueprint Configuration
+# https://render.com/docs/blueprint-spec
+#
+# INSTRUCCIONES:
+# 1. Este archivo puede usarse para crear el servicio automáticamente
+# 2. O crear el servicio manualmente en Render Dashboard
+# 3. Las variables MONGODB_URI y JWT_SECRET DEBEN configurarse en el dashboard (nunca en este archivo)
+
+services:
+  - type: web
+    name: romero-stock-control
+    env: node
+    region: oregon  # Opciones: oregon, frankfurt, singapore, mumbai, tokyo
+    plan: free  # free, starter ($7/mes), standard, pro
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend  # Si el código está en carpeta backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # IMPORTANTE: Las siguientes variables DEBEN configurarse en Render Dashboard:
+      # - MONGODB_URI (obligatoria)
+      # - JWT_SECRET (obligatoria, mínimo 32 caracteres)
+      # - EMAIL_HOST (opcional)
+      # - EMAIL_PORT (opcional)
+      # - EMAIL_USER (opcional)
+      # - EMAIL_PASS (opcional)
+      # - EMAIL_FROM (opcional)
+    healthCheckPath: /health
+    autoDeploy: true  # Auto-deploy en push a main branch (recomendado)
+    
+  # Opcional: Cron job para mantener servicio despierto (solo plan FREE)
+  - type: cron
+    name: keep-alive
+    schedule: "*/10 * * * *"  # Cada 10 minutos
+    env: node
+    buildCommand: npm install
+    startCommand: node scripts/keep-alive.js
+    rootDir: backend
+    envVars:
+      - key: RENDER_URL
+        value: https://romero-stock-control.onrender.com  # Cambiar por tu URL después del primer deploy
+      - key: NODE_ENV
+        value: production
