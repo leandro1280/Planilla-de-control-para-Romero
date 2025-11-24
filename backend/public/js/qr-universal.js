@@ -1,7 +1,20 @@
 // Escáner QR Universal - Optimizado para móvil (Fullscreen intuitivo)
 document.addEventListener('DOMContentLoaded', function () {
+  // Verificar que Html5Qrcode esté disponible
+  if (typeof Html5Qrcode === 'undefined') {
+    console.error('❌ Html5Qrcode no está disponible. Verifica que el script se haya cargado correctamente.');
+    return;
+  }
+
   const btnQrUniversal = document.getElementById('btn-qr-universal');
-  const universalQrModal = new bootstrap.Modal(document.getElementById('universalQrModal'), {
+  const universalQrModalEl = document.getElementById('universalQrModal');
+  
+  if (!universalQrModalEl) {
+    console.warn('Modal QR universal no encontrado');
+    return;
+  }
+
+  const universalQrModal = new bootstrap.Modal(universalQrModalEl, {
     backdrop: 'static',
     keyboard: false
   });
@@ -11,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let html5QrCode = null;
   let isScanning = false;
 
-  // Detectar si es móvil
-  const isMobile = window.innerWidth <= 768;
+  // Detectar si es móvil (mejorado)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
   // Botón del navbar para abrir el escáner universal
   if (btnQrUniversal) {
@@ -42,12 +55,30 @@ document.addEventListener('DOMContentLoaded', function () {
         if (qrLoading) qrLoading.style.display = 'none';
       }, 500);
 
+      // Esperar un momento para que el DOM se actualice
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verificar que el contenedor existe
+      if (!document.getElementById('reader-universal')) {
+        console.error('Contenedor reader-universal no encontrado');
+        return;
+      }
+
       html5QrCode = new Html5Qrcode('reader-universal');
 
       try {
-        const videoInputDevices = await Html5Qrcode.getCameras();
+        // Intentar obtener cámaras
+        let videoInputDevices = [];
+        try {
+          videoInputDevices = await Html5Qrcode.getCameras();
+        } catch (camError) {
+          console.warn('Error obteniendo lista de cámaras, intentando con facingMode:', camError);
+          // Si falla, intentar directamente con facingMode
+          await startWithFacingMode();
+          return;
+        }
         
-        if (videoInputDevices && videoInputDevices.length) {
+        if (videoInputDevices && videoInputDevices.length > 0) {
           // Preferir cámara trasera en móviles
           const rearCamera = videoInputDevices.find(device => {
             const label = device.label.toLowerCase();
@@ -65,83 +96,114 @@ document.addEventListener('DOMContentLoaded', function () {
           let qrboxSize = 300; // Default desktop
           
           if (isMobile) {
-            // En móvil, usar el 80% del viewport más pequeño
-            qrboxSize = Math.min(viewportWidth, viewportHeight) * 0.8;
+            // En móvil, usar el 80% del viewport más pequeño, mínimo 200px
+            qrboxSize = Math.max(200, Math.min(viewportWidth, viewportHeight) * 0.8);
           } else {
             // En desktop, limitar a 400px máximo
             qrboxSize = Math.min(400, viewportWidth * 0.5);
           }
 
+          const config = {
+            fps: isMobile ? 20 : 10, // Más FPS en móvil
+            qrbox: { width: qrboxSize, height: qrboxSize },
+            aspectRatio: 1.0,
+            disableFlip: false, // Permitir rotación
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+          };
+
+          // Configuración de video
+          const videoConstraints = {
+            facingMode: rearCamera ? "environment" : "user",
+            width: { ideal: isMobile ? 640 : 1280 },
+            height: { ideal: isMobile ? 480 : 720 }
+          };
+
           html5QrCode.start(
             cameraId,
-            {
-              fps: isMobile ? 15 : 10, // Más FPS en móvil para mejor experiencia
-              qrbox: { width: qrboxSize, height: qrboxSize },
-              aspectRatio: 1.0,
-              videoConstraints: {
-                facingMode: rearCamera ? "environment" : "user",
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-              }
+            config,
+            (decodedText, decodedResult) => {
+              onUniversalScanSuccess(decodedText, decodedResult);
             },
+            (errorMessage) => {
+              // Ignorar errores de escaneo continuo (es normal mientras busca)
+            }
+          ).then(() => {
+            isScanning = true;
+            if (qrLoading) qrLoading.style.display = 'none';
+            document.body.classList.add('qr-scanning-active');
+          }).catch((err) => {
+            console.error('Error al iniciar el escáner:', err);
+            // Si falla con cameraId, intentar con facingMode
+            if (err.message && err.message.includes('camera')) {
+              startWithFacingMode();
+            } else {
+              showError('Error al iniciar la cámara', 'Asegúrate de dar permisos de cámara y que no esté en uso por otra aplicación.');
+            }
+          });
+        } else {
+          // Si no hay cámaras en la lista, intentar con facingMode
+          await startWithFacingMode();
+        }
+      } catch (error) {
+        console.error('Error al obtener cámaras:', error);
+        // Intentar con facingMode como fallback
+        await startWithFacingMode();
+      }
+
+      // Función auxiliar para iniciar con facingMode (más compatible)
+      async function startWithFacingMode() {
+        try {
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          let qrboxSize = isMobile 
+            ? Math.max(200, Math.min(viewportWidth, viewportHeight) * 0.8)
+            : Math.min(400, viewportWidth * 0.5);
+
+          const config = {
+            fps: isMobile ? 20 : 10,
+            qrbox: { width: qrboxSize, height: qrboxSize },
+            aspectRatio: 1.0,
+            disableFlip: false
+          };
+
+          await html5QrCode.start(
+            { facingMode: isMobile ? "environment" : "user" },
+            config,
             (decodedText, decodedResult) => {
               onUniversalScanSuccess(decodedText, decodedResult);
             },
             (errorMessage) => {
               // Ignorar errores de escaneo continuo
             }
-          ).then(() => {
-            isScanning = true;
-            if (qrLoading) qrLoading.style.display = 'none';
-            // Feedback visual cuando está listo
-            document.body.classList.add('qr-scanning-active');
-          }).catch((err) => {
-            console.error('Error al iniciar el escáner:', err);
-            isScanning = false;
-            if (qrLoading) qrLoading.style.display = 'none';
-            universalQrResult.classList.remove('d-none');
-            universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-danger';
-            universalQrResult.style.marginTop = '60px !important';
-            universalQrResult.innerHTML = `
-              <div class="d-flex align-items-start">
-                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                <div>
-                  <strong>Error al iniciar la cámara</strong><br>
-                  <small>Asegúrate de dar permisos de cámara y que no esté en uso por otra aplicación.</small>
-                </div>
-              </div>
-            `;
-          });
-        } else {
+          );
+          
+          isScanning = true;
           if (qrLoading) qrLoading.style.display = 'none';
+          document.body.classList.add('qr-scanning-active');
+        } catch (err) {
+          console.error('Error iniciando con facingMode:', err);
+          showError('Error al acceder a las cámaras', err.message || 'No se pudo acceder a la cámara. Verifica los permisos.');
+        }
+      }
+
+      // Función auxiliar para mostrar errores
+      function showError(title, message) {
+        isScanning = false;
+        if (qrLoading) qrLoading.style.display = 'none';
+        if (universalQrResult) {
           universalQrResult.classList.remove('d-none');
-          universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-warning';
-          universalQrResult.style.marginTop = '60px !important';
+          universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-danger';
+          universalQrResult.style.marginTop = '60px';
           universalQrResult.innerHTML = `
             <div class="d-flex align-items-start">
               <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
               <div>
-                <strong>No se encontraron cámaras</strong><br>
-                <small>Este dispositivo no tiene cámaras disponibles.</small>
+                <strong>${title}</strong><br>
+                <small>${message}</small>
               </div>
             </div>
           `;
         }
-      } catch (error) {
-        console.error('Error al obtener cámaras:', error);
-        if (qrLoading) qrLoading.style.display = 'none';
-        universalQrResult.classList.remove('d-none');
-        universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-danger';
-        universalQrResult.style.marginTop = '60px !important';
-        universalQrResult.innerHTML = `
-          <div class="d-flex align-items-start">
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div>
-              <strong>Error al acceder a las cámaras</strong><br>
-              <small>${error.message}</small>
-            </div>
-          </div>
-        `;
       }
     });
 

@@ -372,28 +372,30 @@
   </div>
 </div>
 
-<!-- Modal Escanear QR (Bootstrap Optimizado) -->
-<div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+<!-- Modal Escanear QR (Bootstrap Optimizado - Responsive) -->
+<div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down">
     <div class="modal-content bg-dark text-white border-0 shadow">
       <div class="modal-header border-0 position-absolute w-100 p-3" style="z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);">
-        <h5 class="modal-title fw-bold fs-6 text-uppercase letter-spacing-1">
-          <i class="bi bi-qr-code-scan me-2"></i>Escanear
+        <h5 class="modal-title fw-bold fs-6 text-uppercase">
+          <i class="bi bi-qr-code-scan me-2"></i>
+          <span class="d-none d-sm-inline">Escanear QR</span>
+          <span class="d-inline d-sm-none">Escáner</span>
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body p-0 position-relative d-flex align-items-center justify-content-center bg-black">
+      <div class="modal-body p-0 position-relative d-flex align-items-center justify-content-center bg-black" style="min-height: 70vh;">
         <!-- Contenedor del video -->
-        <div id="reader" class="w-100 h-100" style="object-fit: cover;"></div>
+        <div id="reader" class="w-100 h-100" style="min-height: 70vh; object-fit: cover;"></div>
         
-        <!-- Overlay Visual (Guía de enfoque) -->
-        <div class="qr-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center pe-none">
+        <!-- Overlay Visual (Guía de enfoque) - Solo desktop -->
+        <div class="qr-overlay position-absolute top-0 start-0 w-100 h-100 d-none d-md-flex align-items-center justify-content-center pe-none">
           <div class="qr-box"></div>
         </div>
         
         <!-- Mensaje de ayuda flotante -->
-        <div class="position-absolute bottom-0 w-100 text-center p-4 pb-5" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
-          <small class="text-white-50">Apunta la cámara al código QR del producto</small>
+        <div class="position-absolute bottom-0 w-100 text-center p-3 pb-4 d-md-block" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); z-index: 5;">
+          <small class="text-white-50 d-block d-md-inline">Apunta la cámara al código QR</small>
         </div>
       </div>
     </div>

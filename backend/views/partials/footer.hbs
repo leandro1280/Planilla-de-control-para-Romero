@@ -7,9 +7,12 @@
           <i class="bi bi-handshake me-2"></i>Proyecto en colaboración con
         </p>
         <div class="d-flex align-items-center justify-content-center gap-3">
-          <img src="/img/escudo-tecnica1.png" alt="Escudo Escuela Técnica N°1 de Brandsen" 
-               class="img-fluid" style="max-height: 80px; width: auto;"
-               onerror="this.style.display='none'">
+          <div id="escudo-container" style="display: none;">
+            <img src="/img/escudo-tecnica1.png" alt="Escudo Escuela Técnica N°1 de Brandsen" 
+                 class="img-fluid" style="max-height: 80px; width: auto;"
+                 onerror="document.getElementById('escudo-container').style.display='none';"
+                 onload="document.getElementById('escudo-container').style.display='block';">
+          </div>
           <div class="text-start">
             <p class="mb-0 fw-bold text-dark">Escuela Técnica N°1</p>
             <p class="mb-0 small text-secondary">Ing. José Rafael Cantón</p>

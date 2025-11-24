@@ -7,26 +7,61 @@ const { guardarVersionProducto } = require('./historialController');
 const { sanitizeExcelData } = require('../middleware/validateExcel');
 
 // @desc    Buscar producto por código (referencia o código de fabricante)
-// @route   GET /inventario/buscar
+// @route   GET /inventario/productos/buscar
 // @access  Private
 exports.buscarProductoPorCodigo = async (req, res) => {
   try {
     const { codigo } = req.query;
 
-    if (!codigo) {
+    if (!codigo || codigo.trim() === '') {
       return res.status(400).json({
         success: false,
         message: 'Código es requerido'
       });
     }
 
-    // Buscar por referencia o código de fabricante
-    const producto = await Product.findOne({
+    const codigoLimpio = codigo.trim();
+
+    // Buscar por referencia (exacta, case insensitive)
+    // O por código de fabricante (exacta o parcial)
+    // O si el código contiene la referencia en una URL
+    let producto = await Product.findOne({
       $or: [
-        { referencia: codigo.toUpperCase().trim() },
-        { codigoFabricante: codigo.trim() }
+        { referencia: { $regex: new RegExp(`^${codigoLimpio.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { codigoFabricante: codigoLimpio },
+        { codigoFabricante: { $regex: codigoLimpio.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
       ]
     }).lean();
+
+    // Si no se encuentra y el código parece ser una URL, extraer posible referencia
+    if (!producto && codigoLimpio.includes('/')) {
+      const partes = codigoLimpio.split('/');
+      const posibleReferencia = partes[partes.length - 1] || partes[partes.length - 2];
+      if (posibleReferencia && posibleReferencia.length > 3) {
+        producto = await Product.findOne({
+          $or: [
+            { referencia: { $regex: new RegExp(`^${posibleReferencia.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+            { codigoFabricante: posibleReferencia }
+          ]
+        }).lean();
+      }
+    }
+
+    // Si aún no se encuentra, buscar si el código contiene alguna referencia conocida
+    if (!producto && codigoLimpio.length > 5) {
+      // Buscar productos cuyas referencias estén contenidas en el código escaneado
+      const todosProductos = await Product.find({}).select('referencia codigoFabricante').lean();
+      const productoEncontrado = todosProductos.find(p => {
+        const ref = (p.referencia || '').toUpperCase();
+        const codFab = (p.codigoFabricante || '').toUpperCase();
+        const codigoUpper = codigoLimpio.toUpperCase();
+        return (ref && codigoUpper.includes(ref)) || (codFab && codigoUpper.includes(codFab));
+      });
+
+      if (productoEncontrado) {
+        producto = await Product.findById(productoEncontrado._id).lean();
+      }
+    }
 
     if (producto) {
       return res.status(200).json({
@@ -37,7 +72,7 @@ exports.buscarProductoPorCodigo = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Producto no encontrado',
-        codigo: codigo
+        codigo: codigoLimpio
       });
     }
   } catch (error) {

@@ -56,29 +56,72 @@ document.addEventListener('DOMContentLoaded', function () {
     async function initCamera() {
         if (isScanning) return;
 
+        // Verificar que Html5Qrcode esté disponible
+        if (typeof Html5Qrcode === 'undefined') {
+            console.error('Html5Qrcode no está disponible');
+            alert('Error: El escáner QR no está disponible. Recarga la página.');
+            scanModal.hide();
+            return;
+        }
+
         try {
             html5QrCode = new Html5Qrcode("reader");
             
+            // Detectar si es móvil
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
+            // Configuración responsive
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            let qrboxSize = 250; // Default
+            
+            if (isMobile) {
+                // En móvil, usar 70% del viewport más pequeño
+                qrboxSize = Math.max(200, Math.min(viewportWidth, viewportHeight) * 0.7);
+            }
+            
             const config = { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0 
+                fps: isMobile ? 20 : 10, 
+                qrbox: { width: qrboxSize, height: qrboxSize },
+                aspectRatio: 1.0,
+                disableFlip: false
             };
 
-            // Preferir cámara trasera
-            await html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                onScanSuccess, 
-                onScanFailure
-            );
+            // Intentar con facingMode primero
+            try {
+                await html5QrCode.start(
+                    { facingMode: isMobile ? "environment" : "user" }, 
+                    config, 
+                    onScanSuccess, 
+                    onScanFailure
+                );
+            } catch (facingModeError) {
+                // Si falla, intentar obtener lista de cámaras
+                console.warn('Error con facingMode, intentando con lista de cámaras:', facingModeError);
+                const cameras = await Html5Qrcode.getCameras();
+                if (cameras && cameras.length > 0) {
+                    const rearCamera = cameras.find(cam => 
+                        cam.label.toLowerCase().includes('back') || 
+                        cam.label.toLowerCase().includes('environment') ||
+                        cam.label.toLowerCase().includes('rear')
+                    );
+                    await html5QrCode.start(
+                        rearCamera ? rearCamera.id : cameras[0].id,
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                } else {
+                    throw facingModeError;
+                }
+            }
             
             isScanning = true;
-            document.body.classList.add('qr-scanning-active'); // Para efectos CSS opcionales
+            document.body.classList.add('qr-scanning-active');
 
         } catch (err) {
             console.error("Error iniciando cámara: ", err);
-            alert("No se pudo acceder a la cámara. Asegúrate de dar permisos.");
+            alert("No se pudo acceder a la cámara. Asegúrate de dar permisos y que la cámara no esté en uso por otra aplicación.");
             scanModal.hide();
         }
     }

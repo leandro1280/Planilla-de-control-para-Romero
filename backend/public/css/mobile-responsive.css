@@ -1,0 +1,617 @@
+/* ============================================
+   MEJORAS RESPONSIVE PARA MÓVILES
+   ============================================ */
+
+/* Viewport meta tag ya está en main.hbs, pero asegurémonos */
+@viewport {
+  width: device-width;
+  initial-scale: 1.0;
+  maximum-scale: 5.0;
+  user-scalable: yes;
+}
+
+/* ============================================
+   TABLAS RESPONSIVE MEJORADAS
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Asegurar que las tablas no hagan scroll horizontal */
+  .table-responsive {
+    overflow-x: visible !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  /* Mejorar conversión de tabla a cards */
+  .table tbody tr {
+    display: block;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table tbody td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0.5rem 0 !important;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: left !important;
+    font-size: 0.9rem;
+  }
+
+  .table tbody td:last-child {
+    border-bottom: none;
+    padding-top: 0.75rem !important;
+    margin-top: 0.5rem;
+    border-top: 2px solid #e0e0e0;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--primary-dark);
+    min-width: 100px;
+    font-size: 0.85rem;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .table tbody td[data-label=""]::before {
+    display: none;
+  }
+
+  /* Botones de acción en móvil */
+  .table tbody td:last-child .btn-group {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: stretch;
+  }
+
+  .table tbody td:last-child .btn {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+    min-width: 0;
+  }
+
+  .table tbody td:last-child .btn i {
+    font-size: 1rem;
+  }
+}
+
+/* ============================================
+   MODALES RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Modales fullscreen en móvil */
+  .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    height: 100vh;
+  }
+
+  .modal-content {
+    border-radius: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    flex-shrink: 0;
+    padding: 1rem;
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    flex-shrink: 0;
+    padding: 1rem;
+  }
+
+  /* Modal QR específico */
+  .qr-scanner-modal {
+    background: #000 !important;
+  }
+
+  .qr-scanner-modal .modal-body {
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #universal-qr-scanner {
+    flex: 1;
+    min-height: auto !important;
+    height: 100% !important;
+  }
+
+  #reader-universal,
+  #reader {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  /* Guía QR en móvil */
+  .qr-guide {
+    display: none !important; /* Ocultar en móvil, el video es fullscreen */
+  }
+
+  .qr-box {
+    width: 80% !important;
+    max-width: 300px;
+    height: 80% !important;
+    max-height: 300px;
+  }
+}
+
+/* ============================================
+   NAVBAR RESPONSIVE MEJORADO
+   ============================================ */
+
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background: rgba(15, 76, 129, 0.98);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin: 0.25rem 0;
+  }
+
+  .navbar-nav .dropdown-menu {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: 0.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-brand img {
+    height: 32px !important;
+    max-width: 120px !important;
+  }
+
+  .navbar-nav .nav-link {
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .navbar-nav .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ============================================
+   FORMULARIOS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Inputs más grandes en móvil para mejor UX */
+  .form-control-lg,
+  .form-select-lg {
+    font-size: 16px !important; /* Previene zoom en iOS */
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+  }
+
+  /* Input groups */
+  .input-group {
+    flex-wrap: wrap;
+  }
+
+  .input-group .form-control,
+  .input-group .form-select {
+    flex: 1 1 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-group .btn {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  /* Labels más claros */
+  .form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-dark);
+  }
+
+  /* Botones full width en móvil */
+  .btn-lg {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* ============================================
+   HERO/HEADER RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 1.5rem 1rem !important;
+    margin-bottom: 1rem;
+    border-radius: 16px;
+  }
+
+  .hero .card-body {
+    padding: 1rem !important;
+  }
+
+  .hero__title {
+    font-size: 1.5rem !important;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero__subtitle {
+    font-size: 0.9rem !important;
+  }
+
+  .hero__meta {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .hero__meta .btn,
+  .hero__meta a {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   CARDS Y PANELES RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .panel.card,
+  .card {
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  .card-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .panel-title {
+    font-size: 1.125rem;
+  }
+}
+
+/* ============================================
+   FILTROS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .panel .row.g-3 {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .panel .row.g-3 > [class*="col-"] {
+    padding-left: 0;
+    padding-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  /* Filtros apilados */
+  #buscador,
+  #filtro-tipo,
+  #filtro-stock {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* ============================================
+   PAGINACIÓN RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-width: 40px;
+  }
+
+  .pagination .page-item:first-child .page-link,
+  .pagination .page-item:last-child .page-link {
+    border-radius: 8px;
+  }
+}
+
+/* ============================================
+   BADGES Y ALERTAS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .alert {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .alert .btn-close {
+    padding: 0.5rem;
+  }
+}
+
+/* ============================================
+   DROPDOWNS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .dropdown-menu {
+    max-width: calc(100vw - 2rem);
+    left: 1rem !important;
+    right: 1rem !important;
+    transform: none !important;
+  }
+
+  .notification-dropdown {
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 60vh !important;
+  }
+}
+
+/* ============================================
+   UTILIDADES MÓVIL
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Mejorar espaciado general */
+  .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Texto más legible */
+  body {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* Mejorar contraste de botones */
+  .btn {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* Mejorar inputs para evitar zoom en iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Mejorar scroll suave */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================
+   ORIENTACIÓN LANDSCAPE EN MÓVIL
+   ============================================ */
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero {
+    padding: 1rem !important;
+  }
+
+  .hero__title {
+    font-size: 1.25rem !important;
+  }
+
+  .navbar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .modal-dialog {
+    max-height: 100vh;
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* ============================================
+   MEJORAS DE TOUCH
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Áreas táctiles más grandes */
+  .btn,
+  .nav-link,
+  .dropdown-item {
+    min-height: 44px; /* Tamaño mínimo recomendado para touch */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Mejor feedback táctil */
+  .btn:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+
+  /* Evitar selección accidental de texto */
+  .btn,
+  .nav-link {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    user-select: none;
+  }
+}
+
+/* ============================================
+   FIXES ESPECÍFICOS PARA iOS
+   ============================================ */
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS específico */
+  input,
+  select,
+  textarea {
+    -webkit-appearance: none;
+    border-radius: 12px;
+  }
+
+  /* Fix para viewport en iOS */
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* ============================================
+   MEJORAS DE PERFORMANCE EN MÓVIL
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Reducir animaciones en móvil para mejor performance */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+
+  /* Optimizar renders */
+  .table tbody tr {
+    will-change: transform;
+  }
+}
+
+/* ============================================
+   ESCÁNER QR - MEJORAS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Modal scanModal fullscreen en móvil */
+  #scanModal .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    height: 100vh;
+  }
+
+  #scanModal .modal-content {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  #scanModal #reader {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #scanModal #reader video,
+  #scanModal #reader canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  /* Ocultar overlay en móvil */
+  #scanModal .qr-overlay {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   DASHBOARD RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Cards del dashboard apiladas */
+  .dashboard .row.g-4 > [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+
+  /* Gráficos responsive */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Tablas de dashboard */
+  .dashboard .table-responsive {
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+}
+
+/* ============================================
+   MOVIMIENTOS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Filtros de movimientos */
+  #buscador-movimientos,
+  #filtro-tipo-movimientos,
+  #selector-tipo-grafico,
+  #selector-producto-grafico,
+  #filtro-mes,
+  #filtro-anio {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Gráficos de movimientos */
+  #grafico-cantidades,
+  #grafico-gastos,
+  #grafico-top,
+  #grafico-tipos {
+    max-height: 250px !important;
+  }
+}
+
