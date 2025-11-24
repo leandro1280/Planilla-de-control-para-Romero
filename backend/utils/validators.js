@@ -56,17 +56,20 @@ exports.validateProduct = [
     .trim()
     .notEmpty().withMessage('La referencia es obligatoria')
     .isLength({ max: 100 }).withMessage('La referencia no puede exceder 100 caracteres')
-    .matches(/^[A-Z0-9\-_]+$/).withMessage('La referencia solo puede contener letras mayúsculas, números, guiones y guiones bajos'),
+    .matches(/^[A-Z0-9\-_]+$/).withMessage('La referencia solo puede contener letras mayúsculas, números, guiones y guiones bajos')
+    .escape(), // Escapar caracteres HTML peligrosos
   
   body('nombre')
     .trim()
     .notEmpty().withMessage('El nombre es obligatorio')
-    .isLength({ max: 200 }).withMessage('El nombre no puede exceder 200 caracteres'),
+    .isLength({ max: 200 }).withMessage('El nombre no puede exceder 200 caracteres')
+    .escape(), // Escapar caracteres HTML peligrosos
   
   body('equipo')
     .optional()
     .trim()
-    .isLength({ max: 200 }).withMessage('El equipo no puede exceder 200 caracteres'),
+    .isLength({ max: 200 }).withMessage('El equipo no puede exceder 200 caracteres')
+    .escape(),
   
   body('existencia')
     .notEmpty().withMessage('La existencia es obligatoria')
@@ -75,12 +78,14 @@ exports.validateProduct = [
   body('detalle')
     .optional()
     .trim()
-    .isLength({ max: 500 }).withMessage('El detalle no puede exceder 500 caracteres'),
+    .isLength({ max: 500 }).withMessage('El detalle no puede exceder 500 caracteres')
+    .escape(),
   
   body('tipo')
     .optional()
     .trim()
-    .isLength({ max: 50 }).withMessage('El tipo no puede exceder 50 caracteres'),
+    .isLength({ max: 50 }).withMessage('El tipo no puede exceder 50 caracteres')
+    .escape(),
   
   body('costoUnitario')
     .optional()
@@ -108,6 +113,7 @@ exports.validateMovement = [
   body('nota')
     .optional()
     .trim()
-    .isLength({ max: 500 }).withMessage('La nota no puede exceder 500 caracteres'),
+    .isLength({ max: 500 }).withMessage('La nota no puede exceder 500 caracteres')
+    .escape(),
 ];
 

@@ -28,21 +28,37 @@ const writeLimiter = rateLimit({
 
 const setupSecurity = (app) => {
   // Sanitizar datos MongoDB (previene NoSQL injection)
-  app.use(mongoSanitize());
+  app.use(mongoSanitize({
+    replaceWith: '_', // Reemplazar caracteres peligrosos
+    onSanitize: ({ req, key }) => {
+      console.warn(`⚠️ Intento de inyección NoSQL detectado en ${key}`);
+    }
+  }));
   
   // Prevenir HTTP Parameter Pollution
-  app.use(hpp());
+  app.use(hpp({
+    whitelist: ['busqueda', 'tipo', 'stock', 'pagina', 'porPagina'] // Permitir múltiples valores en estos campos
+  }));
   
-  // Rate limiting general
-  // app.use('/api/', limiter);
+  // Rate limiting general para API
+  app.use('/api/', limiter);
   
-  // Rate limiting específico para auth
-  // app.use('/auth/login', authLimiter);
-  // app.use('/auth/register', authLimiter);
+  // Rate limiting específico para autenticación (protección contra fuerza bruta)
+  app.use('/auth/login', authLimiter);
+  app.use('/auth/register', authLimiter);
   
-  // Rate limiting para escrituras
-  // app.use('/inventario', writeLimiter);
-  // app.use('/movimientos', writeLimiter);
+  // Rate limiting para operaciones de escritura (previene spam/abuso)
+  app.use('/inventario/productos', writeLimiter);
+  app.use('/inventario/movimientos', writeLimiter);
+  app.use('/mantenimientos', writeLimiter);
+  
+  // Rate limiting para importaciones (operación pesada)
+  const importLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutos
+    max: 3, // máximo 3 importaciones cada 5 minutos
+    message: 'Demasiadas importaciones, espera 5 minutos antes de intentar nuevamente.',
+  });
+  app.use('/inventario/importar', importLimiter);
 };
 
 module.exports = { setupSecurity, limiter, authLimiter, writeLimiter };

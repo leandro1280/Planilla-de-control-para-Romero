@@ -3,6 +3,8 @@ const Movement = require('../models/Movement');
 const XLSX = require('xlsx');
 const { createNotificationForAdmins } = require('./notificationController');
 const { registrarAuditoria } = require('../middleware/auditoria');
+const { guardarVersionProducto } = require('./historialController');
+const { sanitizeExcelData } = require('../middleware/validateExcel');
 
 // @desc    Buscar producto por código (referencia o código de fabricante)
 // @route   GET /inventario/buscar
@@ -59,14 +61,33 @@ exports.getProducts = async (req, res) => {
 
     const query = {};
 
-    // Filtro de búsqueda
+    // Filtro de búsqueda avanzada (múltiples campos)
     if (busqueda) {
+      // Buscar en múltiples campos: referencia, nombre, equipo, detalle, tipo, código de fabricante
       query.$or = [
         { referencia: { $regex: busqueda, $options: 'i' } },
         { nombre: { $regex: busqueda, $options: 'i' } },
         { equipo: { $regex: busqueda, $options: 'i' } },
-        { detalle: { $regex: busqueda, $options: 'i' } }
+        { detalle: { $regex: busqueda, $options: 'i' } },
+        { tipo: { $regex: busqueda, $options: 'i' } },
+        { codigoFabricante: { $regex: busqueda, $options: 'i' } }
       ];
+    }
+    
+    // Filtro por rango de stock (avanzado - opcional, para uso futuro)
+    const { stockMin, stockMax } = req.query;
+    if (stockMin !== undefined || stockMax !== undefined) {
+      if (!query.existencia) query.existencia = {};
+      if (stockMin !== undefined) query.existencia.$gte = parseInt(stockMin);
+      if (stockMax !== undefined) query.existencia.$lte = parseInt(stockMax);
+    }
+    
+    // Filtro por rango de costo (avanzado - opcional, para uso futuro)
+    const { costoMin, costoMax } = req.query;
+    if (costoMin !== undefined || costoMax !== undefined) {
+      if (!query.costoUnitario) query.costoUnitario = {};
+      if (costoMin !== undefined) query.costoUnitario.$gte = parseFloat(costoMin);
+      if (costoMax !== undefined) query.costoUnitario.$lte = parseFloat(costoMax);
     }
 
     // Filtro por tipo
@@ -152,6 +173,9 @@ exports.createProduct = async (req, res) => {
 
     const product = await Product.create(productData);
 
+    // Guardar versión inicial del producto
+    await guardarVersionProducto(product, req.user._id, {}, 'Creación inicial');
+
     // Registrar auditoría
     await registrarAuditoria(req, 'CREAR', 'Producto', product._id, {
       referencia: product.referencia,
@@ -226,21 +250,28 @@ exports.updateProduct = async (req, res) => {
       runValidators: true
     });
 
-    // Registrar auditoría con detalles de cambios
+    // Calcular cambios detallados
     const cambios = {};
-    if (product.existencia !== updatedProduct.existencia) {
-      cambios.existenciaAnterior = product.existencia;
-      cambios.existenciaNueva = updatedProduct.existencia;
-    }
-    if (product.costoUnitario !== updatedProduct.costoUnitario) {
-      cambios.costoAnterior = product.costoUnitario;
-      cambios.costoNuevo = updatedProduct.costoUnitario;
-    }
-    if (product.nombre !== updatedProduct.nombre) {
-      cambios.nombreAnterior = product.nombre;
-      cambios.nombreNuevo = updatedProduct.nombre;
+    const campos = ['nombre', 'equipo', 'existencia', 'detalle', 'tipo', 'costoUnitario', 'codigoFabricante'];
+    
+    campos.forEach(campo => {
+      const valorAnterior = product[campo];
+      const valorNuevo = updateData[campo];
+      
+      if (valorAnterior !== valorNuevo && (valorAnterior !== undefined || valorNuevo !== undefined)) {
+        cambios[campo] = {
+          anterior: valorAnterior !== undefined ? valorAnterior : null,
+          nuevo: valorNuevo !== undefined ? valorNuevo : null
+        };
+      }
+    });
+
+    // Guardar versión histórica si hay cambios
+    if (Object.keys(cambios).length > 0) {
+      await guardarVersionProducto(updatedProduct, req.user._id, cambios);
     }
 
+    // Registrar auditoría con detalles de cambios
     await registrarAuditoria(req, 'MODIFICAR', 'Producto', updatedProduct._id, {
       referencia: updatedProduct.referencia,
       nombre: updatedProduct.nombre,
@@ -474,7 +505,14 @@ exports.importFromExcel = async (req, res) => {
       });
     }
 
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    // Configuración segura de XLSX para mitigar vulnerabilidades
+    const workbook = XLSX.read(req.file.buffer, { 
+      type: 'buffer',
+      cellText: false, // No procesar texto de celdas innecesariamente (mitiga ReDoS)
+      cellDates: false, // No procesar fechas (reduce complejidad)
+      sheetStubs: false, // No procesar stubs vacíos
+      dense: false // No usar formato denso (más seguro)
+    });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 

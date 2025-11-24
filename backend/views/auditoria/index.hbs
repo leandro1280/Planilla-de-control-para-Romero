@@ -65,10 +65,14 @@
                         value="{{filtros.fechaHasta}}">
                 </div>
 
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
+                <div class="col-md-1 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
+                    <a href="/reportes/auditoria?usuario={{filtros.usuario}}&accion={{filtros.accion}}&entidad={{filtros.entidad}}&fechaDesde={{filtros.fechaDesde}}&fechaHasta={{filtros.fechaHasta}}" 
+                       class="btn btn-danger" target="_blank" title="Exportar PDF">
+                        <i class="bi bi-file-pdf"></i>
+                    </a>
                 </div>
             </form>
         </div>

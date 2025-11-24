@@ -4,17 +4,17 @@ const RegistroAuditoria = require('../models/RegistroAuditoria');
 // @route   GET /auditoria
 // @access  Private (solo administrador)
 exports.getAuditoriaLogs = async (req, res) => {
-    // Timeout de 10 segundos para esta operación
+    // Timeout de 8 segundos para esta operación
     const timeout = setTimeout(() => {
         if (!res.headersSent) {
-            console.error('⏱️ Timeout en auditoría después de 10 segundos');
+            console.error('⏱️ Timeout en auditoría después de 8 segundos');
             return res.status(503).render('error', {
                 title: 'Timeout',
-                message: 'La consulta de auditoría está tardando demasiado. Por favor intenta nuevamente o contacta al administrador.',
+                message: 'La consulta de auditoría está tardando demasiado. Por favor intenta nuevamente.',
                 layout: 'main'
             });
         }
-    }, 10000);
+    }, 8000);
 
     try {
         const { usuario, accion, entidad, fechaDesde, fechaHasta, pagina = 1, porPagina = 20 } = req.query;

@@ -52,6 +52,12 @@
           <option value="bajo" {{#if (eq stockFiltro 'bajo' )}}selected{{/if}}>Bajo stock (&lt;10)</option>
         </select>
       </div>
+      <div class="col-12 col-md-4 col-lg-3 d-flex align-items-end">
+        <a href="/reportes/inventario?{{#if busqueda}}busqueda={{busqueda}}&{{/if}}{{#if tipoFiltro}}tipo={{tipoFiltro}}&{{/if}}{{#if stockFiltro}}stock={{stockFiltro}}{{/if}}" 
+           class="btn btn-danger w-100" target="_blank">
+          <i class="bi bi-file-pdf me-1"></i> Exportar PDF
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -131,6 +137,11 @@
               <i class="bi bi-pencil"></i>
             </button>
             {{/if}}
+            <a href="/historial/productos/{{this._id}}" 
+               class="btn btn-sm btn-outline-info" 
+               title="Ver historial de cambios">
+              <i class="bi bi-clock-history"></i>
+            </a>
             {{#if (eq ../usuario.rol 'administrador')}}
             <button class="btn btn-sm btn-outline-danger btn-delete" 
               data-id="{{this._id}}"

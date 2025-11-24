@@ -10,7 +10,12 @@
     "seed:products": "node scripts/seedProducts.js",
     "clear:data": "node scripts/clearProducts.js",
     "import:smart": "node scripts/importProductsSmart.js",
-    "test:login": "node scripts/testLogin.js"
+    "test:login": "node scripts/testLogin.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:security": "jest tests/security.test.js"
   },
   "keywords": [
     "stock",

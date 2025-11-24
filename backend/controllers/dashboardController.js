@@ -91,6 +91,58 @@ exports.renderDashboard = async (req, res) => {
       }
     });
 
+    // Estadísticas mensuales de los últimos 6 meses (para comparativas)
+    const estadisticasMensuales = [];
+    for (let i = 5; i >= 0; i--) {
+      const fechaMes = new Date();
+      fechaMes.setMonth(fechaMes.getMonth() - i);
+      fechaMes.setDate(1);
+      fechaMes.setHours(0, 0, 0, 0);
+      const finMes = new Date(fechaMes);
+      finMes.setMonth(finMes.getMonth() + 1);
+      finMes.setDate(0);
+      finMes.setHours(23, 59, 59, 999);
+
+      const movimientosMesAnterior = await Movement.find({
+        createdAt: { $gte: fechaMes, $lte: finMes }
+      }).lean();
+
+      const ingresosMesAnterior = movimientosMesAnterior
+        .filter(m => m.tipo === 'ingreso')
+        .reduce((acc, m) => acc + m.cantidad, 0);
+      const egresosMesAnterior = movimientosMesAnterior
+        .filter(m => m.tipo === 'egreso')
+        .reduce((acc, m) => acc + m.cantidad, 0);
+      const inversionMesAnterior = movimientosMesAnterior
+        .filter(m => m.tipo === 'ingreso')
+        .reduce((acc, m) => acc + (m.costoTotal || 0), 0);
+      const consumoMesAnterior = movimientosMesAnterior
+        .filter(m => m.tipo === 'egreso')
+        .reduce((acc, m) => acc + (m.costoTotal || 0), 0);
+
+      estadisticasMensuales.push({
+        mes: fechaMes.toLocaleDateString('es-AR', { month: 'short', year: 'numeric' }),
+        ingresos: ingresosMesAnterior,
+        egresos: egresosMesAnterior,
+        inversion: inversionMesAnterior,
+        consumo: consumoMesAnterior
+      });
+    }
+
+    // Calcular tendencias (comparar mes actual con mes anterior)
+    const mesAnterior = estadisticasMensuales[estadisticasMensuales.length - 2] || {};
+    const mesActual = estadisticasMensuales[estadisticasMensuales.length - 1] || {};
+    const tendencias = {
+      ingresos: mesAnterior.ingresos ? 
+        ((mesActual.ingresos - mesAnterior.ingresos) / mesAnterior.ingresos * 100).toFixed(1) : 0,
+      egresos: mesAnterior.egresos ? 
+        ((mesActual.egresos - mesAnterior.egresos) / mesAnterior.egresos * 100).toFixed(1) : 0,
+      inversion: mesAnterior.inversion ? 
+        ((mesActual.inversion - mesAnterior.inversion) / mesAnterior.inversion * 100).toFixed(1) : 0,
+      consumo: mesAnterior.consumo ? 
+        ((mesActual.consumo - mesAnterior.consumo) / mesAnterior.consumo * 100).toFixed(1) : 0
+    };
+
     res.render('dashboard/index', {
       title: 'Dashboard - Sistema de Gestión Interna',
       currentPage: 'dashboard',
@@ -107,6 +159,8 @@ exports.renderDashboard = async (req, res) => {
         egresosMes,
         tiposContador
       },
+      estadisticasMensuales,
+      tendencias,
       movimientosRecientes,
       productosCriticosLista,
       proximosMantenimientos,

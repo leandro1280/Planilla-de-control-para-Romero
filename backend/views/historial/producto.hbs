@@ -1,0 +1,171 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">
+            <i class="bi bi-clock-history me-2"></i>Historial de Cambios
+          </h2>
+          <p class="text-muted mb-0">Producto: <strong>{{producto.referencia}}</strong> - {{producto.nombre}}</p>
+        </div>
+        <a href="/inventario" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Volver al Inventario
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información del Producto Actual -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Estado Actual del Producto</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <strong>Referencia:</strong><br>
+          <span class="text-primary">{{producto.referencia}}</span>
+        </div>
+        <div class="col-md-3">
+          <strong>Nombre:</strong><br>
+          {{producto.nombre}}
+        </div>
+        <div class="col-md-2">
+          <strong>Stock:</strong><br>
+          <span class="badge bg-{{#if (lte producto.existencia 4)}}danger{{else if (lt producto.existencia 10)}}warning{{else}}success{{/if}}">
+            {{producto.existencia}} unidades
+          </span>
+        </div>
+        <div class="col-md-2">
+          <strong>Tipo:</strong><br>
+          {{producto.tipo || 'N/A'}}
+        </div>
+        <div class="col-md-2">
+          <strong>Costo:</strong><br>
+          ${{formatCurrency producto.costoUnitario}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de Versiones -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Historial de Versiones ({{historial.length}} cambios)</h5>
+    </div>
+    <div class="card-body">
+      {{#if historial.length}}
+        <div class="timeline">
+          {{#each historial}}
+            <div class="timeline-item mb-4">
+              <div class="d-flex">
+                <div class="timeline-marker me-3">
+                  <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                       style="width: 40px; height: 40px;">
+                    <i class="bi bi-{{#if cambiosDetallados.esCreacion}}plus{{else}}pencil{{/if}}-square"></i>
+                  </div>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>Versión {{this.version}}</strong>
+                        <span class="badge bg-{{#if cambiosDetallados.esCreacion}}success{{else}}info{{/if}} ms-2">
+                          {{#if cambiosDetallados.esCreacion}}Creación{{else}}Modificación{{/if}}
+                        </span>
+                      </div>
+                      <div class="text-muted small">
+                        <i class="bi bi-calendar me-1"></i>{{formatDate this.createdAt}}
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-2">
+                        <strong>Modificado por:</strong>
+                        {{#if this.modificadoPor}}
+                          {{this.modificadoPor.nombre}} ({{this.modificadoPor.email}})
+                        {{else}}
+                          Sistema
+                        {{/if}}
+                      </div>
+                      
+                      {{#if this.cambiosDetallados.cambios.length}}
+                        <div class="table-responsive">
+                          <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Campo</th>
+                                <th>Valor Anterior</th>
+                                <th>Valor Nuevo</th>
+                                <th>Tipo de Cambio</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {{#each this.cambiosDetallados.cambios}}
+                                <tr>
+                                  <td><strong>{{this.campo}}</strong></td>
+                                  <td>
+                                    {{#if (eq this.tipoCambio 'agregado')}}
+                                      <span class="text-muted fst-italic">(vacío)</span>
+                                    {{else}}
+                                      {{#if this.valorAnterior}}
+                                        {{this.valorAnterior}}
+                                      {{else}}
+                                        <span class="text-muted">-</span>
+                                      {{/if}}
+                                    {{/if}}
+                                  </td>
+                                  <td>
+                                    {{#if (eq this.tipoCambio 'eliminado')}}
+                                      <span class="text-muted fst-italic">(eliminado)</span>
+                                    {{else}}
+                                      {{#if this.valorNuevo}}
+                                        <span class="text-success fw-bold">{{this.valorNuevo}}</span>
+                                      {{else}}
+                                        <span class="text-muted">-</span>
+                                      {{/if}}
+                                    {{/if}}
+                                  </td>
+                                  <td>
+                                    <span class="badge bg-{{#if (eq this.tipoCambio 'creado')}}success{{else if (eq this.tipoCambio 'agregado')}}info{{else if (eq this.tipoCambio 'eliminado')}}danger{{else}}warning{{/if}}">
+                                      {{this.tipoCambio}}
+                                    </span>
+                                  </td>
+                                </tr>
+                              {{/each}}
+                            </tbody>
+                          </table>
+                        </div>
+                      {{else}}
+                        <p class="text-muted mb-0">Sin cambios registrados en esta versión</p>
+                      {{/if}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>No hay historial de cambios para este producto.
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<style>
+  .timeline {
+    position: relative;
+    padding-left: 0;
+  }
+  
+  .timeline-item {
+    position: relative;
+  }
+  
+  .timeline-marker {
+    flex-shrink: 0;
+  }
+</style>
+

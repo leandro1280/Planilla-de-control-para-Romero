@@ -23,14 +23,38 @@ connectDB().catch(err => {
 // Iniciar tareas programadas (Notificaciones)
 iniciarTareasProgramadas();
 
-// Middleware básico
+// Middleware básico - Seguridad mejorada
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  },
+  crossOriginEmbedderPolicy: false, // Permite CDN para desarrollo
+  hsts: {
+    maxAge: 31536000, // 1 año
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(morgan('dev'));
+
+// Middleware de sanitización y seguridad
+const { sanitizeBody, validateObjectId, sanitizeSearch } = require('./middleware/sanitize');
+app.use(sanitizeBody);
+app.use(validateObjectId);
+app.use(sanitizeSearch);
 
 // Configurar Handlebars
 app.engine('hbs', hbs.engine({
@@ -143,8 +167,12 @@ app.use('/inventario', require('./routes/inventario'));
 app.use('/movimientos', require('./routes/movimientos'));
 app.use('/mantenimientos', require('./routes/mantenimientos'));
 app.use('/perfiles', require('./routes/perfiles'));
-// app.use('/auditoria', require('./routes/auditoria')); // Temporalmente deshabilitada por problemas de rendimiento
+app.use('/auditoria', require('./routes/auditoria'));
+app.use('/historial', require('./routes/historial'));
+app.use('/estadisticas', require('./routes/estadisticasViews'));
 app.use('/api', require('./routes/api'));
+app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/reportes', require('./routes/reportes'));
 
 // Ruta principal
 app.get('/', (req, res) => {
@@ -159,6 +187,14 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
+// Solo iniciar servidor si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+    console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
 // Manejar errores no capturados para que el servidor no se caiga
 process.on('uncaughtException', (error) => {
   console.error('❌ Error no capturado:', error);
@@ -170,11 +206,14 @@ process.on('unhandledRejection', (reason, promise) => {
   console.warn('⚠️  El servidor continuará ejecutándose');
 });
 
-// Iniciar servidor
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-});
+// Iniciar servidor solo si no estamos en modo test
+let server;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+    console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 // Manejar errores del servidor
 server.on('error', (error) => {
