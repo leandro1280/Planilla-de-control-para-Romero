@@ -80,126 +80,39 @@ exports.register = async (req, res) => {
 // @route   POST /auth/login
 // @access  Public
 exports.login = async (req, res) => {
-  console.log('\n═══════════════════════════════════════');
-  console.log('🔐 LOGIN REQUEST RECIBIDA');
-  console.log('═══════════════════════════════════════');
-  console.log('📋 REQ.BODY:', JSON.stringify(req.body, null, 2));
-
   try {
-    // El email ya viene normalizado del middleware de validación
     const { email, password } = req.body;
-
-    console.log('\n📥 DATOS RECIBIDOS:');
-    console.log('   📧 Email:', email);
-    // console.log('   🔑 Password:', password); // REMOVED FOR SECURITY
-    console.log('   📏 Password length:', password?.length || 0);
 
     // Validar email y password
     if (!email || !password) {
-      console.log('\n❌ VALIDACIÓN FALLIDA:');
-      console.log('   Email vacío:', !email);
-      console.log('   Password vacío:', !password);
       return res.status(400).json({
         success: false,
         message: 'Por favor ingrese email y contraseña'
       });
     }
 
-    // Normalizar email (por si acaso)
+    // Normalizar email
     const emailNormalizado = (email || '').toLowerCase().trim();
-    console.log('\n🔄 NORMALIZACIÓN:');
-    console.log('   Email original:', email);
-    console.log('   Email normalizado:', emailNormalizado);
 
     // Verificar usuario y contraseña
-    console.log('\n🔍 BUSCANDO USUARIO EN BD...');
-    console.log('   Query 1 (normalizado):', { email: emailNormalizado });
+    const user = await User.findOne({ email: emailNormalizado }).select('+password');
 
-    let user = await User.findOne({ email: emailNormalizado }).select('+password');
-
-    if (!user) {
-      console.log('   ❌ No encontrado con email normalizado');
-      console.log('   Query 2 (original del req.body):', { email: email });
-
-      // Intentar buscar con el email original del req.body
-      user = await User.findOne({ email: email }).select('+password');
-
-      if (!user) {
-        console.log('   ❌ No encontrado con email original');
-        console.log('   Query 3 (case-insensitive): Buscando todos los usuarios...');
-
-        // Buscar todos los usuarios para debug
-        const allUsers = await User.find({}).select('email');
-        console.log('   📋 Usuarios en BD:');
-        allUsers.forEach(u => {
-          console.log(`      - "${u.email}" (igual?: ${u.email === emailNormalizado}, igual case?: ${u.email.toLowerCase() === emailNormalizado})`);
-        });
-
-        console.log('\n❌ USUARIO NO ENCONTRADO');
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciales inválidas'
-        });
-      } else {
-        console.log('   ✅ Usuario encontrado con email original:', user.email);
-      }
-    } else {
-      console.log('   ✅ Usuario encontrado con email normalizado');
-    }
-
-    console.log('\n✅ USUARIO ENCONTRADO:');
-    console.log('   ID:', user._id);
-    console.log('   Nombre:', user.nombre);
-    console.log('   Email:', user.email);
-    console.log('   Rol:', user.rol);
-    console.log('   Activo:', user.activo);
-    console.log('   Activo:', user.activo);
-    // console.log('   Password hash (primeros 30 chars):', user.password?.substring(0, 30) + '...'); // REMOVED FOR SECURITY
-
-    if (!user.activo) {
-      console.log('\n❌ USUARIO INACTIVO');
-      return res.status(401).json({
-        success: false,
-        message: 'Usuario inactivo'
-      });
-    }
-
-    // Verificar contraseña
-    console.log('\n🔐 VERIFICANDO CONTRASEÑA...');
-    // console.log('   Contraseña recibida:', password); // REMOVED FOR SECURITY
-    // console.log('   Hash en BD:', user.password?.substring(0, 30) + '...'); // REMOVED FOR SECURITY
-
-    const passwordMatch = await user.matchPassword(password);
-    console.log('   Resultado de matchPassword:', passwordMatch);
-
-    if (!passwordMatch) {
-      console.log('\n❌ CONTRASEÑA INCORRECTA');
-      console.log('   Email:', emailNormalizado);
-      // console.log('   Contraseña recibida:', password); // REMOVED FOR SECURITY
-
-      // Intentar con diferentes variantes
-      console.log('   🔍 Probando variantes...');
-      const variants = [
-        password.trim(),
-        password.trim() + ' ',
-        ' ' + password.trim(),
-      ];
-
-      for (const variant of variants) {
-        if (variant !== password) {
-          const match = await user.matchPassword(variant);
-          console.log(`   Variante "${variant}": ${match ? '✅ MATCH' : '❌ No match'}`);
-        }
-      }
-
+    if (!user || !user.activo) {
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
       });
     }
 
-    console.log('\n✅ CONTRASEÑA CORRECTA');
-    console.log(`✅ LOGIN EXITOSO: ${user.nombre} (${user.email})`);
+    // Verificar contraseña
+    const passwordMatch = await user.matchPassword(password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciales inválidas'
+      });
+    }
 
     // Establecer req.user temporalmente para la auditoría
     req.user = user;
@@ -211,7 +124,6 @@ exports.login = async (req, res) => {
     });
 
     const token = generateToken(user._id);
-    console.log('   Token generado (primeros 30 chars):', token?.substring(0, 30) + '...');
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -219,9 +131,8 @@ exports.login = async (req, res) => {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
     });
-    console.log('   Cookie configurada');
 
-    const responseData = {
+    res.status(200).json({
       success: true,
       data: {
         _id: user._id,
@@ -230,22 +141,12 @@ exports.login = async (req, res) => {
         rol: user.rol,
         token
       }
-    };
-
-    console.log('\n📤 ENVIANDO RESPUESTA EXITOSA');
-    console.log('═══════════════════════════════════════\n');
-
-    res.status(200).json(responseData);
+    });
   } catch (error) {
-    console.log('\n💥 ERROR EN LOGIN:');
-    console.error('   Error:', error);
-    console.error('   Message:', error.message);
-    console.error('   Stack:', error.stack);
-    console.log('═══════════════════════════════════════\n');
-
+    console.error('Error en login:', error);
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Error en el servidor'
     });
   }
 };

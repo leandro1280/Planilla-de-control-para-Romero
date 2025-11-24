@@ -6,13 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed:users": "node scripts/seedUsers.js",
-    "seed:products": "node scripts/seedProducts.js",
-    "clear:data": "node scripts/clearProducts.js",
-    "import:smart": "node scripts/importProductsSmart.js",
-    "test:login": "node scripts/testLogin.js",
-    "backup": "node scripts/backup.js",
-    "restore": "node scripts/restore.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:security": "jest tests/security.test.js"
@@ -26,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "chartjs-node-canvas": "^4.1.6",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -41,9 +35,12 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
+    "pdfkit": "^0.14.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   }
 }
