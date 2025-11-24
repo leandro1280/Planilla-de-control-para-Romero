@@ -1,8 +1,22 @@
+<header class="hero card border-0 shadow-lg text-white mb-4">
+  <div class="card-body py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="hero__title mb-2">
+          <i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario
+        </h1>
+        <p class="hero__subtitle mb-0">Crea un nuevo usuario para el sistema</p>
+      </div>
+      <a href="/auth/usuarios" class="btn btn-light btn-lg">
+        <i class="bi bi-arrow-left me-2"></i>Volver a Usuarios
+      </a>
+    </div>
+  </div>
+</header>
+
 <div class="card shadow-lg border-0">
   <div class="card-body p-4 p-md-5">
-    <h2 class="card-title text-center mb-4 fw-bold">Registrar Usuario</h2>
-    
-    <form action="/auth/register" method="POST" id="registerForm">
+    <form id="registerForm" autocomplete="off">
       <div class="mb-3">
         <label for="nombre" class="form-label fw-semibold">Nombre</label>
         <input 
@@ -46,8 +60,8 @@
         <label for="rol" class="form-label fw-semibold">Rol *</label>
         <select class="form-select form-select-lg" id="rol" name="rol" required>
           <option value="">Seleccione un rol</option>
-          <option value="usuario_comun">Usuario Común - Solo descarga y visualización</option>
-          <option value="visor">Visor - Carga/descarga, agregar productos, no borra registros</option>
+          <option value="operario">Operario - Solo consulta y visualización</option>
+          <option value="supervisor">Supervisor - Crear/editar productos y movimientos</option>
           <option value="administrador">Administrador - Acceso total</option>
         </select>
         <small class="form-text text-muted">
@@ -55,56 +69,99 @@
         </small>
       </div>
       
-      <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mb-3">
-        <i class="bi bi-person-plus me-2"></i>
-        Registrar Usuario
-      </button>
+      <div id="register-result" class="mb-3 d-none"></div>
       
-      <div class="text-center">
-        <a href="/dashboard" class="text-decoration-none">← Volver al dashboard</a>
+      <div class="d-grid gap-2 mt-4">
+        <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+          <i class="bi bi-person-plus me-2"></i>Registrar Usuario
+        </button>
+        <a href="/auth/usuarios" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>Cancelar
+        </a>
       </div>
     </form>
   </div>
 </div>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
 <script>
-document.getElementById('registerForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+  const registerForm = document.getElementById('registerForm');
+  const registerResult = document.getElementById('register-result');
   
-  const formData = new FormData(this);
-  const data = Object.fromEntries(formData);
-  
-  // Validación básica
-  if (!data.rol) {
-    alert('Por favor seleccione un rol');
+  if (!registerForm) {
+    console.error('Formulario de registro no encontrado');
     return;
   }
   
-  try {
-    const response = await fetch('/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
+  registerForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    const result = await response.json();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
     
-    if (result.success) {
-      alert('✅ Usuario registrado correctamente');
-      this.reset();
-      // No redirigir, solo limpiar el formulario para permitir crear más usuarios
-    } else {
-      const errorMsg = result.message || result.errors?.[0]?.msg || 'Error al registrar usuario';
-      alert('❌ Error: ' + errorMsg);
+    // Ocultar mensajes anteriores
+    registerResult.className = 'mt-3 d-none';
+    registerResult.innerHTML = '';
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Validación básica
+    if (!data.rol || data.rol === '') {
+      registerResult.className = 'mt-3 alert alert-warning';
+      registerResult.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Por favor seleccione un rol';
+      registerResult.classList.remove('d-none');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+      return;
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('❌ Error de conexión. Por favor intenta nuevamente.');
-  }
+    
+    try {
+      const response = await fetch('/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin', // Incluir cookies
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        registerResult.className = 'mt-3 alert alert-success';
+        registerResult.innerHTML = `
+          <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>¡Usuario registrado correctamente!</h6>
+          <p class="mb-0">El usuario <strong>${result.data.nombre}</strong> ha sido creado exitosamente.</p>
+        `;
+        registerResult.classList.remove('d-none');
+        
+        // Limpiar formulario
+        this.reset();
+        
+        // Después de 2 segundos, redirigir a la lista de usuarios
+        setTimeout(() => {
+          window.location.href = '/auth/usuarios';
+        }, 2000);
+      } else {
+        const errorMsg = result.message || result.errors?.[0]?.msg || 'Error al registrar usuario';
+        registerResult.className = 'mt-3 alert alert-danger';
+        registerResult.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error:</strong> ${errorMsg}`;
+        registerResult.classList.remove('d-none');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      registerResult.className = 'mt-3 alert alert-danger';
+      registerResult.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error de conexión.</strong> Por favor intenta nuevamente.';
+      registerResult.classList.remove('d-none');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
+  });
 });
 </script>
 

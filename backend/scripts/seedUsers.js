@@ -44,19 +44,19 @@ const usuariosPrueba = [
     nombre: 'Usuario1 Prueba',
     email: 'usuario1@romero.com',
     password: 'User1123!',
-    rol: 'visor'
+    rol: 'supervisor'
   },
   {
     nombre: 'Guillermo Kleimbielen',
     email: 'guillermo.kleimbielen@romero.com',
     password: 'User1123!',
-    rol: 'visor'
+    rol: 'supervisor'
   },
   {
     nombre: 'Javier Speroni',
     email: 'javier.speroni@romero.com',
     password: 'User1123!',
-    rol: 'visor'
+    rol: 'supervisor'
   },
   
   // Usuarios Comunes
@@ -64,19 +64,19 @@ const usuariosPrueba = [
     nombre: 'Usuario Común Prueba',
     email: 'usuario.comun@romero.com',
     password: 'UserCom123!',
-    rol: 'usuario_comun'
+    rol: 'operario'
   },
   {
     nombre: 'Operario 1',
     email: 'operario1@romero.com',
     password: 'Oper123!',
-    rol: 'usuario_comun'
+    rol: 'operario'
   },
   {
     nombre: 'Operario 2',
     email: 'operario2@romero.com',
     password: 'Oper123!',
-    rol: 'usuario_comun'
+    rol: 'operario'
   }
 ];
 
@@ -122,12 +122,12 @@ async function seedUsers() {
     // Listar usuarios por rol
     console.log('👥 Usuarios por rol:');
     const adminCount = await User.countDocuments({ rol: 'administrador' });
-    const visorCount = await User.countDocuments({ rol: 'visor' });
-    const comunCount = await User.countDocuments({ rol: 'usuario_comun' });
+    const supervisorCount = await User.countDocuments({ rol: 'supervisor' });
+    const operarioCount = await User.countDocuments({ rol: 'operario' });
     
     console.log(`   👑 Administradores: ${adminCount}`);
-    console.log(`   👁️  Visores: ${visorCount}`);
-    console.log(`   👤 Usuarios Comunes: ${comunCount}\n`);
+    console.log(`   👨‍💼 Supervisores: ${supervisorCount}`);
+    console.log(`   👷 Operarios: ${operarioCount}\n`);
 
     console.log('✨ Proceso completado\n');
     

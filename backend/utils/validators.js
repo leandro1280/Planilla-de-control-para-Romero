@@ -34,7 +34,7 @@ exports.validateRegister = [
   
   body('rol')
     .optional()
-    .isIn(['administrador', 'visor', 'usuario_comun']).withMessage('Rol inválido'),
+    .isIn(['administrador', 'supervisor', 'operario']).withMessage('Rol inválido'),
 ];
 
 // Validaciones para login

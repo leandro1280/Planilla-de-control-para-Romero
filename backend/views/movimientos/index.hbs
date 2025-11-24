@@ -85,6 +85,7 @@
             <th>Cantidad</th>
             <th>Costo unidad</th>
             <th>Total</th>
+            <th>Usuario</th>
             <th>Detalle</th>
           </tr>
         </thead>
@@ -102,6 +103,19 @@
               <td class="text-end">{{formatNumber this.cantidad}}</td>
               <td class="text-end">$ {{formatCurrency this.costoUnitario}}</td>
               <td class="text-end fw-semibold">$ {{formatCurrency this.costoTotal}}</td>
+              <td>
+                {{#if this.usuario}}
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-person-circle me-2 text-muted"></i>
+                    <div>
+                      <div class="fw-semibold small">{{this.usuario.nombre}}</div>
+                      <small class="text-muted d-none d-md-block">{{this.usuario.email}}</small>
+                    </div>
+                  </div>
+                {{else}}
+                  <span class="text-muted">-</span>
+                {{/if}}
+              </td>
               <td>{{this.nota}}</td>
             </tr>
             {{/each}}

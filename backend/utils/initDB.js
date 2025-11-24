@@ -25,13 +25,13 @@ const usuariosIniciales = [
     nombre: 'Guillermo Kleimbielen',
     email: 'guillermo.kleimbielen@romero.com',
     password: process.env.USER_PASSWORD || 'User1123!',
-    rol: 'visor'
+    rol: 'supervisor'
   },
   {
     nombre: 'Javier Speroni',
     email: 'javier.speroni@romero.com',
     password: process.env.USER_PASSWORD || 'User1123!',
-    rol: 'visor'
+    rol: 'supervisor'
   }
 ];
 

@@ -17,5 +17,11 @@ router.post('/logout', protect, authController.logout);
 router.get('/logout', protect, authController.logout);
 router.get('/me', protect, authController.getMe);
 
+// Rutas de gestión de usuarios (solo administradores)
+const usuariosController = require('../controllers/usuariosController');
+router.get('/usuarios', protect, authorize('administrador'), usuariosController.getUsuarios);
+router.put('/usuarios/:id', protect, authorize('administrador'), usuariosController.updateUsuario);
+router.delete('/usuarios/:id', protect, authorize('administrador'), usuariosController.deleteUsuario);
+
 module.exports = router;
 

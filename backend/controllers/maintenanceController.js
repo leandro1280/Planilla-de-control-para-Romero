@@ -1,6 +1,7 @@
 const Maintenance = require('../models/Maintenance');
 const Product = require('../models/Product');
 const { createNotificationForAdmins } = require('./notificationController');
+const { registrarAuditoria } = require('../middleware/auditoria');
 
 // @desc    Obtener productos para el formulario
 // @route   GET /mantenimientos/productos
@@ -104,7 +105,7 @@ exports.getMaintenances = async (req, res) => {
 
 // @desc    Crear nuevo mantenimiento
 // @route   POST /mantenimientos
-// @access  Private (administrador, visor)
+// @access  Private (administrador, supervisor)
 exports.createMaintenance = async (req, res) => {
   try {
     const {
@@ -137,15 +138,35 @@ exports.createMaintenance = async (req, res) => {
       tipo: tipo || 'preventivo',
       equipo: equipo ? equipo.trim() : '',
       fechaInstalacion: fechaInstalacion ? new Date(fechaInstalacion) : new Date(),
-      fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
-      horasVidaUtil: horasVidaUtil ? parseInt(horasVidaUtil) : null,
+      tipoFrecuencia: req.body.tipoFrecuencia || 'horas',
+      intervaloDias: req.body.intervaloDias ? parseInt(req.body.intervaloDias) : null,
+      horasVidaUtil: req.body.horasVidaUtil ? parseInt(req.body.horasVidaUtil) : null,
       observaciones: observaciones ? observaciones.trim() : '',
       tecnico: req.user._id,
       costo: costo ? parseFloat(costo) : null,
       estado: 'activo'
     };
 
+    // Calcular fecha de vencimiento si es por fecha
+    if (maintenanceData.tipoFrecuencia === 'fecha' && maintenanceData.intervaloDias) {
+      const fechaInst = new Date(maintenanceData.fechaInstalacion);
+      maintenanceData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + maintenanceData.intervaloDias));
+    } else if (fechaVencimiento) {
+      maintenanceData.fechaVencimiento = new Date(fechaVencimiento);
+    }
+
+    // Si es por horas, el cálculo se hace en el frontend o se deja null hasta que se actualice
+
     const maintenance = await Maintenance.create(maintenanceData);
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'CREAR', 'Mantenimiento', maintenance._id, {
+      referencia: producto.referencia,
+      producto: producto.nombre,
+      tipo: tipo,
+      equipo: equipo,
+      estado: 'activo'
+    });
 
     // Descontar 1 unidad del stock del producto solo si tiene stock
     if (tieneStock) {
@@ -160,7 +181,7 @@ exports.createMaintenance = async (req, res) => {
       req.user._id
     );
 
-    const mensaje = tieneStock 
+    const mensaje = tieneStock
       ? 'Mantenimiento registrado correctamente. Stock descontado automáticamente (1 unidad).'
       : 'Mantenimiento registrado. ⚠️ NOTA: El producto no tenía stock disponible, no se descontó stock del inventario.';
 
@@ -180,7 +201,7 @@ exports.createMaintenance = async (req, res) => {
 
 // @desc    Actualizar mantenimiento
 // @route   PUT /mantenimientos/:id
-// @access  Private (administrador, visor)
+// @access  Private (administrador, supervisor)
 exports.updateMaintenance = async (req, res) => {
   try {
     let maintenance = await Maintenance.findById(req.params.id);
@@ -196,17 +217,43 @@ exports.updateMaintenance = async (req, res) => {
       tipo: req.body.tipo || maintenance.tipo,
       equipo: req.body.equipo !== undefined ? req.body.equipo.trim() : maintenance.equipo,
       fechaInstalacion: req.body.fechaInstalacion ? new Date(req.body.fechaInstalacion) : maintenance.fechaInstalacion,
-      fechaVencimiento: req.body.fechaVencimiento ? new Date(req.body.fechaVencimiento) : maintenance.fechaVencimiento,
+      tipoFrecuencia: req.body.tipoFrecuencia || maintenance.tipoFrecuencia,
+      intervaloDias: req.body.intervaloDias ? parseInt(req.body.intervaloDias) : maintenance.intervaloDias,
       horasVidaUtil: req.body.horasVidaUtil ? parseInt(req.body.horasVidaUtil) : maintenance.horasVidaUtil,
       observaciones: req.body.observaciones !== undefined ? req.body.observaciones.trim() : maintenance.observaciones,
       costo: req.body.costo ? parseFloat(req.body.costo) : maintenance.costo,
       estado: req.body.estado || maintenance.estado
     };
 
+    // Recalcular vencimiento si cambia a fecha o cambian los parámetros
+    if (updateData.tipoFrecuencia === 'fecha' && updateData.intervaloDias) {
+      const fechaInst = new Date(updateData.fechaInstalacion);
+      updateData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + updateData.intervaloDias));
+    } else if (req.body.fechaVencimiento) {
+      updateData.fechaVencimiento = new Date(req.body.fechaVencimiento);
+    }
+
+    // Guardar datos anteriores para auditoría
+    const cambios = {};
+    if (maintenance.estado !== updateData.estado) {
+      cambios.estadoAnterior = maintenance.estado;
+      cambios.estadoNuevo = updateData.estado;
+    }
+    if (maintenance.equipo !== updateData.equipo) {
+      cambios.equipoAnterior = maintenance.equipo;
+      cambios.equipoNuevo = updateData.equipo;
+    }
+
     maintenance = await Maintenance.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     }).populate('producto', 'referencia nombre tipo').populate('tecnico', 'nombre email');
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'MODIFICAR', 'Mantenimiento', maintenance._id, {
+      referencia: maintenance.referencia,
+      cambios: Object.keys(cambios).length > 0 ? cambios : undefined
+    });
 
     res.status(200).json({
       success: true,
@@ -235,6 +282,13 @@ exports.deleteMaintenance = async (req, res) => {
       });
     }
 
+    // Registrar auditoría antes de eliminar
+    await registrarAuditoria(req, 'ELIMINAR', 'Mantenimiento', maintenance._id, {
+      referencia: maintenance.referencia,
+      equipo: maintenance.equipo,
+      estado: maintenance.estado
+    });
+
     // Si el mantenimiento está activo, devolver el stock al inventario
     if (maintenance.estado === 'activo') {
       const producto = await Product.findById(maintenance.producto);
@@ -256,6 +310,47 @@ exports.deleteMaintenance = async (req, res) => {
       success: false,
       message: error.message || 'Error al eliminar el mantenimiento'
     });
+  }
+};
+
+// @desc    Verificar mantenimientos próximos a vencer
+// @access  Internal
+exports.checkUpcomingMaintenances = async () => {
+  try {
+    const hoy = new Date();
+    const tresDiasDespues = new Date();
+    tresDiasDespues.setDate(hoy.getDate() + 3);
+
+    // Buscar mantenimientos activos que vencen pronto (en los próximos 3 días) o ya vencieron
+    // y que NO tengan una notificación reciente (esto es más complejo, por ahora simplificamos)
+    const mantenimientos = await Maintenance.find({
+      estado: 'activo',
+      fechaVencimiento: { $lte: tresDiasDespues }
+    }).populate('producto');
+
+    for (const mant of mantenimientos) {
+      // Aquí podríamos verificar si ya se envió notificación hoy para no spammear
+      // Por simplicidad, asumimos que el sistema de notificaciones maneja duplicados o aceptamos el spam diario
+
+      const diasRestantes = Math.ceil((new Date(mant.fechaVencimiento) - hoy) / (1000 * 60 * 60 * 24));
+      let mensaje = '';
+
+      if (diasRestantes < 0) {
+        mensaje = `El mantenimiento para ${mant.producto.nombre} (${mant.equipo}) venció hace ${Math.abs(diasRestantes)} días.`;
+      } else if (diasRestantes === 0) {
+        mensaje = `El mantenimiento para ${mant.producto.nombre} (${mant.equipo}) vence HOY.`;
+      } else {
+        mensaje = `El mantenimiento para ${mant.producto.nombre} (${mant.equipo}) vence en ${diasRestantes} días.`;
+      }
+
+      await createNotificationForAdmins(
+        'Alerta de Mantenimiento',
+        mensaje,
+        null // Sistema
+      );
+    }
+  } catch (error) {
+    console.error('Error verificando mantenimientos:', error);
   }
 };
 

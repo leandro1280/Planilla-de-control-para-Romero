@@ -1,0 +1,208 @@
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="bi bi-file-text"></i> Registro de Auditoría
+                </h2>
+                <span class="badge bg-info">{{paginacion.totalRegistros}} registros</span>
+            </div>
+        </div>
+    </div>
+
+    {{! Filtros }}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="/auditoria" class="row g-3">
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Usuario</label>
+                    <select name="usuario" id="usuario" class="form-select">
+                        <option value="todos" {{#if (eq filtros.usuario 'todos' )}}selected{{/if}}>Todos</option>
+                        {{#each usuarios}}
+                        <option value="{{this._id}}" {{#if (eq ../filtros.usuario this._id)}}selected{{/if}}>
+                            {{this.nombre}}
+                        </option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="accion" class="form-label">Acción</label>
+                    <select name="accion" id="accion" class="form-select">
+                        <option value="todos" {{#if (eq filtros.accion 'todos' )}}selected{{/if}}>Todas</option>
+                        <option value="CREAR" {{#if (eq filtros.accion 'CREAR' )}}selected{{/if}}>Crear</option>
+                        <option value="MODIFICAR" {{#if (eq filtros.accion 'MODIFICAR' )}}selected{{/if}}>Modificar
+                        </option>
+                        <option value="ELIMINAR" {{#if (eq filtros.accion 'ELIMINAR' )}}selected{{/if}}>Eliminar
+                        </option>
+                        <option value="LOGIN" {{#if (eq filtros.accion 'LOGIN' )}}selected{{/if}}>Login</option>
+                        <option value="LOGOUT" {{#if (eq filtros.accion 'LOGOUT' )}}selected{{/if}}>Logout</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="entidad" class="form-label">Entidad</label>
+                    <select name="entidad" id="entidad" class="form-select">
+                        <option value="todos" {{#if (eq filtros.entidad 'todos' )}}selected{{/if}}>Todas</option>
+                        {{#each entidades}}
+                        <option value="{{this}}" {{#if (eq ../filtros.entidad this)}}selected{{/if}}>{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="fechaDesde" class="form-label">Desde</label>
+                    <input type="date" name="fechaDesde" id="fechaDesde" class="form-control"
+                        value="{{filtros.fechaDesde}}">
+                </div>
+
+                <div class="col-md-2">
+                    <label for="fechaHasta" class="form-label">Hasta</label>
+                    <input type="date" name="fechaHasta" id="fechaHasta" class="form-control"
+                        value="{{filtros.fechaHasta}}">
+                </div>
+
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{! Tabla de registros }}
+    <div class="card">
+        <div class="card-body">
+            {{#if registros.length}}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Entidad</th>
+                            <th>Detalles</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each registros}}
+                        <tr>
+                            <td>
+                                <small>{{formatDate this.fecha}}</small>
+                            </td>
+                            <td>
+                                {{#if this.usuario}}
+                                <strong>{{this.usuario.nombre}}</strong><br>
+                                <small class="text-muted">{{this.usuario.email}}</small>
+                                {{else}}
+                                <span class="text-muted">Sistema</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                {{#if (eq this.accion 'CREAR')}}
+                                <span class="badge bg-success"><i class="bi bi-plus-circle"></i> Crear</span>
+                                {{else if (eq this.accion 'MODIFICAR')}}
+                                <span class="badge bg-warning"><i class="bi bi-pencil"></i> Modificar</span>
+                                {{else if (eq this.accion 'ELIMINAR')}}
+                                <span class="badge bg-danger"><i class="bi bi-trash"></i> Eliminar</span>
+                                {{else if (eq this.accion 'LOGIN')}}
+                                <span class="badge bg-info"><i class="bi bi-box-arrow-in-right"></i> Login</span>
+                                {{else if (eq this.accion 'LOGOUT')}}
+                                <span class="badge bg-secondary"><i class="bi bi-box-arrow-right"></i> Logout</span>
+                                {{else}}
+                                <span class="badge bg-secondary">{{this.accion}}</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <strong>{{this.entidad}}</strong>
+                                {{#if this.entidadId}}
+                                <br><small class="text-muted font-monospace">{{this.entidadId}}</small>
+                                {{/if}}
+                            </td>
+                            <td>
+                                {{#if this.detalles}}
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#detalles-{{this._id}}">
+                                    <i class="bi bi-eye"></i> Ver detalles
+                                </button>
+                                <div class="collapse mt-2" id="detalles-{{this._id}}">
+                                    <div class="card card-body bg-light">
+                                        <pre class="mb-0"><code>{{json this.detalles}}</code></pre>
+                                    </div>
+                                </div>
+                                {{else}}
+                                <span class="text-muted">-</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <small class="font-monospace">{{this.ip}}</small>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            {{! Paginación }}
+            {{#if (gt paginacion.totalPaginas 1)}}
+            <nav aria-label="Paginación de auditoría" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+                        <a class="page-link"
+                            href="?pagina={{subtract paginacion.paginaActual 1}}&usuario={{filtros.usuario}}&accion={{filtros.accion}}&entidad={{filtros.entidad}}&fechaDesde={{filtros.fechaDesde}}&fechaHasta={{filtros.fechaHasta}}">
+                            Anterior
+                        </a>
+                    </li>
+
+                    {{#each (buildPaginationPages paginacion.paginaActual paginacion.totalPaginas 5)}}
+                    <li class="page-item {{#if this.active}}active{{/if}}">
+                        <a class="page-link"
+                            href="{{this.url}}&usuario={{../filtros.usuario}}&accion={{../filtros.accion}}&entidad={{../filtros.entidad}}&fechaDesde={{../filtros.fechaDesde}}&fechaHasta={{../filtros.fechaHasta}}">
+                            {{this.numero}}
+                        </a>
+                    </li>
+                    {{/each}}
+
+                    <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+                        <a class="page-link"
+                            href="?pagina={{add paginacion.paginaActual 1}}&usuario={{filtros.usuario}}&accion={{filtros.accion}}&entidad={{filtros.entidad}}&fechaDesde={{filtros.fechaDesde}}&fechaHasta={{filtros.fechaHasta}}">
+                            Siguiente
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <p class="text-center text-muted">
+                Mostrando {{paginacion.desde}} - {{paginacion.hasta}} de {{paginacion.totalRegistros}} registros
+            </p>
+            {{/if}}
+            {{else}}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay registros de auditoría que coincidan con los filtros
+                seleccionados.
+            </div>
+            {{/if}}
+        </div>
+    </div>
+</div>
+
+<style>
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+    }
+
+    pre code {
+        font-size: 0.85rem;
+        color: #333;
+    }
+
+    .badge {
+        font-size: 0.85rem;
+    }
+</style>

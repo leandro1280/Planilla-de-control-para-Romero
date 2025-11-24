@@ -1,10 +1,11 @@
 const Product = require('../models/Product');
 const Movement = require('../models/Movement');
-const { createNotificationForAdmins } = require('./notificationController');
 const XLSX = require('xlsx');
+const { createNotificationForAdmins } = require('./notificationController');
+const { registrarAuditoria } = require('../middleware/auditoria');
 
 // @desc    Buscar producto por código (referencia o código de fabricante)
-// @route   GET /inventario/productos/buscar
+// @route   GET /inventario/buscar
 // @access  Private
 exports.buscarProductoPorCodigo = async (req, res) => {
   try {
@@ -86,8 +87,10 @@ exports.getProducts = async (req, res) => {
     const totalProductos = await Product.countDocuments(query);
     const totalPaginas = Math.ceil(totalProductos / limite);
 
-    // Obtener productos paginados
+    // Obtener productos paginados con información de usuarios
     const products = await Product.find(query)
+      .populate('creadoPor', 'nombre email')
+      .populate('actualizadoPor', 'nombre email')
       .sort({ referencia: 1 })
       .skip(salto)
       .limit(limite)
@@ -136,7 +139,7 @@ exports.getProducts = async (req, res) => {
 
 // @desc    Crear producto
 // @route   POST /inventario/productos
-// @access  Private (administrador, visor)
+// @access  Private (administrador, supervisor)
 exports.createProduct = async (req, res) => {
   try {
     const productData = {
@@ -148,6 +151,15 @@ exports.createProduct = async (req, res) => {
     };
 
     const product = await Product.create(productData);
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'CREAR', 'Producto', product._id, {
+      referencia: product.referencia,
+      nombre: product.nombre,
+      tipo: product.tipo,
+      existencia: product.existencia,
+      costoUnitario: product.costoUnitario
+    });
 
     // Crear notificación para administradores
     await createNotificationForAdmins(
@@ -182,7 +194,7 @@ exports.createProduct = async (req, res) => {
 
 // @desc    Actualizar producto
 // @route   PUT /inventario/productos/:id
-// @access  Private (administrador, visor)
+// @access  Private (administrador, supervisor)
 exports.updateProduct = async (req, res) => {
   try {
     let product = await Product.findById(req.params.id);
@@ -200,23 +212,44 @@ exports.updateProduct = async (req, res) => {
       existencia: req.body.existencia !== undefined ? parseInt(req.body.existencia) : product.existencia,
       detalle: req.body.detalle !== undefined ? req.body.detalle.trim() : product.detalle,
       tipo: req.body.tipo !== undefined && req.body.tipo.trim() !== '' ? req.body.tipo.trim() : product.tipo,
-      costoUnitario: req.body.costoUnitario !== undefined && req.body.costoUnitario !== '' 
-        ? parseFloat(req.body.costoUnitario) || null 
+      costoUnitario: req.body.costoUnitario !== undefined && req.body.costoUnitario !== ''
+        ? parseFloat(req.body.costoUnitario) || null
         : product.costoUnitario,
-      codigoFabricante: req.body.codigoFabricante !== undefined && req.body.codigoFabricante.trim() !== '' 
-        ? req.body.codigoFabricante.trim() 
+      codigoFabricante: req.body.codigoFabricante !== undefined && req.body.codigoFabricante.trim() !== ''
+        ? req.body.codigoFabricante.trim()
         : (req.body.codigoFabricante === '' ? null : product.codigoFabricante),
       actualizadoPor: req.user._id
     };
 
-    product = await Product.findByIdAndUpdate(req.params.id, updateData, {
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     });
 
+    // Registrar auditoría con detalles de cambios
+    const cambios = {};
+    if (product.existencia !== updatedProduct.existencia) {
+      cambios.existenciaAnterior = product.existencia;
+      cambios.existenciaNueva = updatedProduct.existencia;
+    }
+    if (product.costoUnitario !== updatedProduct.costoUnitario) {
+      cambios.costoAnterior = product.costoUnitario;
+      cambios.costoNuevo = updatedProduct.costoUnitario;
+    }
+    if (product.nombre !== updatedProduct.nombre) {
+      cambios.nombreAnterior = product.nombre;
+      cambios.nombreNuevo = updatedProduct.nombre;
+    }
+
+    await registrarAuditoria(req, 'MODIFICAR', 'Producto', updatedProduct._id, {
+      referencia: updatedProduct.referencia,
+      nombre: updatedProduct.nombre,
+      cambios
+    });
+
     res.status(200).json({
       success: true,
-      data: product
+      data: updatedProduct
     });
   } catch (error) {
     res.status(400).json({
@@ -249,6 +282,15 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
+    // Registrar auditoría antes de eliminar
+    await registrarAuditoria(req, 'ELIMINAR', 'Producto', product._id, {
+      referencia: product.referencia,
+      nombre: product.nombre,
+      tipo: product.tipo,
+      existenciaFinal: product.existencia,
+      costoUnitario: product.costoUnitario
+    });
+
     await Product.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -265,7 +307,7 @@ exports.deleteProduct = async (req, res) => {
 
 // @desc    Registrar movimiento
 // @route   POST /inventario/movimientos
-// @access  Private (administrador, visor)
+// @access  Private (administrador, supervisor)
 exports.createMovement = async (req, res) => {
   try {
     const { referencia, tipo, cantidad, costoUnitario, nota } = req.body;
@@ -331,6 +373,16 @@ exports.createMovement = async (req, res) => {
       producto: product._id,
       usuario: req.user._id,
       tipoProducto: product.tipo || ''
+    });
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'CREAR', 'Movimiento', movimiento._id, {
+      referencia: product.referencia,
+      tipo: tipo,
+      cantidad: cantidadNum,
+      nuevaExistencia: nuevaExistencia,
+      costoUnitario: movimiento.costoUnitario,
+      costoTotal: movimiento.costoTotal
     });
 
     // Crear notificación para administradores
@@ -425,7 +477,7 @@ exports.importFromExcel = async (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    
+
     // range: 1 salta la primera fila (índice 0) y usa la fila 2 (índice 1) como encabezados
     const data = XLSX.utils.sheet_to_json(sheet, { range: 1 });
 
@@ -470,7 +522,7 @@ exports.importFromExcel = async (req, res) => {
           // Actualizamos existencia solo si es válida en el excel? O sumamos? 
           // Generalmente en importación masiva de inventario inicial se sobrescribe.
           if (!isNaN(productData.existencia)) {
-             product.existencia = productData.existencia;
+            product.existencia = productData.existencia;
           }
           product.detalle = productData.detalle || product.detalle;
           product.tipo = productData.tipo || product.tipo;

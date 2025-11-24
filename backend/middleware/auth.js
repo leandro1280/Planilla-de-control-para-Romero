@@ -97,7 +97,7 @@ exports.canCreate = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No autorizado' });
   }
 
-  if (['administrador', 'visor'].includes(req.user.rol)) {
+  if (['administrador', 'supervisor'].includes(req.user.rol)) {
     return next();
   }
 

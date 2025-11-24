@@ -49,9 +49,9 @@ exports.getPerfiles = async (req, res) => {
           }
         }
       },
-      visor: {
-        nombre: 'Visor',
-        icono: 'bi-eye',
+      supervisor: {
+        nombre: 'Supervisor',
+        icono: 'bi-person-badge',
         color: 'primary',
         descripcion: 'Rol para coordinadores y personal autorizado. Puede gestionar inventario y movimientos, pero no eliminar registros ni gestionar usuarios.',
         funciones: [
@@ -95,8 +95,8 @@ exports.getPerfiles = async (req, res) => {
           }
         }
       },
-      usuario_comun: {
-        nombre: 'Usuario Común',
+      operario: {
+        nombre: 'Operario',
         icono: 'bi-person',
         color: 'secondary',
         descripcion: 'Rol para personal operativo. Solo puede visualizar y descargar información de componentes utilizados.',

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { createNotificationForAdmins } = require('./notificationController');
+const { registrarAuditoria } = require('../middleware/auditoria');
 
 // @desc    Registrar usuario
 // @route   POST /auth/register
@@ -23,11 +24,18 @@ exports.register = async (req, res) => {
       nombre,
       email,
       password,
-      rol: rol || 'usuario_comun',
+      rol: rol || 'operario',
       creadoPor: req.user ? req.user._id : null
     });
 
     if (user) {
+      // Registrar auditoría
+      await registrarAuditoria(req, 'CREAR', 'Usuario', user._id, {
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol
+      });
+
       // Crear notificación para otros administradores (si no es el mismo que está creando)
       if (req.user && req.user._id.toString() !== user._id.toString()) {
         await createNotificationForAdmins(
@@ -193,6 +201,15 @@ exports.login = async (req, res) => {
     console.log('\n✅ CONTRASEÑA CORRECTA');
     console.log(`✅ LOGIN EXITOSO: ${user.nombre} (${user.email})`);
 
+    // Establecer req.user temporalmente para la auditoría
+    req.user = user;
+
+    // Registrar auditoría de login
+    await registrarAuditoria(req, 'LOGIN', 'Usuario', user._id, {
+      email: user.email,
+      rol: user.rol
+    });
+
     const token = generateToken(user._id);
     console.log('   Token generado (primeros 30 chars):', token?.substring(0, 30) + '...');
 
@@ -238,6 +255,14 @@ exports.login = async (req, res) => {
 // @route   GET /auth/logout
 // @access  Private
 exports.logout = async (req, res) => {
+  // Registrar auditoría de logout antes de limpiar
+  if (req.user) {
+    await registrarAuditoria(req, 'LOGOUT', 'Usuario', req.user._id, {
+      email: req.user.email,
+      rol: req.user.rol
+    });
+  }
+
   // Limpiar cookie
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),

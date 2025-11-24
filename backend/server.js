@@ -10,11 +10,18 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 const { setupSecurity } = require('./middleware/security');
 const { errorHandler } = require('./middleware/errorHandler');
+const { iniciarTareasProgramadas } = require('./services/servicioCron');
 
 const app = express();
 
-// Conectar a MongoDB
-connectDB();
+// Conectar a MongoDB (no bloquea el servidor si falla)
+connectDB().catch(err => {
+  console.error(`⚠️  Error en conexión inicial a MongoDB: ${err.message}`);
+  console.warn(`⚠️  El servidor continuará ejecutándose`);
+});
+
+// Iniciar tareas programadas (Notificaciones)
+iniciarTareasProgramadas();
 
 // Middleware básico
 app.use(helmet({
@@ -59,6 +66,7 @@ app.engine('hbs', hbs.engine({
       }
     },
     eq: (a, b) => a === b,
+    toString: (val) => val ? val.toString() : '',
     gt: (a, b) => a > b,
     lt: (a, b) => a < b,
     lte: (a, b) => a <= b,
@@ -135,6 +143,7 @@ app.use('/inventario', require('./routes/inventario'));
 app.use('/movimientos', require('./routes/movimientos'));
 app.use('/mantenimientos', require('./routes/mantenimientos'));
 app.use('/perfiles', require('./routes/perfiles'));
+// app.use('/auditoria', require('./routes/auditoria')); // Temporalmente deshabilitada por problemas de rendimiento
 app.use('/api', require('./routes/api'));
 
 // Ruta principal
@@ -150,8 +159,32 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+// Manejar errores no capturados para que el servidor no se caiga
+process.on('uncaughtException', (error) => {
+  console.error('❌ Error no capturado:', error);
+  console.warn('⚠️  El servidor continuará ejecutándose');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Promesa rechazada no manejada:', reason);
+  console.warn('⚠️  El servidor continuará ejecutándose');
+});
+
+// Iniciar servidor
+const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Manejar errores del servidor
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Puerto ${PORT} ya está en uso`);
+    process.exit(1);
+  } else {
+    console.error(`❌ Error del servidor: ${error.message}`);
+  }
+});
+
+// Force restart
 

@@ -25,10 +25,10 @@ const userSchema = new mongoose.Schema({
   rol: {
     type: String,
     enum: {
-      values: ['administrador', 'visor', 'usuario_comun'],
+      values: ['administrador', 'supervisor', 'operario'],
       message: 'Rol inválido'
     },
-    default: 'usuario_comun',
+    default: 'operario',
     required: true
   },
   activo: {

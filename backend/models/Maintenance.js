@@ -40,6 +40,19 @@ const maintenanceSchema = new mongoose.Schema({
     min: [0, 'Las horas de vida útil no pueden ser negativas'],
     default: null
   },
+  tipoFrecuencia: {
+    type: String,
+    enum: {
+      values: ['horas', 'fecha'],
+      message: 'El tipo de frecuencia debe ser horas o fecha'
+    },
+    default: 'horas'
+  },
+  intervaloDias: {
+    type: Number,
+    min: [1, 'El intervalo debe ser al menos 1 día'],
+    required: false
+  },
   observaciones: {
     type: String,
     trim: true,

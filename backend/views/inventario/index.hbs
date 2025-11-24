@@ -77,9 +77,23 @@
       <tr
         class="{{#if (eq this.existencia 0)}}table-danger opacity-75{{else if (lte this.existencia 4)}}table-danger{{else if (lt this.existencia 10)}}table-warning{{/if}}">
         <td class="fw-semibold" data-label="Referencia:">
-          {{this.referencia}}
-          {{#if (eq this.existencia 0)}}
-          <span class="badge bg-danger ms-2" title="Producto sin stock">Sin stock</span>
+          <div>
+            {{this.referencia}}
+            {{#if (eq this.existencia 0)}}
+            <span class="badge bg-danger ms-2" title="Producto sin stock">Sin stock</span>
+            {{/if}}
+          </div>
+          {{#if this.creadoPor}}
+          <small class="text-muted d-block mt-1" title="Creado por: {{this.creadoPor.nombre}}">
+            <i class="bi bi-person-plus me-1"></i>{{this.creadoPor.nombre}}
+            {{#if this.actualizadoPor}}
+              {{#unless (eq this.creadoPor._id this.actualizadoPor._id)}}
+              <span class="ms-2" title="Última modificación por: {{this.actualizadoPor.nombre}}">
+                <i class="bi bi-pencil"></i> {{this.actualizadoPor.nombre}}
+              </span>
+              {{/unless}}
+            {{/if}}
+          </small>
           {{/if}}
         </td>
         <td data-label="Descripción:">{{this.nombre}}</td>
@@ -102,7 +116,7 @@
         </td>
         <td class="text-end" data-label="">
           <div class="btn-group" role="group">
-            {{#if (or (eq ../usuario.rol 'administrador') (eq ../usuario.rol 'visor'))}}
+            {{#if (or (eq ../usuario.rol 'administrador') (eq ../usuario.rol 'supervisor'))}}
             <button class="btn btn-sm btn-outline-primary btn-edit" 
               data-id="{{this._id}}"
               data-referencia="{{this.referencia}}"
@@ -196,7 +210,7 @@
 {{/if}}
 {{/if}}
 
-{{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'visor'))}}
+{{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
 <section class="panel card border-0 shadow-sm mb-4 mt-4">
   <div class="card-body">
     <h2 class="panel-title mb-4">Registrar movimiento</h2>

@@ -42,33 +42,52 @@
 
   {{> footer}}
 
-  <!-- Modal Escáner QR Universal (disponible en todas las páginas) -->
-  <div class="modal fade" id="universalQrModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header border-0 bg-primary text-white">
-          <h5 class="modal-title fw-bold">
-            <i class="bi bi-qr-code-scan me-2"></i>Escanear Código QR
+  <!-- Modal Escáner QR Universal (Fullscreen en móvil) -->
+  <div class="modal fade" id="universalQrModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-fullscreen-md-down modal-dialog-centered">
+      <div class="modal-content qr-scanner-modal">
+        <div class="modal-header border-0 bg-dark text-white position-absolute top-0 start-0 end-0 z-3">
+          <h5 class="modal-title fw-bold d-flex align-items-center">
+            <i class="bi bi-qr-code-scan me-2"></i>
+            <span class="d-none d-sm-inline">Escanear Código QR</span>
+            <span class="d-inline d-sm-none">Escáner QR</span>
           </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-        <div class="modal-body">
-          <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+        <div class="modal-body p-0 position-relative" style="min-height: 70vh;">
+          <!-- Instrucciones (solo en desktop) -->
+          <div class="alert alert-info d-none d-md-flex align-items-center m-3 position-absolute top-0 start-0 end-0 z-2" style="margin-top: 60px !important;" role="alert">
             <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-            <div>
+            <div class="small">
               <strong>Escáner Universal</strong><br>
-              <small>Escanea códigos QR de fabricantes o tus propios productos. El sistema intentará encontrar el producto o te permitirá crear uno nuevo.</small>
+              Escanea códigos QR de fabricantes o tus propios productos. El sistema intentará encontrar el producto automáticamente.
             </div>
           </div>
           
-          <div id="universal-qr-result" class="mb-3 d-none"></div>
+          <!-- Resultado del escaneo -->
+          <div id="universal-qr-result" class="position-absolute top-0 start-0 end-0 z-3 m-3 d-none" style="margin-top: 60px !important;"></div>
           
-          <div id="universal-qr-scanner" style="min-height: 400px; position: relative;">
+          <!-- Contenedor del escáner -->
+          <div id="universal-qr-scanner" class="w-100 h-100 d-flex align-items-center justify-content-center position-relative" style="min-height: 70vh;">
+            <!-- Indicador de carga -->
+            <div class="text-center text-white position-absolute z-2" id="qr-loading">
+              <div class="spinner-border mb-3" role="status">
+                <span class="visually-hidden">Cargando cámara...</span>
+              </div>
+              <p class="small">Iniciando cámara...</p>
+            </div>
             <!-- El escáner se inicializará aquí -->
           </div>
+          
+          <!-- Guía visual para móvil -->
+          <div class="qr-guide d-none d-md-block position-absolute top-50 start-50 translate-middle z-2">
+            <div class="qr-guide-box"></div>
+          </div>
         </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <div class="modal-footer border-0 bg-dark text-white position-absolute bottom-0 start-0 end-0 z-3">
+          <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Cerrar
+          </button>
         </div>
       </div>
     </div>
