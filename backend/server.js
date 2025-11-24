@@ -3,25 +3,22 @@ const express = require('express');
 const mongoose = require('mongoose');
 const hbs = require('express-handlebars');
 const path = require('path');
-const morgan = require('morgan');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-
+const morgan = require('morgan');
 const connectDB = require('./config/database');
 const { setupSecurity } = require('./middleware/security');
-const { errorHandler } = require('./middleware/errorHandler');
+const { sanitizeBody, validateObjectId, sanitizeSearch } = require('./middleware/sanitize');
+const errorHandler = require('./middleware/errorHandler').errorHandler;
 const { iniciarTareasProgramadas } = require('./services/servicioCron');
 
-const app = express();
-
-// Conectar a MongoDB (no bloquea el servidor si falla)
+// Conectar a MongoDB
 connectDB().catch(err => {
-  console.error(`⚠️  Error en conexión inicial a MongoDB: ${err.message}`);
-  console.warn(`⚠️  El servidor continuará ejecutándose`);
+  console.error('❌ Error conectando a MongoDB:', err.message);
 });
 
-// Iniciar tareas programadas (Notificaciones)
-iniciarTareasProgramadas();
+// Crear app Express
+const app = express();
 
 // Middleware básico - Seguridad mejorada
 app.use(helmet({
@@ -45,16 +42,19 @@ app.use(helmet({
     preload: true
   }
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
 // Middleware de sanitización y seguridad
-const { sanitizeBody, validateObjectId, sanitizeSearch } = require('./middleware/sanitize');
 app.use(sanitizeBody);
 app.use(validateObjectId);
 app.use(sanitizeSearch);
+
+// Configurar seguridad
+setupSecurity(app);
 
 // Configurar Handlebars
 app.engine('hbs', hbs.engine({
@@ -63,91 +63,61 @@ app.engine('hbs', hbs.engine({
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   helpers: {
-    formatNumber: (num) => {
-      if (!num && num !== 0) return '-';
-      return Number(num).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    formatNumber: (value) => {
+      if (value === null || value === undefined) return '-';
+      return Number(value).toLocaleString('es-AR');
     },
-    formatCurrency: (num) => {
-      if (num === null || num === undefined) return '-';
-      if (!num && num !== 0) return '-';
-      const numValue = Number(num);
-      if (isNaN(numValue)) return '-';
-      return numValue.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    formatCurrency: (value) => {
+      if (value === null || value === undefined) return '-';
+      return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+      }).format(value);
     },
-    formatDate: (date) => {
-      if (!date) return '-';
-      try {
-        const fecha = new Date(date);
-        return fecha.toLocaleString('es-AR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } catch (error) {
-        return '-';
-      }
+    formatDate: (value) => {
+      if (!value) return '-';
+      const date = new Date(value);
+      return date.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     },
     eq: (a, b) => a === b,
-    toString: (val) => val ? val.toString() : '',
     gt: (a, b) => a > b,
     lt: (a, b) => a < b,
     lte: (a, b) => a <= b,
-    or: (a, b) => a || b,
-    year: () => new Date().getFullYear(),
-    and: (a, b) => a && b,
     gte: (a, b) => a >= b,
-    add: (a, b) => (parseInt(a) || 0) + (parseInt(b) || 0),
-    subtract: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
-    // Helper para construir URL de paginación preservando filtros
-    buildPaginationUrl: (paginaActual, cambio, baseUrl) => {
-      if (typeof paginaActual !== 'number') paginaActual = parseInt(paginaActual) || 1;
-      if (typeof cambio !== 'number') cambio = parseInt(cambio) || 0;
-
-      const nuevaPagina = paginaActual + cambio;
-      if (nuevaPagina < 1) return '#';
-
-      const params = new URLSearchParams(baseUrl || '');
-      params.set('pagina', nuevaPagina.toString());
-      const urlParams = params.toString();
-      return urlParams ? '?' + urlParams : '?pagina=' + nuevaPagina;
+    or: (a, b) => a || b,
+    and: (a, b) => a && b,
+    year: () => new Date().getFullYear(),
+    add: (a, b) => Number(a) + Number(b),
+    subtract: (a, b) => Number(a) - Number(b),
+    json: (context) => JSON.stringify(context),
+    toString: (value) => String(value),
+    objectIdEq: (a, b) => String(a) === String(b),
+    buildPaginationUrl: (baseUrl, query) => {
+      const params = new URLSearchParams(query);
+      return `${baseUrl}?${params.toString()}`;
     },
-    // Helper para generar números de página a mostrar
-    generatePaginationPages: (paginaActual, totalPaginas, baseUrl) => {
-      if (typeof paginaActual !== 'number') paginaActual = parseInt(paginaActual) || 1;
-      if (typeof totalPaginas !== 'number') totalPaginas = parseInt(totalPaginas) || 1;
-
-      const paginas = [];
-      const maxPaginas = 7; // Máximo de números de página a mostrar
-
-      if (totalPaginas <= 1) {
-        return paginas; // No mostrar paginación si hay 1 o menos páginas
+    generatePaginationPages: (currentPage, totalPages) => {
+      const pages = [];
+      const maxPages = 5;
+      let start = Math.max(1, currentPage - Math.floor(maxPages / 2));
+      let end = Math.min(totalPages, start + maxPages - 1);
+      
+      if (end - start < maxPages - 1) {
+        start = Math.max(1, end - maxPages + 1);
       }
-
-      let inicio = Math.max(1, paginaActual - Math.floor(maxPaginas / 2));
-      let fin = Math.min(totalPaginas, inicio + maxPaginas - 1);
-
-      // Ajustar inicio si nos acercamos al final
-      if (fin - inicio < maxPaginas - 1) {
-        inicio = Math.max(1, fin - maxPaginas + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
       }
-
-      for (let i = inicio; i <= fin; i++) {
-        const params = new URLSearchParams(baseUrl || '');
-        params.set('pagina', i.toString());
-        const urlParams = params.toString();
-        paginas.push({
-          numero: i,
-          active: i === paginaActual,
-          disabled: false,
-          url: urlParams ? '?' + urlParams : '?pagina=' + i
-        });
-      }
-
-      return paginas;
-    },
-    json: (context) => JSON.stringify(context)
+      return pages;
+    }
   }
 }));
 
@@ -156,9 +126,6 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Middleware de seguridad
-setupSecurity(app);
 
 // Rutas
 app.use('/auth', require('./routes/auth'));
@@ -172,6 +139,7 @@ app.use('/historial', require('./routes/historial'));
 app.use('/estadisticas', require('./routes/estadisticasViews'));
 app.use('/api', require('./routes/api'));
 app.use('/api/estadisticas', require('./routes/estadisticas'));
+app.use('/api/notificaciones', require('./routes/notificaciones'));
 app.use('/reportes', require('./routes/reportes'));
 
 // Ruta principal
@@ -185,15 +153,8 @@ app.get('/', (req, res) => {
 // Middleware de manejo de errores (debe ir al final)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-
-// Solo iniciar servidor si no estamos en modo test
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-    console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  });
-}
+// Iniciar tareas programadas (Cron)
+iniciarTareasProgramadas();
 
 // Manejar errores no capturados para que el servidor no se caiga
 process.on('uncaughtException', (error) => {
@@ -206,24 +167,24 @@ process.on('unhandledRejection', (reason, promise) => {
   console.warn('⚠️  El servidor continuará ejecutándose');
 });
 
-// Iniciar servidor solo si no estamos en modo test
-let server;
+// Exportar app para tests (SIEMPRE, antes de iniciar servidor)
+module.exports = app;
+
+// Iniciar servidor solo si NO estamos en modo test
 if (process.env.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => {
+  const PORT = process.env.PORT || 3000;
+  const server = app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`🌐 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   });
+
+  // Manejar errores del servidor
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Puerto ${PORT} ya está en uso`);
+      process.exit(1);
+    } else {
+      console.error('❌ Error del servidor:', error);
+    }
+  });
 }
-
-// Manejar errores del servidor
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Puerto ${PORT} ya está en uso`);
-    process.exit(1);
-  } else {
-    console.error(`❌ Error del servidor: ${error.message}`);
-  }
-});
-
-// Force restart
-

@@ -31,7 +31,9 @@ const setupSecurity = (app) => {
   app.use(mongoSanitize({
     replaceWith: '_', // Reemplazar caracteres peligrosos
     onSanitize: ({ req, key }) => {
-      console.warn(`⚠️ Intento de inyección NoSQL detectado en ${key}`);
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn(`⚠️ Intento de inyección NoSQL detectado en ${key}`);
+      }
     }
   }));
   
@@ -40,25 +42,28 @@ const setupSecurity = (app) => {
     whitelist: ['busqueda', 'tipo', 'stock', 'pagina', 'porPagina'] // Permitir múltiples valores en estos campos
   }));
   
-  // Rate limiting general para API
-  app.use('/api/', limiter);
-  
-  // Rate limiting específico para autenticación (protección contra fuerza bruta)
-  app.use('/auth/login', authLimiter);
-  app.use('/auth/register', authLimiter);
-  
-  // Rate limiting para operaciones de escritura (previene spam/abuso)
-  app.use('/inventario/productos', writeLimiter);
-  app.use('/inventario/movimientos', writeLimiter);
-  app.use('/mantenimientos', writeLimiter);
-  
-  // Rate limiting para importaciones (operación pesada)
-  const importLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutos
-    max: 3, // máximo 3 importaciones cada 5 minutos
-    message: 'Demasiadas importaciones, espera 5 minutos antes de intentar nuevamente.',
-  });
-  app.use('/inventario/importar', importLimiter);
+  // Solo aplicar rate limiting si NO estamos en modo test
+  if (process.env.NODE_ENV !== 'test') {
+    // Rate limiting general para API
+    app.use('/api/', limiter);
+    
+    // Rate limiting específico para autenticación (protección contra fuerza bruta)
+    app.use('/auth/login', authLimiter);
+    app.use('/auth/register', authLimiter);
+    
+    // Rate limiting para operaciones de escritura (previene spam/abuso)
+    app.use('/inventario/productos', writeLimiter);
+    app.use('/inventario/movimientos', writeLimiter);
+    app.use('/mantenimientos', writeLimiter);
+    
+    // Rate limiting para importaciones (operación pesada)
+    const importLimiter = rateLimit({
+      windowMs: 5 * 60 * 1000, // 5 minutos
+      max: 3, // máximo 3 importaciones cada 5 minutos
+      message: 'Demasiadas importaciones, espera 5 minutos antes de intentar nuevamente.',
+    });
+    app.use('/inventario/importar', importLimiter);
+  }
 };
 
 module.exports = { setupSecurity, limiter, authLimiter, writeLimiter };
