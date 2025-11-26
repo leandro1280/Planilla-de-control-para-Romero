@@ -161,6 +161,16 @@ exports.getProducts = async (req, res) => {
 
     console.log(`📊 Inventario - Productos encontrados: ${totalProductos}, Mostrando: ${products.length}, Página: ${paginaActual}/${totalPaginas}`);
 
+    // Construir baseUrl con los filtros actuales
+    const queryParams = {};
+    if (busqueda) queryParams.busqueda = busqueda;
+    if (tipo && tipo !== 'todos') queryParams.tipo = tipo;
+    if (stock && stock !== 'todos') queryParams.stock = stock;
+    
+    const baseUrl = '/inventario';
+    const queryString = new URLSearchParams(queryParams).toString();
+    const baseUrlWithParams = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
     res.render('inventario/index', {
       title: 'Inventario - Romero Panificados',
       currentPage: 'inventario',
@@ -182,7 +192,9 @@ exports.getProducts = async (req, res) => {
         tieneAnterior: paginaActual > 1,
         tieneSiguiente: paginaActual < totalPaginas,
         desde: salto + 1,
-        hasta: Math.min(salto + limite, totalProductos)
+        hasta: Math.min(salto + limite, totalProductos),
+        baseUrl: baseUrlWithParams,
+        queryParams: queryParams
       }
     });
   } catch (error) {

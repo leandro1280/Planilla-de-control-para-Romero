@@ -176,24 +176,77 @@ app.engine('hbs', hbs.engine({
     json: (context) => JSON.stringify(context),
     toString: (value) => String(value),
     objectIdEq: (a, b) => String(a) === String(b),
-    buildPaginationUrl: (baseUrl, query) => {
-      const params = new URLSearchParams(query);
-      return `${baseUrl}?${params.toString()}`;
+    buildPaginationUrl: function(currentPage, offset, baseUrl) {
+      try {
+        const page = Number(currentPage) + Number(offset);
+        const base = baseUrl || '/inventario';
+        
+        if (page < 1) {
+          // Si la página es menor a 1, devolver la base sin parámetro de página
+          const urlParts = base.split('?');
+          const basePath = urlParts[0];
+          const existingParams = urlParts[1] ? new URLSearchParams(urlParts[1]) : new URLSearchParams();
+          existingParams.delete('pagina'); // Eliminar parámetro de página
+          const queryString = existingParams.toString();
+          return queryString ? `${basePath}?${queryString}` : basePath;
+        }
+        
+        // Parsear la baseUrl para extraer los parámetros existentes
+        const urlParts = base.split('?');
+        const basePath = urlParts[0];
+        const existingParams = urlParts[1] ? new URLSearchParams(urlParts[1]) : new URLSearchParams();
+        
+        // Actualizar o agregar el parámetro de página
+        existingParams.set('pagina', page.toString());
+        
+        const queryString = existingParams.toString();
+        return queryString ? `${basePath}?${queryString}` : basePath;
+      } catch (error) {
+        console.error('Error en buildPaginationUrl:', error);
+        return baseUrl || '/inventario';
+      }
     },
-    generatePaginationPages: (currentPage, totalPages) => {
-      const pages = [];
-      const maxPages = 5;
-      let start = Math.max(1, currentPage - Math.floor(maxPages / 2));
-      let end = Math.min(totalPages, start + maxPages - 1);
-      
-      if (end - start < maxPages - 1) {
-        start = Math.max(1, end - maxPages + 1);
+    generatePaginationPages: function(currentPage, totalPages, baseUrl) {
+      try {
+        const current = Number(currentPage) || 1;
+        const total = Number(totalPages) || 1;
+        const maxPages = 5;
+        
+        if (total <= 1) return [];
+        
+        const pages = [];
+        let start = Math.max(1, current - Math.floor(maxPages / 2));
+        let end = Math.min(total, start + maxPages - 1);
+        
+        if (end - start < maxPages - 1) {
+          start = Math.max(1, end - maxPages + 1);
+        }
+        
+        // Parsear baseUrl para mantener los parámetros de query
+        const base = baseUrl || '/inventario';
+        const urlParts = base.split('?');
+        const basePath = urlParts[0];
+        const existingParams = urlParts[1] ? new URLSearchParams(urlParts[1]) : new URLSearchParams();
+        
+        // Crear una copia de los parámetros base para cada página
+        for (let i = start; i <= end; i++) {
+          const params = new URLSearchParams(existingParams);
+          params.set('pagina', i.toString());
+          const queryString = params.toString();
+          const url = queryString ? `${basePath}?${queryString}` : basePath;
+          
+          pages.push({
+            numero: i,
+            active: i === current,
+            url: url
+          });
+        }
+        
+        return pages;
+      } catch (error) {
+        console.error('Error en generatePaginationPages:', error);
+        return [];
       }
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
     },
     buildPaginationPages: function(currentPage, totalPages, maxPagesToShow) {
       try {
