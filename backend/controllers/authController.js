@@ -55,6 +55,7 @@ exports.register = async (req, res) => {
       return res.status(201).json({
         success: true,
         message: 'Usuario creado correctamente',
+        warning: 'IMPORTANTE: Recuerde informar al usuario su contraseña. Si la olvida, NO podrá recuperarla. El usuario podrá cambiarla después de iniciar sesión.',
         data: {
           _id: user._id,
           nombre: user.nombre,
@@ -233,5 +234,112 @@ exports.renderRegister = async (req, res) => {
       layout: 'main'
     });
   }
+};
+
+// @desc    Cambiar contraseña del usuario actual
+// @route   PUT /auth/cambiar-password
+// @access  Private
+exports.cambiarPassword = async (req, res) => {
+  try {
+    const { passwordActual, nuevaPassword, confirmarPassword } = req.body;
+
+    // Validaciones
+    if (!passwordActual || !nuevaPassword || !confirmarPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Todos los campos son obligatorios'
+      });
+    }
+
+    if (nuevaPassword !== confirmarPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las contraseñas nuevas no coinciden'
+      });
+    }
+
+    if (nuevaPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
+    // Validar formato de contraseña (mayúscula, minúscula, número)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(nuevaPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
+      });
+    }
+
+    // Obtener usuario con contraseña
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Verificar contraseña actual
+    const passwordMatch = await user.matchPassword(passwordActual);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'La contraseña actual es incorrecta'
+      });
+    }
+
+    // Verificar que la nueva contraseña sea diferente
+    const nuevaPasswordMatch = await user.matchPassword(nuevaPassword);
+    if (nuevaPasswordMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contraseña debe ser diferente a la actual'
+      });
+    }
+
+    // Actualizar contraseña
+    user.password = nuevaPassword;
+    await user.save();
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'MODIFICAR', 'Usuario', user._id, {
+      email: user.email,
+      nombre: user.nombre,
+      cambio: 'Contraseña actualizada'
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Contraseña actualizada correctamente'
+    });
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Error al cambiar la contraseña'
+    });
+  }
+};
+
+// @desc    Renderizar vista de cambio de contraseña
+// @route   GET /auth/cambiar-password
+// @access  Private
+exports.renderCambiarPassword = (req, res) => {
+  res.render('auth/cambiar-password', {
+    title: 'Cambiar Contraseña - Romero Panificados',
+    layout: 'main',
+    currentPage: 'perfil',
+    usuario: {
+      nombre: req.user.nombre,
+      email: req.user.email,
+      rol: req.user.rol
+    }
+  });
 };
 

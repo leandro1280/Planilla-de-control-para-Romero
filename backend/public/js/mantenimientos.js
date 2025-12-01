@@ -252,45 +252,83 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = Object.fromEntries(formData);
       console.log('📦 Datos del formulario:', data);
 
-      // Validar que se haya seleccionado un producto
-      const productoSelect = document.getElementById('mantenimiento-producto');
-      if (!productoSelect || !productoSelect.value) {
-        alert('Por favor selecciona un producto');
-        productoSelect.focus();
-        return;
-      }
+      // Validar según tipo de registro
+      const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
+      
+      if (tipoRegistro === 'maquina') {
+        const maquinaSelect = document.getElementById('mantenimiento-maquina');
+        if (!maquinaSelect || !maquinaSelect.value) {
+          alert('Por favor selecciona una máquina');
+          maquinaSelect?.focus();
+          return;
+        }
+      } else {
+        // Validar que se haya seleccionado un producto
+        const productoSelect = document.getElementById('mantenimiento-producto');
+        if (!productoSelect || !productoSelect.value) {
+          alert('Por favor selecciona un producto');
+          productoSelect?.focus();
+          return;
+        }
 
-      // Validar que el producto tenga stock
-      const optionSelected = productoSelect.options[productoSelect.selectedIndex];
-      const stockDisponible = parseInt(optionSelected.dataset.stock) || 0;
+        // Validar que el producto tenga stock
+        const optionSelected = productoSelect.options[productoSelect.selectedIndex];
+        const stockDisponible = parseInt(optionSelected.dataset.stock) || 0;
 
-      if (stockDisponible < 1) {
-        const confirmacion = confirm('⚠️ ATENCIÓN: Este producto no tiene stock disponible (0 unidades).\n\n¿Deseas registrar el mantenimiento de todas formas?\n\nNOTA: No se descontará stock del inventario.');
-        if (!confirmacion) {
+        if (stockDisponible < 1) {
+          const confirmacion = confirm('⚠️ ATENCIÓN: Este producto no tiene stock disponible (0 unidades).\n\n¿Deseas registrar el mantenimiento de todas formas?\n\nNOTA: No se descontará stock del inventario.');
+          if (!confirmacion) {
+            return;
+          }
+        }
+
+        // Validar campos obligatorios
+        const equipo = document.getElementById('mantenimiento-equipo')?.value.trim();
+        if (!equipo) {
+          alert('Por favor ingresa el equipo donde se instala la pieza');
+          document.getElementById('mantenimiento-equipo')?.focus();
           return;
         }
       }
 
-      // Validar campos obligatorios
-      const equipo = document.getElementById('mantenimiento-equipo').value.trim();
-      if (!equipo) {
-        alert('Por favor ingresa el equipo donde se instala la pieza');
-        document.getElementById('mantenimiento-equipo').focus();
-        return;
+      // Obtener tipo de registro (máquina o equipo manual)
+      const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
+      const maquinaSelect = document.getElementById('mantenimiento-maquina');
+      const equipoInput = document.getElementById('mantenimiento-equipo');
+      
+      // Procesar repuestos utilizados
+      const repuestosUtilizados = [];
+      const repuestosContainer = document.getElementById('repuestos-mantenimiento-container');
+      if (repuestosContainer) {
+        repuestosContainer.querySelectorAll('.repuesto-mantenimiento-item').forEach(item => {
+          const productoId = item.querySelector('select[name*="[producto]"]')?.value;
+          const cantidad = item.querySelector('input[name*="[cantidad]"]')?.value;
+          const costoUnitario = item.querySelector('input[name*="[costoUnitario]"]')?.value;
+          
+          if (productoId && cantidad) {
+            repuestosUtilizados.push({
+              producto: productoId,
+              cantidad: parseInt(cantidad),
+              costoUnitario: costoUnitario ? parseFloat(costoUnitario) : 0
+            });
+          }
+        });
       }
 
       // Preparar datos
       const maintenanceData = {
-        productoId: data.productoId,
+        maquinaId: tipoRegistro === 'maquina' && maquinaSelect?.value ? maquinaSelect.value : null,
+        productoId: tipoRegistro === 'equipo' && data.productoId ? data.productoId : null,
         tipo: data.tipo || 'preventivo',
-        equipo: data.equipo || '',
+        equipo: tipoRegistro === 'equipo' ? (equipoInput?.value || '') : (maquinaSelect?.selectedOptions[0]?.dataset.nombre || ''),
         fechaInstalacion: data.fechaInstalacion || new Date().toISOString().split('T')[0],
         fechaVencimiento: data.fechaVencimiento || null,
         tipoFrecuencia: data.tipoFrecuencia || 'horas',
         intervaloDias: data.intervaloDias ? parseInt(data.intervaloDias) : null,
         horasVidaUtil: data.horasVidaUtil ? parseInt(data.horasVidaUtil) : null,
         observaciones: data.observaciones || '',
-        costo: data.costo ? parseFloat(data.costo) : null
+        costo: data.costo ? parseFloat(data.costo) : null,
+        repuestosUtilizados: repuestosUtilizados
       };
 
       // Validar según tipo de frecuencia
@@ -409,5 +447,204 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Error de conexión');
     }
   }
+
+  // ============================================
+  // FUNCIONALIDAD DE MÁQUINAS Y REPUESTOS
+  // ============================================
+  
+  const tipoRegistroRadios = document.querySelectorAll('input[name="tipoRegistro"]');
+  const selectorMaquina = document.getElementById('selector-maquina');
+  const inputEquipo = document.getElementById('input-equipo');
+  const seccionRepuestos = document.getElementById('seccion-repuestos');
+  const mantenimientoMaquina = document.getElementById('mantenimiento-maquina');
+  const mantenimientoProducto = document.getElementById('mantenimiento-producto');
+  const btnAgregarRepuesto = document.getElementById('btn-agregar-repuesto-mantenimiento');
+  const repuestosMantenimientoContainer = document.getElementById('repuestos-mantenimiento-container');
+  let repuestosMantenimientoCount = 0;
+  let productosDisponibles = [];
+  let repuestosMaquina = [];
+
+  // Cargar productos disponibles
+  async function cargarProductosDisponibles() {
+    try {
+      const response = await fetch('/maquinas/api/productos');
+      const data = await response.json();
+      if (data.success) {
+        productosDisponibles = data.productos;
+      }
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+    }
+  }
+
+  // Toggle entre máquina y equipo manual
+  if (tipoRegistroRadios.length > 0) {
+    tipoRegistroRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.value === 'maquina') {
+          selectorMaquina?.classList.remove('d-none');
+          inputEquipo?.classList.add('d-none');
+          mantenimientoProducto?.closest('.col-12')?.classList.add('d-none');
+          seccionRepuestos?.style.setProperty('display', 'block', 'important');
+          
+          // Hacer equipo opcional cuando es máquina
+          const equipoInput = document.getElementById('mantenimiento-equipo');
+          if (equipoInput) equipoInput.removeAttribute('required');
+        } else {
+          selectorMaquina?.classList.add('d-none');
+          inputEquipo?.classList.remove('d-none');
+          mantenimientoProducto?.closest('.col-12')?.classList.remove('d-none');
+          seccionRepuestos?.style.setProperty('display', 'none', 'important');
+          
+          // Hacer equipo requerido cuando es manual
+          const equipoInput = document.getElementById('mantenimiento-equipo');
+          if (equipoInput) equipoInput.setAttribute('required', 'required');
+          
+          // Limpiar repuestos
+          if (repuestosMantenimientoContainer) {
+            repuestosMantenimientoContainer.innerHTML = '';
+            repuestosMantenimientoCount = 0;
+          }
+        }
+      });
+    });
+  }
+
+  // Cargar repuestos cuando se selecciona una máquina
+  if (mantenimientoMaquina) {
+    mantenimientoMaquina.addEventListener('change', async function() {
+      const maquinaId = this.value;
+      
+      if (!maquinaId) {
+        if (repuestosMantenimientoContainer) {
+          repuestosMantenimientoContainer.innerHTML = '';
+          repuestosMantenimientoCount = 0;
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`/maquinas/api/qr/${this.options[this.selectedIndex].dataset.codigo}`);
+        const data = await response.json();
+        
+        if (data.success && data.data.maquina.repuestos) {
+          repuestosMaquina = data.data.maquina.repuestos;
+          
+          // Limpiar repuestos anteriores
+          if (repuestosMantenimientoContainer) {
+            repuestosMantenimientoContainer.innerHTML = '';
+            repuestosMantenimientoCount = 0;
+          }
+          
+          // Agregar repuestos de la máquina automáticamente
+          repuestosMaquina.forEach(repuesto => {
+            if (repuesto.producto && repuesto.producto._id) {
+              agregarRepuestoMantenimiento({
+                producto: repuesto.producto._id,
+                cantidad: repuesto.cantidadRequerida || 1,
+                costoUnitario: repuesto.producto.costoUnitario || 0
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error cargando repuestos de máquina:', error);
+      }
+    });
+  }
+
+  // Agregar repuesto al mantenimiento
+  function agregarRepuestoMantenimiento(repuesto = null) {
+    const repuestoId = `repuesto-mant-${repuestosMantenimientoCount++}`;
+    const repuestoDiv = document.createElement('div');
+    repuestoDiv.className = 'card mb-3 repuesto-mantenimiento-item';
+    repuestoDiv.id = repuestoId;
+    
+    const productoId = repuesto ? repuesto.producto : '';
+    const cantidad = repuesto ? repuesto.cantidad : 1;
+    const costoUnitario = repuesto ? repuesto.costoUnitario : 0;
+
+    // Crear opciones de productos
+    let productosOptions = '<option value="">Seleccione un producto</option>';
+    productosDisponibles.forEach(prod => {
+      const selected = prod._id === productoId ? 'selected' : '';
+      const stockBadge = prod.existencia === 0 ? 'bg-danger' : prod.existencia <= 4 ? 'bg-warning' : 'bg-success';
+      productosOptions += `<option value="${prod._id}" ${selected} data-stock="${prod.existencia}" data-costo="${prod.costoUnitario || 0}">${prod.referencia} - ${prod.nombre} (Stock: ${prod.existencia})</option>`;
+    });
+
+    repuestoDiv.innerHTML = `
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0 text-primary">
+            <i class="bi bi-box me-2"></i>Repuesto ${repuestosMantenimientoCount}
+          </h6>
+          <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-repuesto-mant">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-md-5">
+            <label class="form-label fw-semibold">Producto *</label>
+            <select class="form-select form-select-lg select-producto-mant" name="repuestosUtilizados[${repuestosMantenimientoCount - 1}][producto]" required>
+              ${productosOptions}
+            </select>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Cantidad *</label>
+            <input 
+              type="number" 
+              class="form-control form-control-lg" 
+              name="repuestosUtilizados[${repuestosMantenimientoCount - 1}][cantidad]" 
+              value="${cantidad}"
+              min="1" 
+              required
+            >
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-semibold">Costo Unitario</label>
+            <input 
+              type="number" 
+              class="form-control form-control-lg" 
+              name="repuestosUtilizados[${repuestosMantenimientoCount - 1}][costoUnitario]"
+              value="${costoUnitario}"
+              min="0" 
+              step="0.01"
+            >
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (repuestosMantenimientoContainer) {
+      repuestosMantenimientoContainer.appendChild(repuestoDiv);
+    }
+
+    // Actualizar costo cuando se selecciona un producto
+    const selectProducto = repuestoDiv.querySelector('.select-producto-mant');
+    const costoInput = repuestoDiv.querySelector('input[name*="[costoUnitario]"]');
+    
+    selectProducto.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const costo = selectedOption.dataset.costo || '0';
+      if (costoInput && !costoInput.value) {
+        costoInput.value = costo;
+      }
+    });
+
+    // Eliminar repuesto
+    repuestoDiv.querySelector('.btn-eliminar-repuesto-mant').addEventListener('click', function() {
+      repuestoDiv.remove();
+    });
+  }
+
+  // Botón agregar repuesto
+  if (btnAgregarRepuesto) {
+    btnAgregarRepuesto.addEventListener('click', function() {
+      agregarRepuestoMantenimiento();
+    });
+  }
+
+  // Cargar productos al iniciar
+  cargarProductosDisponibles();
 });
 

@@ -117,3 +117,23 @@ exports.validateMovement = [
     .escape(),
 ];
 
+// Validaciones para cambio de contraseña
+exports.validateCambiarPassword = [
+  body('passwordActual')
+    .notEmpty().withMessage('La contraseña actual es obligatoria'),
+  
+  body('nuevaPassword')
+    .notEmpty().withMessage('La nueva contraseña es obligatoria')
+    .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('La contraseña debe contener al menos una mayúscula, una minúscula y un número'),
+  
+  body('confirmarPassword')
+    .notEmpty().withMessage('La confirmación de contraseña es obligatoria')
+    .custom((value, { req }) => {
+      if (value !== req.body.nuevaPassword) {
+        throw new Error('Las contraseñas nuevas no coinciden');
+      }
+      return true;
+    }),
+];
+

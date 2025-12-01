@@ -1,0 +1,376 @@
+<header class="hero card border-0 shadow-lg text-white mb-4 bg-primary">
+  <div class="card-body py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="hero__title mb-2">
+          <i class="bi bi-gear me-2"></i>{{#if maquina}}Editar Máquina{{else}}Nueva Máquina{{/if}}
+        </h1>
+        <p class="hero__subtitle mb-0">Registra una nueva máquina con sus repuestos asociados</p>
+      </div>
+      <a href="/maquinas" class="btn btn-light btn-lg">
+        <i class="bi bi-arrow-left me-2"></i>Volver a Máquinas
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="card shadow-lg border-0">
+  <div class="card-body p-4 p-md-5">
+    <form id="maquinaForm" autocomplete="off">
+      <!-- Información Básica -->
+      <h5 class="text-primary mb-3">
+        <i class="bi bi-info-circle me-2"></i>Información Básica
+      </h5>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+          <label for="codigo" class="form-label fw-semibold">Código de Máquina *</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="codigo" 
+            name="codigo" 
+            required 
+            autofocus
+            placeholder="Ej: MAQ-001"
+            pattern="[A-Z0-9\-_]+"
+            title="Solo letras mayúsculas, números, guiones y guiones bajos"
+          >
+          <small class="form-text text-muted">Este código se usará para el QR. Solo mayúsculas, números, guiones y guiones bajos.</small>
+        </div>
+        
+        <div class="col-12 col-md-6">
+          <label for="nombre" class="form-label fw-semibold">Nombre *</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="nombre" 
+            name="nombre" 
+            required
+            placeholder="Ej: Amasadora Industrial"
+          >
+        </div>
+        
+        <div class="col-12">
+          <label for="descripcion" class="form-label fw-semibold">Descripción</label>
+          <textarea 
+            class="form-control form-control-lg" 
+            id="descripcion" 
+            name="descripcion" 
+            rows="3"
+            placeholder="Descripción detallada de la máquina..."
+          ></textarea>
+        </div>
+        
+        <div class="col-12 col-md-4">
+          <label for="ubicacion" class="form-label fw-semibold">Ubicación</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="ubicacion" 
+            name="ubicacion"
+            placeholder="Ej: Planta Principal"
+          >
+        </div>
+        
+        <div class="col-12 col-md-4">
+          <label for="marca" class="form-label fw-semibold">Marca</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="marca" 
+            name="marca"
+            placeholder="Ej: Panadería Pro"
+          >
+        </div>
+        
+        <div class="col-12 col-md-4">
+          <label for="modelo" class="form-label fw-semibold">Modelo</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="modelo" 
+            name="modelo"
+            placeholder="Ej: AM-5000"
+          >
+        </div>
+        
+        <div class="col-12">
+          <label for="numeroSerie" class="form-label fw-semibold">Número de Serie</label>
+          <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            id="numeroSerie" 
+            name="numeroSerie"
+            placeholder="Ej: SN-123456789"
+          >
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <!-- Repuestos -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="text-primary mb-0">
+          <i class="bi bi-box-seam me-2"></i>Repuestos Asociados
+        </h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-agregar-repuesto">
+          <i class="bi bi-plus-circle me-1"></i>Agregar Repuesto
+        </button>
+      </div>
+      
+      <div id="repuestos-container" class="mb-4">
+        <!-- Los repuestos se agregarán dinámicamente aquí -->
+        <p class="text-muted text-center py-3" id="sin-repuestos">
+          <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+          No hay repuestos agregados. Haz clic en "Agregar Repuesto" para comenzar.
+        </p>
+      </div>
+
+      <hr class="my-4">
+
+      <!-- Resultado -->
+      <div id="maquina-result" class="mb-3 d-none"></div>
+      
+      <!-- Botones -->
+      <div class="d-grid gap-2 mt-4">
+        <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+          <i class="bi bi-check-circle me-2"></i>{{#if maquina}}Actualizar{{else}}Crear{{/if}} Máquina
+        </button>
+        <a href="/maquinas" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const maquinaForm = document.getElementById('maquinaForm');
+  const maquinaResult = document.getElementById('maquina-result');
+  const repuestosContainer = document.getElementById('repuestos-container');
+  const btnAgregarRepuesto = document.getElementById('btn-agregar-repuesto');
+  const sinRepuestos = document.getElementById('sin-repuestos');
+  let repuestosCount = 0;
+  let productosDisponibles = [];
+
+  // Cargar productos disponibles
+  async function cargarProductos() {
+    try {
+      const response = await fetch('/maquinas/api/productos');
+      const data = await response.json();
+      if (data.success) {
+        productosDisponibles = data.productos;
+      }
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+    }
+  }
+
+  // Agregar repuesto al formulario
+  function agregarRepuesto(repuesto = null) {
+    if (sinRepuestos) sinRepuestos.style.display = 'none';
+    
+    const repuestoId = `repuesto-${repuestosCount++}`;
+    const repuestoDiv = document.createElement('div');
+    repuestoDiv.className = 'card mb-3 repuesto-item';
+    repuestoDiv.id = repuestoId;
+    
+    const productoId = repuesto ? repuesto.producto._id || repuesto.producto : '';
+    const cantidad = repuesto ? repuesto.cantidadRequerida : 1;
+    const descripcion = repuesto ? repuesto.descripcion || '' : '';
+
+    // Crear opciones de productos
+    let productosOptions = '<option value="">Seleccione un producto</option>';
+    productosDisponibles.forEach(prod => {
+      const selected = prod._id === productoId ? 'selected' : '';
+      productosOptions += `<option value="${prod._id}" ${selected} data-stock="${prod.existencia}">${prod.referencia} - ${prod.nombre} (Stock: ${prod.existencia})</option>`;
+    });
+
+    repuestoDiv.innerHTML = `
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0 text-primary">
+            <i class="bi bi-box me-2"></i>Repuesto ${repuestosCount}
+          </h6>
+          <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-repuesto">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold">Producto *</label>
+            <select class="form-select form-select-lg select-producto" name="repuestos[${repuestosCount - 1}][producto]" required>
+              ${productosOptions}
+            </select>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Cantidad Requerida *</label>
+            <input 
+              type="number" 
+              class="form-control form-control-lg" 
+              name="repuestos[${repuestosCount - 1}][cantidadRequerida]" 
+              value="${cantidad}"
+              min="1" 
+              required
+            >
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label fw-semibold">Stock Disponible</label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              readonly
+              id="stock-${repuestosCount - 1}"
+              value="-"
+            >
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Descripción (opcional)</label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              name="repuestos[${repuestosCount - 1}][descripcion]"
+              value="${descripcion}"
+              placeholder="Ej: Filtro de aceite principal"
+            >
+          </div>
+        </div>
+      </div>
+    `;
+
+    repuestosContainer.appendChild(repuestoDiv);
+
+    // Actualizar stock cuando se selecciona un producto
+    const selectProducto = repuestoDiv.querySelector('.select-producto');
+    const stockInput = repuestoDiv.querySelector(`#stock-${repuestosCount - 1}`);
+    
+    selectProducto.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const stock = selectedOption.dataset.stock || '0';
+      stockInput.value = stock;
+      
+      // Cambiar color según stock
+      if (parseInt(stock) === 0) {
+        stockInput.classList.add('bg-danger', 'text-white');
+        stockInput.classList.remove('bg-warning', 'bg-success');
+      } else if (parseInt(stock) <= 4) {
+        stockInput.classList.add('bg-warning', 'text-dark');
+        stockInput.classList.remove('bg-danger', 'bg-success');
+      } else {
+        stockInput.classList.add('bg-success', 'text-white');
+        stockInput.classList.remove('bg-danger', 'bg-warning');
+      }
+    });
+
+    // Eliminar repuesto
+    repuestoDiv.querySelector('.btn-eliminar-repuesto').addEventListener('click', function() {
+      repuestoDiv.remove();
+      if (repuestosContainer.children.length === 0 && sinRepuestos) {
+        sinRepuestos.style.display = 'block';
+      }
+    });
+  }
+
+  // Botón agregar repuesto
+  if (btnAgregarRepuesto) {
+    btnAgregarRepuesto.addEventListener('click', function() {
+      agregarRepuesto();
+    });
+  }
+
+  // Cargar productos y preparar formulario
+  cargarProductos().then(() => {
+    // Si hay repuestos preexistentes (modo edición), agregarlos
+    // Por ahora, solo modo creación
+  });
+
+  // Enviar formulario
+  if (maquinaForm) {
+    maquinaForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+      
+      maquinaResult.className = 'mb-3 d-none';
+      maquinaResult.innerHTML = '';
+      
+      const formData = new FormData(this);
+      const data = {};
+      
+      // Procesar datos básicos
+      for (const [key, value] of formData.entries()) {
+        if (key.startsWith('repuestos[')) {
+          // Procesar repuestos
+          const match = key.match(/repuestos\[(\d+)\]\[(\w+)\]/);
+          if (match) {
+            const index = parseInt(match[1]);
+            const field = match[2];
+            if (!data.repuestos) data.repuestos = [];
+            if (!data.repuestos[index]) data.repuestos[index] = {};
+            data.repuestos[index][field] = value;
+          }
+        } else {
+          data[key] = value;
+        }
+      }
+      
+      // Filtrar repuestos vacíos
+      if (data.repuestos) {
+        data.repuestos = data.repuestos.filter(r => r.producto && r.cantidadRequerida);
+      }
+      
+      try {
+        const response = await fetch('/maquinas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          maquinaResult.className = 'mb-3 alert alert-success';
+          maquinaResult.innerHTML = `
+            <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>¡Máquina creada correctamente!</h6>
+            <p class="mb-0">La máquina <strong>${result.data.nombre}</strong> ha sido creada exitosamente.</p>
+          `;
+          maquinaResult.classList.remove('d-none');
+          
+          // Limpiar formulario
+          this.reset();
+          repuestosContainer.innerHTML = '';
+          if (sinRepuestos) sinRepuestos.style.display = 'block';
+          repuestosCount = 0;
+          
+          // Redirigir después de 2 segundos
+          setTimeout(() => {
+            window.location.href = '/maquinas';
+          }, 2000);
+        } else {
+          const errorMsg = result.message || 'Error al crear la máquina';
+          maquinaResult.className = 'mb-3 alert alert-danger';
+          maquinaResult.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error:</strong> ${errorMsg}`;
+          maquinaResult.classList.remove('d-none');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        maquinaResult.className = 'mb-3 alert alert-danger';
+        maquinaResult.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error de conexión.</strong> Por favor intenta nuevamente.';
+        maquinaResult.classList.remove('d-none');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    });
+  }
+});
+</script>
+

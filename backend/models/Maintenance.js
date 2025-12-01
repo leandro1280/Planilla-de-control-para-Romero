@@ -1,17 +1,41 @@
 const mongoose = require('mongoose');
 
 const maintenanceSchema = new mongoose.Schema({
+  // Máquina a la que se le realiza el mantenimiento
+  maquina: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Machine',
+    required: false // Opcional para mantener compatibilidad
+  },
   producto: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true
+    required: false // Ahora es opcional si se usa máquina
   },
   referencia: {
     type: String,
-    required: true,
+    required: false, // Opcional si se usa máquina
     trim: true,
     uppercase: true
   },
+  // Repuestos utilizados en este mantenimiento
+  repuestosUtilizados: [{
+    producto: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true
+    },
+    cantidad: {
+      type: Number,
+      required: true,
+      min: [1, 'La cantidad debe ser al menos 1']
+    },
+    costoUnitario: {
+      type: Number,
+      min: [0, 'El costo unitario no puede ser negativo'],
+      default: 0
+    }
+  }],
   tipo: {
     type: String,
     enum: {
@@ -80,7 +104,16 @@ const maintenanceSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Validación: debe tener máquina O producto/referencia
+maintenanceSchema.pre('validate', function(next) {
+  if (!this.maquina && !this.producto && !this.referencia) {
+    this.invalidate('maquina', 'Debe especificar una máquina o un producto');
+  }
+  next();
+});
+
 // Índices para búsquedas
+maintenanceSchema.index({ maquina: 1 });
 maintenanceSchema.index({ producto: 1 });
 maintenanceSchema.index({ referencia: 1 });
 maintenanceSchema.index({ equipo: 1 });

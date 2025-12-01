@@ -12,7 +12,11 @@
     "lint": "echo 'Linter no configurado. Considerar agregar ESLint'",
     "prestart": "node -e \"require('./utils/validateEnv').validateEnvironment()\"",
     "render-build": "npm install",
-    "render-start": "npm start"
+    "render-start": "npm start",
+    "limpiar-datos": "node scripts/limpiar-datos.js",
+    "limpiar-datos:yes": "node scripts/limpiar-datos.js --yes",
+    "limpiar-usuarios": "node scripts/limpiar-usuarios.js",
+    "limpiar-usuarios:yes": "node scripts/limpiar-usuarios.js --yes"
   },
   "keywords": [
     "stock",

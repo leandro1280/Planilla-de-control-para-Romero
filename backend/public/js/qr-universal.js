@@ -274,8 +274,51 @@ document.addEventListener('DOMContentLoaded', function () {
       </div>
     `;
 
-    // Buscar producto en el inventario
+    // Buscar primero si es una máquina, luego producto
     try {
+      // Intentar buscar máquina primero
+      let isMachine = false;
+      try {
+        const machineResponse = await fetch(`/maquinas/api/qr/${encodeURIComponent(decodedText)}`);
+        if (machineResponse.ok) {
+          const machineData = await machineResponse.json();
+          if (machineData.success && machineData.data.maquina) {
+            isMachine = true;
+            const maquina = machineData.data.maquina;
+            
+            // Máquina encontrada - éxito
+            universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-success';
+            universalQrResult.style.marginTop = '60px !important';
+            universalQrResult.innerHTML = `
+              <h6 class="alert-heading d-flex align-items-center">
+                <i class="bi bi-gear-fill me-2 fs-5"></i>
+                Máquina encontrada
+              </h6>
+              <p class="mb-1"><strong>Código:</strong> ${maquina.codigo}</p>
+              <p class="mb-1"><strong>Nombre:</strong> ${maquina.nombre}</p>
+              ${maquina.ubicacion ? `<p class="mb-1"><strong>Ubicación:</strong> ${maquina.ubicacion}</p>` : ''}
+              ${maquina.repuestos && maquina.repuestos.length > 0 ? `<p class="mb-2"><strong>Repuestos:</strong> ${maquina.repuestos.length} repuesto(s) asociado(s)</p>` : ''}
+              <div class="d-grid gap-2">
+                <a href="/maquinas/qr/${encodeURIComponent(maquina.codigo)}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-eye me-1"></i>Ver detalles y mantenimientos
+                </a>
+              </div>
+            `;
+            
+            // Auto-cerrar después de 3 segundos y redirigir
+            setTimeout(() => {
+              universalQrModal.hide();
+              window.location.href = `/maquinas/qr/${encodeURIComponent(maquina.codigo)}`;
+            }, 2000);
+            return;
+          }
+        }
+      } catch (machineError) {
+        // Si falla la búsqueda de máquina, continuar con producto
+        console.log('No es una máquina, buscando producto...');
+      }
+
+      // Si no es máquina, buscar producto
       const response = await fetch(`/inventario/productos/buscar?codigo=${encodeURIComponent(decodedText)}`);
       const data = await response.json();
 

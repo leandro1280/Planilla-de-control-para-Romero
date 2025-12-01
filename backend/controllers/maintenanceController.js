@@ -1,5 +1,7 @@
 const Maintenance = require('../models/Maintenance');
 const Product = require('../models/Product');
+const Machine = require('../models/Machine');
+const Movement = require('../models/Movement');
 const { createNotificationForAdmins } = require('./notificationController');
 const { registrarAuditoria } = require('../middleware/auditoria');
 
@@ -59,7 +61,9 @@ exports.getMaintenances = async (req, res) => {
     // Obtener mantenimientos paginados
     const maintenances = await Maintenance.find(query)
       .populate('producto', 'referencia nombre tipo existencia')
+      .populate('maquina', 'codigo nombre ubicacion')
       .populate('tecnico', 'nombre email')
+      .populate('repuestosUtilizados.producto', 'referencia nombre existencia')
       .sort({ fechaInstalacion: -1 })
       .skip(salto)
       .limit(limite)
@@ -75,6 +79,12 @@ exports.getMaintenances = async (req, res) => {
       .select('referencia nombre tipo existencia')
       .lean();
 
+    // Obtener máquinas para el formulario
+    const maquinas = await Machine.find({ activo: true })
+      .sort({ nombre: 1 })
+      .select('codigo nombre ubicacion')
+      .lean();
+
     res.render('mantenimientos/index', {
       title: 'Mantenimientos Preventivos - Romero Panificados',
       currentPage: 'mantenimientos',
@@ -86,6 +96,7 @@ exports.getMaintenances = async (req, res) => {
       },
       maintenances,
       productos,
+      maquinas,
       equipos: equiposFiltrados,
       paginaActual,
       totalPaginas,
@@ -109,6 +120,7 @@ exports.getMaintenances = async (req, res) => {
 exports.createMaintenance = async (req, res) => {
   try {
     const {
+      maquinaId,
       productoId,
       tipo,
       equipo,
@@ -116,35 +128,98 @@ exports.createMaintenance = async (req, res) => {
       fechaVencimiento,
       horasVidaUtil,
       observaciones,
-      costo
+      costo,
+      repuestosUtilizados
     } = req.body;
 
-    // Validar que el producto existe
-    const producto = await Product.findById(productoId);
-    if (!producto) {
-      return res.status(404).json({
+    let maquina = null;
+    let producto = null;
+    let referencia = '';
+
+    // Validar máquina o producto
+    if (maquinaId) {
+      maquina = await Machine.findById(maquinaId);
+      if (!maquina) {
+        return res.status(404).json({
+          success: false,
+          message: 'Máquina no encontrada'
+        });
+      }
+      referencia = maquina.codigo;
+    } else if (productoId) {
+      producto = await Product.findById(productoId);
+      if (!producto) {
+        return res.status(404).json({
+          success: false,
+          message: 'Producto no encontrado'
+        });
+      }
+      referencia = producto.referencia.toUpperCase().trim();
+    } else {
+      return res.status(400).json({
         success: false,
-        message: 'Producto no encontrado'
+        message: 'Debe especificar una máquina o un producto'
       });
     }
 
-    // Si no hay stock, permitir igual pero no descontar
-    const tieneStock = producto.existencia > 0;
+    // Procesar repuestos utilizados
+    const repuestosArray = [];
+    let costoTotalRepuestos = 0;
+
+    if (repuestosUtilizados && Array.isArray(repuestosUtilizados)) {
+      for (const repuesto of repuestosUtilizados) {
+        if (repuesto.producto && repuesto.cantidad) {
+          const prodRepuesto = await Product.findById(repuesto.producto);
+          if (prodRepuesto) {
+            const cantidad = parseInt(repuesto.cantidad);
+            const costoUnitario = parseFloat(repuesto.costoUnitario) || prodRepuesto.costoUnitario || 0;
+            
+            repuestosArray.push({
+              producto: repuesto.producto,
+              cantidad: cantidad,
+              costoUnitario: costoUnitario
+            });
+
+            costoTotalRepuestos += cantidad * costoUnitario;
+
+            // Descontar del stock
+            if (prodRepuesto.existencia >= cantidad) {
+              prodRepuesto.existencia -= cantidad;
+              await prodRepuesto.save();
+
+              // Registrar movimiento de egreso
+              await Movement.create({
+                referencia: prodRepuesto.referencia,
+                tipo: 'egreso',
+                cantidad: cantidad,
+                costoUnitario: costoUnitario,
+                producto: prodRepuesto._id,
+                usuario: req.user._id,
+                tipoProducto: prodRepuesto.tipo,
+                nota: `Mantenimiento: ${observaciones || 'Sin observaciones'}`
+              });
+            }
+          }
+        }
+      }
+    }
 
     // Crear el mantenimiento
     const maintenanceData = {
-      producto: productoId,
-      referencia: producto.referencia.toUpperCase().trim(),
+      maquina: maquinaId || null,
+      producto: productoId || null,
+      referencia: referencia,
       tipo: tipo || 'preventivo',
-      equipo: equipo ? equipo.trim() : '',
+      equipo: equipo ? equipo.trim() : (maquina ? maquina.nombre : ''),
       fechaInstalacion: fechaInstalacion ? new Date(fechaInstalacion) : new Date(),
       tipoFrecuencia: req.body.tipoFrecuencia || 'horas',
       intervaloDias: req.body.intervaloDias ? parseInt(req.body.intervaloDias) : null,
       horasVidaUtil: req.body.horasVidaUtil ? parseInt(req.body.horasVidaUtil) : null,
       observaciones: observaciones ? observaciones.trim() : '',
       tecnico: req.user._id,
-      costo: costo ? parseFloat(costo) : null,
-      estado: 'activo'
+      costo: costo ? parseFloat(costo) : (costoTotalRepuestos > 0 ? costoTotalRepuestos : null),
+      estado: 'activo',
+      repuestosUtilizados: repuestosArray
     };
 
     // Calcular fecha de vencimiento si es por fecha
@@ -155,35 +230,33 @@ exports.createMaintenance = async (req, res) => {
       maintenanceData.fechaVencimiento = new Date(fechaVencimiento);
     }
 
-    // Si es por horas, el cálculo se hace en el frontend o se deja null hasta que se actualice
-
     const maintenance = await Maintenance.create(maintenanceData);
 
     // Registrar auditoría
     await registrarAuditoria(req, 'CREAR', 'Mantenimiento', maintenance._id, {
-      referencia: producto.referencia,
-      producto: producto.nombre,
+      referencia: referencia,
+      maquina: maquina ? maquina.nombre : null,
+      producto: producto ? producto.nombre : null,
       tipo: tipo,
-      equipo: equipo,
-      estado: 'activo'
+      equipo: equipo || (maquina ? maquina.nombre : ''),
+      estado: 'activo',
+      repuestosUtilizados: repuestosArray.length
     });
 
-    // Descontar 1 unidad del stock del producto solo si tiene stock
-    if (tieneStock) {
-      producto.existencia -= 1;
-      await producto.save();
-    }
-
     // Crear notificación para administradores
+    const descripcion = maquina 
+      ? `Mantenimiento ${tipo} en máquina ${maquina.codigo} - ${maquina.nombre}`
+      : `Mantenimiento ${tipo} en ${producto.referencia} - ${producto.nombre}`;
+    
     await createNotificationForAdmins(
       'Nuevo mantenimiento registrado',
-      `Se instaló ${producto.referencia} - ${producto.nombre} en ${equipo || 'equipo no especificado'}`,
+      descripcion,
       req.user._id
     );
 
-    const mensaje = tieneStock
-      ? 'Mantenimiento registrado correctamente. Stock descontado automáticamente (1 unidad).'
-      : 'Mantenimiento registrado. ⚠️ NOTA: El producto no tenía stock disponible, no se descontó stock del inventario.';
+    const mensaje = repuestosArray.length > 0
+      ? `Mantenimiento registrado correctamente. Se utilizaron ${repuestosArray.length} repuesto(s) y se descontó stock automáticamente.`
+      : 'Mantenimiento registrado correctamente.';
 
     res.status(201).json({
       success: true,

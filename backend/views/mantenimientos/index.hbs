@@ -63,9 +63,10 @@
         <thead class="table-primary">
           <tr>
             <th>Referencia</th>
-            <th>Producto</th>
+            <th>Máquina/Producto</th>
             <th>Tipo</th>
             <th>Equipo</th>
+            <th>Repuestos</th>
             <th>Fecha Instalación</th>
             <th>Fecha Vencimiento</th>
             <th>Técnico</th>
@@ -81,14 +82,37 @@
             class="{{#if (eq this.estado 'activo')}}table-success{{else if (eq this.estado 'completado')}}table-secondary{{else}}table-danger{{/if}}">
             <td class="fw-semibold">{{this.referencia}}</td>
             <td>
-              {{#if this.producto}}
-              {{this.producto.nombre}}
+              {{#if this.maquina}}
+              <div>
+                <i class="bi bi-gear me-1 text-primary"></i>
+                <strong>{{this.maquina.nombre}}</strong>
+                <br>
+                <small class="text-muted">{{this.maquina.codigo}}</small>
+              </div>
+              {{else if this.producto}}
+              <div>
+                <i class="bi bi-box me-1 text-success"></i>
+                {{this.producto.nombre}}
+              </div>
               {{else}}
-              <span class="text-muted">Producto eliminado</span>
+              <span class="text-muted">-</span>
               {{/if}}
             </td>
             <td class="text-capitalize">{{this.tipo}}</td>
             <td>{{this.equipo}}</td>
+            <td>
+              {{#if this.repuestosUtilizados}}
+              {{#if (gt this.repuestosUtilizados.length 0)}}
+              <span class="badge bg-info" title="{{#each this.repuestosUtilizados}}{{#if this.producto}}{{this.producto.referencia}} ({{this.cantidad}}){{/if}}{{#unless @last}}, {{/unless}}{{/each}}">
+                {{this.repuestosUtilizados.length}} repuesto(s)
+              </span>
+              {{else}}
+              <span class="text-muted">-</span>
+              {{/if}}
+              {{else}}
+              <span class="text-muted">-</span>
+              {{/if}}
+            </td>
             <td>{{formatDate this.fechaInstalacion}}</td>
             <td>
               {{#if this.fechaVencimiento}}
@@ -144,14 +168,14 @@
           {{/each}}
           {{else}}
           <tr>
-            <td colspan="9" class="text-center text-muted py-4">
+            <td colspan="10" class="text-center text-muted py-4">
               No hay mantenimientos registrados con los filtros seleccionados
             </td>
           </tr>
           {{/if}}
           {{else}}
           <tr>
-            <td colspan="9" class="text-center text-muted py-4">No hay mantenimientos registrados</td>
+            <td colspan="10" class="text-center text-muted py-4">No hay mantenimientos registrados</td>
           </tr>
           {{/if}}
         </tbody>
@@ -266,19 +290,46 @@
 
           <div class="row g-3 mb-3">
             <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Máquina/Equipo *</label>
-              <input type="text" id="mantenimiento-equipo" name="equipo" class="form-control form-control-lg"
-                placeholder="Ej: Horno 1, Mezcladora 2..." required list="equipos-sugeridos">
-              <datalist id="equipos-sugeridos">
-                <option value="Horno 1">
-                <option value="Horno 2">
-                <option value="Mezcladora 1">
-                <option value="Mezcladora 2">
-                <option value="Amasadora">
-                <option value="Túnel de enfriado">
-                <option value="Cortadora">
-                <option value="Empacadora">
-              </datalist>
+              <label class="form-label fw-semibold text-primary">Tipo de Registro</label>
+              <div class="d-flex gap-3 mt-2 mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-maquina" value="maquina" checked>
+                  <label class="form-check-label" for="tipo-maquina">Máquina Registrada</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-equipo" value="equipo">
+                  <label class="form-check-label" for="tipo-equipo">Equipo Manual</label>
+                </div>
+              </div>
+              
+              <div id="selector-maquina" class="mb-3">
+                <label class="form-label fw-semibold text-primary">Máquina *</label>
+                <select id="mantenimiento-maquina" name="maquinaId" class="form-select form-select-lg">
+                  <option value="">Seleccione una máquina</option>
+                  {{#each maquinas}}
+                  <option value="{{this._id}}" data-codigo="{{this.codigo}}" data-nombre="{{this.nombre}}">
+                    {{this.codigo}} - {{this.nombre}}{{#if this.ubicacion}} ({{this.ubicacion}}){{/if}}
+                  </option>
+                  {{/each}}
+                </select>
+                <small class="text-muted">Al seleccionar una máquina, podrás agregar sus repuestos automáticamente.</small>
+              </div>
+              
+              <div id="input-equipo" class="mb-3 d-none">
+                <label class="form-label fw-semibold text-primary">Máquina/Equipo *</label>
+                <input type="text" id="mantenimiento-equipo" name="equipo" class="form-control form-control-lg"
+                  placeholder="Ej: Horno 1, Mezcladora 2..." list="equipos-sugeridos">
+                <datalist id="equipos-sugeridos">
+                  <option value="Horno 1">
+                  <option value="Horno 2">
+                  <option value="Mezcladora 1">
+                  <option value="Mezcladora 2">
+                  <option value="Amasadora">
+                  <option value="Túnel de enfriado">
+                  <option value="Cortadora">
+                  <option value="Empacadora">
+                </datalist>
+              </div>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label fw-semibold text-primary">Fecha de Instalación *</label>
@@ -328,6 +379,23 @@
               <label class="form-label fw-semibold text-primary">Costo (Opcional)</label>
               <input type="number" id="mantenimiento-costo" name="costo" min="0" step="0.01"
                 class="form-control form-control-lg" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Repuestos Utilizados -->
+          <div class="row g-3 mb-3" id="seccion-repuestos" style="display: none;">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="form-label fw-semibold text-primary mb-0">
+                  <i class="bi bi-box-seam me-2"></i>Repuestos Utilizados
+                </label>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-agregar-repuesto-mantenimiento">
+                  <i class="bi bi-plus-circle me-1"></i>Agregar Repuesto
+                </button>
+              </div>
+              <div id="repuestos-mantenimiento-container" class="mb-3">
+                <!-- Los repuestos se agregarán dinámicamente aquí -->
+              </div>
             </div>
           </div>
 

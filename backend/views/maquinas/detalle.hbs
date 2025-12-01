@@ -1,0 +1,271 @@
+<header class="hero card border-0 shadow-lg text-white mb-4 bg-primary">
+  <div class="card-body p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+      <div class="text-center text-lg-start">
+        <h1 class="hero__title fw-bold mb-2">
+          <i class="bi bi-gear me-2"></i>{{maquina.nombre}}
+        </h1>
+        <p class="hero__subtitle mb-0 opacity-75 fs-5">
+          Código: <strong>{{maquina.codigo}}</strong>
+          {{#if maquina.ubicacion}} · {{maquina.ubicacion}}{{/if}}
+        </p>
+      </div>
+      <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
+        <a href="/maquinas" class="btn btn-outline-light px-3">
+          <i class="bi bi-arrow-left me-1"></i>Volver a Máquinas
+        </a>
+        <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-light text-primary px-3 fw-semibold">
+          <i class="bi bi-tools me-1"></i>Nuevo Mantenimiento
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="row g-4">
+  <!-- Información de la Máquina -->
+  <div class="col-12 col-lg-4">
+    <section class="panel card border-0 shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-info-circle me-2"></i>Información General
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <strong class="text-primary">Código:</strong>
+          <div class="badge bg-primary fs-6 mt-1">{{maquina.codigo}}</div>
+        </div>
+        {{#if maquina.descripcion}}
+        <div class="mb-3">
+          <strong class="text-primary">Descripción:</strong>
+          <p class="mb-0">{{maquina.descripcion}}</p>
+        </div>
+        {{/if}}
+        {{#if maquina.ubicacion}}
+        <div class="mb-3">
+          <strong class="text-primary">Ubicación:</strong>
+          <p class="mb-0">
+            <i class="bi bi-geo-alt me-1"></i>{{maquina.ubicacion}}
+          </p>
+        </div>
+        {{/if}}
+        {{#if maquina.marca}}
+        <div class="mb-3">
+          <strong class="text-primary">Marca:</strong>
+          <p class="mb-0">{{maquina.marca}}</p>
+        </div>
+        {{/if}}
+        {{#if maquina.modelo}}
+        <div class="mb-3">
+          <strong class="text-primary">Modelo:</strong>
+          <p class="mb-0">{{maquina.modelo}}</p>
+        </div>
+        {{/if}}
+        {{#if maquina.numeroSerie}}
+        <div class="mb-3">
+          <strong class="text-primary">Número de Serie:</strong>
+          <p class="mb-0">{{maquina.numeroSerie}}</p>
+        </div>
+        {{/if}}
+        <div class="mb-3">
+          <strong class="text-primary">Creado:</strong>
+          <p class="mb-0">{{formatDate maquina.createdAt}}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estadísticas -->
+    <section class="panel card border-0 shadow-sm mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up me-2"></i>Estadísticas
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 text-center">
+          <div class="col-6">
+            <div class="p-3 bg-light rounded">
+              <div class="fs-3 fw-bold text-primary">{{stats.total}}</div>
+              <small class="text-muted">Total</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded">
+              <div class="fs-3 fw-bold text-success">{{stats.preventivos}}</div>
+              <small class="text-muted">Preventivos</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded">
+              <div class="fs-3 fw-bold text-warning">{{stats.correctivos}}</div>
+              <small class="text-muted">Correctivos</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded">
+              <div class="fs-3 fw-bold text-info">{{stats.activos}}</div>
+              <small class="text-muted">Activos</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Repuestos y Mantenimientos -->
+  <div class="col-12 col-lg-8">
+    <!-- Repuestos de la Máquina -->
+    <section class="panel card border-0 shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-box-seam me-2"></i>Repuestos Asociados
+          <span class="badge bg-light text-dark ms-2">{{#if maquina.repuestos}}{{maquina.repuestos.length}}{{else}}0{{/if}}</span>
+        </h5>
+      </div>
+      <div class="card-body">
+        {{#if maquina.repuestos}}
+        {{#if (gt maquina.repuestos.length 0)}}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Referencia</th>
+                <th>Nombre</th>
+                <th>Cantidad Requerida</th>
+                <th>Stock Disponible</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each maquina.repuestos}}
+              <tr>
+                <td class="fw-semibold">{{this.producto.referencia}}</td>
+                <td>{{this.producto.nombre}}</td>
+                <td>
+                  <span class="badge bg-primary">{{this.cantidadRequerida}}</span>
+                </td>
+                <td>
+                  <span class="badge {{#if (eq this.producto.existencia 0)}}bg-danger{{else if (lte this.producto.existencia 4)}}bg-warning{{else}}bg-success{{/if}}">
+                    {{this.producto.existencia}}
+                  </span>
+                </td>
+                <td>
+                  {{#if (gte this.producto.existencia this.cantidadRequerida)}}
+                  <span class="badge bg-success">Disponible</span>
+                  {{else if (gt this.producto.existencia 0)}}
+                  <span class="badge bg-warning">Stock bajo</span>
+                  {{else}}
+                  <span class="badge bg-danger">Sin stock</span>
+                  {{/if}}
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        {{else}}
+        <p class="text-muted text-center py-3">No hay repuestos asociados a esta máquina</p>
+        {{/if}}
+        {{else}}
+        <p class="text-muted text-center py-3">No hay repuestos asociados a esta máquina</p>
+        {{/if}}
+      </div>
+    </section>
+
+    <!-- Últimos Mantenimientos -->
+    <section class="panel card border-0 shadow-sm mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+          <i class="bi bi-tools me-2"></i>Últimos Mantenimientos
+        </h5>
+      </div>
+      <div class="card-body">
+        {{#if ultimosMantenimientos}}
+        {{#if (gt ultimosMantenimientos.length 0)}}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Técnico</th>
+                <th>Repuestos</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each ultimosMantenimientos}}
+              <tr>
+                <td>{{formatDate this.fechaInstalacion}}</td>
+                <td>
+                  <span class="badge bg-{{#if (eq this.tipo 'preventivo')}}success{{else if (eq this.tipo 'correctivo')}}warning{{else}}info{{/if}} text-capitalize">
+                    {{this.tipo}}
+                  </span>
+                </td>
+                <td>
+                  {{#if this.tecnico}}
+                  {{this.tecnico.nombre}}
+                  {{else}}
+                  <span class="text-muted">-</span>
+                  {{/if}}
+                </td>
+                <td>
+                  {{#if this.repuestosUtilizados}}
+                  {{#if (gt this.repuestosUtilizados.length 0)}}
+                  <span class="badge bg-info">{{this.repuestosUtilizados.length}} repuesto(s)</span>
+                  {{else}}
+                  <span class="text-muted">-</span>
+                  {{/if}}
+                  {{else}}
+                  <span class="text-muted">-</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <span class="badge {{#if (eq this.estado 'activo')}}bg-success{{else if (eq this.estado 'completado')}}bg-secondary{{else}}bg-danger{{/if}} text-capitalize">
+                    {{this.estado}}
+                  </span>
+                </td>
+                <td>
+                  <a href="/mantenimientos?referencia={{this.referencia}}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-center mt-3">
+          <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-primary">
+            <i class="bi bi-list-ul me-1"></i>Ver todos los mantenimientos
+          </a>
+        </div>
+        {{else}}
+        <p class="text-muted text-center py-3">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+          No hay mantenimientos registrados para esta máquina
+        </p>
+        <div class="text-center">
+          <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Registrar primer mantenimiento
+          </a>
+        </div>
+        {{/if}}
+        {{else}}
+        <p class="text-muted text-center py-3">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+          No hay mantenimientos registrados para esta máquina
+        </p>
+        <div class="text-center">
+          <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Registrar primer mantenimiento
+          </a>
+        </div>
+        {{/if}}
+      </div>
+    </section>
+  </div>
+</div>
+

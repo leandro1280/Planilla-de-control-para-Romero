@@ -17,6 +17,10 @@ router.post('/logout', protect, authController.logout);
 router.get('/logout', protect, authController.logout);
 router.get('/me', protect, authController.getMe);
 
+// Ruta para cambiar contraseña
+router.get('/cambiar-password', protect, authController.renderCambiarPassword);
+router.put('/cambiar-password', protect, require('../utils/validators').validateCambiarPassword, require('../utils/validators').handleValidationErrors, authController.cambiarPassword);
+
 // Rutas de gestión de usuarios (solo administradores)
 const usuariosController = require('../controllers/usuariosController');
 router.get('/usuarios', protect, authorize('administrador'), usuariosController.getUsuarios);

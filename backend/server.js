@@ -301,6 +301,7 @@ app.use('/dashboard', require('./routes/dashboard'));
 app.use('/inventario', require('./routes/inventario'));
 app.use('/movimientos', require('./routes/movimientos'));
 app.use('/mantenimientos', require('./routes/mantenimientos'));
+app.use('/maquinas', require('./routes/maquinas'));
 app.use('/perfiles', require('./routes/perfiles'));
 app.use('/auditoria', require('./routes/auditoria'));
 app.use('/historial', require('./routes/historial'));
