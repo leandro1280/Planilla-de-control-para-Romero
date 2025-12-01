@@ -48,14 +48,17 @@ const iniciarTareasProgramadas = () => {
                 if (mantenimientosPorVencer.length > 0) {
                     console.log(`⚠️ Se encontraron ${mantenimientosPorVencer.length} mantenimientos que vencen mañana.`);
 
-                    // Enviar correo al administrador (o al correo configurado)
-                    // NOTA: El destinatario debería venir de la configuración o de los usuarios admin
-                    const destinatario = process.env.EMAIL_ALERT_TO || process.env.EMAIL_USER;
+                    // Enviar correo al destinatario configurado
+                    // Prioridad: EMAIL_ALERT_TO > EMAIL_ALERT_MANTENIMIENTO > pc1manromero@gmail.com > EMAIL_USER
+                    const destinatario = process.env.EMAIL_ALERT_TO || 
+                                       process.env.EMAIL_ALERT_MANTENIMIENTO || 
+                                       process.env.EMAIL_USER ||
+                                       'pc1manromero@gmail.com';
 
                     if (destinatario) {
                         await enviarAlertaMantenimiento(mantenimientosPorVencer, destinatario);
                     } else {
-                        console.warn('⚠️ No hay destinatario configurado para alertas (EMAIL_ALERT_TO).');
+                        console.warn('⚠️ No hay destinatario configurado para alertas de mantenimiento.');
                     }
                 } else {
                     console.log('✅ No hay mantenimientos que venzan mañana.');
@@ -96,13 +99,17 @@ const iniciarTareasProgramadas = () => {
                 if (productosStockBajo.length > 0) {
                     console.log(`⚠️ Se encontraron ${productosStockBajo.length} productos con stock bajo.`);
 
-                    // Enviar correo al administrador (o al correo configurado)
-                    const destinatario = process.env.EMAIL_ALERT_TO || process.env.EMAIL_USER;
+                    // Enviar correo al destinatario configurado
+                    // Prioridad: EMAIL_ALERT_TO > EMAIL_ALERT_STOCK > EMAIL_USER > pc1manromero@gmail.com
+                    const destinatario = process.env.EMAIL_ALERT_TO || 
+                                       process.env.EMAIL_ALERT_STOCK || 
+                                       process.env.EMAIL_USER ||
+                                       'pc1manromero@gmail.com';
 
                     if (destinatario) {
                         await enviarAlertaStockBajo(productosStockBajo, destinatario, umbralCritico, umbralBajo);
                     } else {
-                        console.warn('⚠️ No hay destinatario configurado para alertas (EMAIL_ALERT_TO).');
+                        console.warn('⚠️ No hay destinatario configurado para alertas de stock.');
                     }
                 } else {
                     console.log('✅ No hay productos con stock bajo.');

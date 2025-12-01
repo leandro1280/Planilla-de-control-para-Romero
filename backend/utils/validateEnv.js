@@ -23,6 +23,9 @@ const optionalEnvVars = {
   EMAIL_PORT: '587',
   EMAIL_USER: '',
   EMAIL_PASS: '',
+  EMAIL_ALERT_TO: 'pc1manromero@gmail.com', // Email por defecto para todas las alertas
+  EMAIL_ALERT_STOCK: 'pc1manromero@gmail.com', // Email específico para alertas de stock
+  EMAIL_ALERT_MANTENIMIENTO: 'pc1manromero@gmail.com', // Email específico para alertas de mantenimiento
   PORT: '3000'
 };
 
