@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+// Configurar zona horaria de Argentina (America/Argentina/Buenos_Aires, UTC-3)
+// Esto afecta a todas las operaciones de fecha/hora en Node.js
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 // Validar variables de entorno críticas ANTES de importar otros módulos
 const { validateEnvironment } = require('./utils/validateEnv');
 validateEnvironment();
@@ -155,12 +159,15 @@ app.engine('hbs', hbs.engine({
     formatDate: (value) => {
       if (!value) return '-';
       const date = new Date(value);
+      // Usar zona horaria de Argentina explícitamente
       return date.toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: true // Formato 12 horas con AM/PM
       });
     },
     eq: (a, b) => a === b,
