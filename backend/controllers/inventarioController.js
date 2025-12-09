@@ -268,6 +268,9 @@ exports.createProduct = async (req, res) => {
 // @access  Private (administrador, supervisor)
 exports.updateProduct = async (req, res) => {
   try {
+    console.log('📝 Actualizando producto:', req.params.id);
+    console.log('📦 Datos recibidos:', JSON.stringify(req.body, null, 2));
+    
     let product = await Product.findById(req.params.id);
 
     if (!product) {
@@ -294,26 +297,46 @@ exports.updateProduct = async (req, res) => {
       updateData.detalle = req.body.detalle.trim() || '';
     }
     if (req.body.tipo !== undefined) {
-      // Si viene como cadena vacía, establecer como null
-      updateData.tipo = req.body.tipo && req.body.tipo.trim() !== '' ? req.body.tipo.trim() : null;
+      // Si viene como cadena vacía o null, establecer como null
+      const tipoValue = req.body.tipo;
+      if (tipoValue === null || tipoValue === 'null' || (typeof tipoValue === 'string' && tipoValue.trim() === '')) {
+        updateData.tipo = null;
+      } else {
+        updateData.tipo = tipoValue.trim();
+      }
     }
     if (req.body.costoUnitario !== undefined) {
-      updateData.costoUnitario = req.body.costoUnitario && req.body.costoUnitario !== '' 
-        ? parseFloat(req.body.costoUnitario) || null 
-        : null;
+      const costoValue = req.body.costoUnitario;
+      if (costoValue === null || costoValue === '' || costoValue === 'null') {
+        updateData.costoUnitario = null;
+      } else {
+        updateData.costoUnitario = parseFloat(costoValue) || null;
+      }
     }
     if (req.body.codigoFabricante !== undefined) {
-      updateData.codigoFabricante = req.body.codigoFabricante && req.body.codigoFabricante.trim() !== ''
-        ? req.body.codigoFabricante.trim()
-        : null;
+      const codigoValue = req.body.codigoFabricante;
+      if (codigoValue === null || codigoValue === '' || codigoValue === 'null' || (typeof codigoValue === 'string' && codigoValue.trim() === '')) {
+        updateData.codigoFabricante = null;
+      } else {
+        updateData.codigoFabricante = codigoValue.trim();
+      }
     }
     
     updateData.actualizadoPor = req.user._id;
+
+    console.log('🔄 Datos a actualizar:', JSON.stringify(updateData, null, 2));
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     });
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se pudo actualizar el producto'
+      });
+    }
 
     // Calcular cambios detallados - solo para campos que se actualizaron
     const cambios = {};
@@ -338,32 +361,46 @@ exports.updateProduct = async (req, res) => {
       }
     });
 
-    // Guardar versión histórica si hay cambios
+    // Guardar versión histórica si hay cambios (no bloquear si falla)
     if (Object.keys(cambios).length > 0) {
-      await guardarVersionProducto(updatedProduct, req.user._id, cambios);
+      try {
+        await guardarVersionProducto(updatedProduct, req.user._id, cambios);
+      } catch (histError) {
+        console.error('⚠️ Error guardando historial (no crítico):', histError);
+        // Continuar aunque falle el historial
+      }
     }
 
-    // Registrar auditoría con detalles de cambios
-    await registrarAuditoria(req, 'MODIFICAR', 'Producto', updatedProduct._id, {
-      referencia: updatedProduct.referencia,
-      nombre: updatedProduct.nombre,
-      cambios
-    });
+    // Registrar auditoría con detalles de cambios (no bloquear si falla)
+    try {
+      await registrarAuditoria(req, 'MODIFICAR', 'Producto', updatedProduct._id, {
+        referencia: updatedProduct.referencia,
+        nombre: updatedProduct.nombre,
+        cambios
+      });
+    } catch (auditError) {
+      console.error('⚠️ Error registrando auditoría (no crítico):', auditError);
+      // Continuar aunque falle la auditoría
+    }
 
+    console.log('✅ Producto actualizado exitosamente');
     res.status(200).json({
       success: true,
       data: updatedProduct
     });
   } catch (error) {
-    console.error('Error al actualizar producto:', error);
+    console.error('❌ Error al actualizar producto:', error);
+    console.error('Error stack:', error.stack);
     
     // Si es un error de validación de Mongoose, extraer mensajes más detallados
-    let errorMessage = error.message;
+    let errorMessage = error.message || 'Error desconocido al actualizar producto';
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       errorMessage = validationErrors.join(', ');
     } else if (error.name === 'CastError') {
       errorMessage = 'ID de producto inválido';
+    } else if (error.code === 11000) {
+      errorMessage = 'Ya existe un producto con esa referencia';
     }
     
     res.status(400).json({

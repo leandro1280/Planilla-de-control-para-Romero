@@ -322,6 +322,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
+        console.log('📤 Enviando actualización:', updateData);
+        
         const response = await fetch(`/inventario/productos/${productId}`, {
           method: 'PUT',
           headers: {
@@ -330,7 +332,18 @@ document.addEventListener('DOMContentLoaded', function () {
           body: JSON.stringify(updateData)
         });
 
-        const result = await response.json();
+        // Verificar si la respuesta es JSON válido
+        let result;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          console.error('❌ Respuesta no es JSON:', text);
+          throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+        }
+
+        console.log('📥 Respuesta recibida:', result);
 
         resultDiv.classList.remove('d-none');
 
