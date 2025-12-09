@@ -283,42 +283,110 @@ exports.updateProduct = async (req, res) => {
     // Preparar datos de actualización
     const updateData = {};
     
-    // Solo actualizar campos que vienen en el request
+    // Validar y preparar cada campo
     if (req.body.nombre !== undefined) {
-      updateData.nombre = req.body.nombre.trim();
+      const nombre = req.body.nombre.trim();
+      if (!nombre || nombre.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'El nombre es obligatorio',
+          errors: [{ field: 'nombre', message: 'El nombre no puede estar vacío' }]
+        });
+      }
+      if (nombre.length > 200) {
+        return res.status(400).json({
+          success: false,
+          message: 'El nombre excede el límite de caracteres',
+          errors: [{ field: 'nombre', message: 'El nombre no puede exceder 200 caracteres' }]
+        });
+      }
+      updateData.nombre = nombre;
     }
+    
     if (req.body.equipo !== undefined) {
-      updateData.equipo = req.body.equipo.trim() || '';
+      const equipo = req.body.equipo.trim() || '';
+      if (equipo.length > 200) {
+        return res.status(400).json({
+          success: false,
+          message: 'El equipo excede el límite de caracteres',
+          errors: [{ field: 'equipo', message: 'El equipo no puede exceder 200 caracteres' }]
+        });
+      }
+      updateData.equipo = equipo;
     }
+    
     if (req.body.existencia !== undefined) {
-      updateData.existencia = parseInt(req.body.existencia) || 0;
+      const existencia = parseInt(req.body.existencia);
+      if (isNaN(existencia) || existencia < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'La existencia debe ser un número mayor o igual a 0',
+          errors: [{ field: 'existencia', message: 'La existencia no puede ser negativa' }]
+        });
+      }
+      updateData.existencia = existencia;
     }
+    
     if (req.body.detalle !== undefined) {
-      updateData.detalle = req.body.detalle.trim() || '';
+      const detalle = req.body.detalle.trim() || '';
+      if (detalle.length > 500) {
+        return res.status(400).json({
+          success: false,
+          message: 'El detalle excede el límite de caracteres',
+          errors: [{ field: 'detalle', message: 'El detalle no puede exceder 500 caracteres' }]
+        });
+      }
+      updateData.detalle = detalle;
     }
+    
     if (req.body.tipo !== undefined) {
-      // Si viene como cadena vacía o null, establecer como null
       const tipoValue = req.body.tipo;
       if (tipoValue === null || tipoValue === 'null' || (typeof tipoValue === 'string' && tipoValue.trim() === '')) {
         updateData.tipo = null;
       } else {
-        updateData.tipo = tipoValue.trim();
+        const tipo = tipoValue.trim();
+        if (tipo.length > 50) {
+          return res.status(400).json({
+            success: false,
+            message: 'El tipo excede el límite de caracteres',
+            errors: [{ field: 'tipo', message: 'El tipo no puede exceder 50 caracteres' }]
+          });
+        }
+        updateData.tipo = tipo;
       }
     }
+    
     if (req.body.costoUnitario !== undefined) {
       const costoValue = req.body.costoUnitario;
       if (costoValue === null || costoValue === '' || costoValue === 'null') {
         updateData.costoUnitario = null;
       } else {
-        updateData.costoUnitario = parseFloat(costoValue) || null;
+        const costo = parseFloat(costoValue);
+        if (isNaN(costo) || costo < 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'El costo unitario debe ser un número mayor o igual a 0',
+            errors: [{ field: 'costoUnitario', message: 'El costo unitario no puede ser negativo' }]
+          });
+        }
+        updateData.costoUnitario = costo;
       }
     }
+    
     if (req.body.codigoFabricante !== undefined) {
       const codigoValue = req.body.codigoFabricante;
       if (codigoValue === null || codigoValue === '' || codigoValue === 'null' || (typeof codigoValue === 'string' && codigoValue.trim() === '')) {
         updateData.codigoFabricante = null;
       } else {
-        updateData.codigoFabricante = codigoValue.trim();
+        const codigo = codigoValue.trim();
+        if (codigo.length > 200) {
+          return res.status(400).json({
+            success: false,
+            message: 'El código de fabricante excede el límite de caracteres',
+            errors: [{ field: 'codigoFabricante', message: 'El código de fabricante no puede exceder 200 caracteres' }]
+          });
+        }
+        updateData.codigoFabricante = codigo;
       }
     }
     
@@ -326,10 +394,16 @@ exports.updateProduct = async (req, res) => {
 
     console.log('🔄 Datos a actualizar:', JSON.stringify(updateData, null, 2));
 
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-      runValidators: true
-    });
+    // Usar findOneAndUpdate con setDefaultsOnInsert: false para no afectar campos no enviados
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id, 
+      { $set: updateData },
+      {
+        new: true,
+        runValidators: true,
+        setDefaultsOnInsert: false
+      }
+    );
 
     if (!updatedProduct) {
       return res.status(404).json({
@@ -394,9 +468,15 @@ exports.updateProduct = async (req, res) => {
     
     // Si es un error de validación de Mongoose, extraer mensajes más detallados
     let errorMessage = error.message || 'Error desconocido al actualizar producto';
+    let errorDetails = [];
+    
     if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
-      errorMessage = validationErrors.join(', ');
+      errorDetails = Object.keys(error.errors).map(key => ({
+        field: key,
+        message: error.errors[key].message,
+        path: error.errors[key].path
+      }));
+      errorMessage = errorDetails.map(e => e.message).join(', ');
     } else if (error.name === 'CastError') {
       errorMessage = 'ID de producto inválido';
     } else if (error.code === 11000) {
@@ -406,6 +486,7 @@ exports.updateProduct = async (req, res) => {
     res.status(400).json({
       success: false,
       message: errorMessage,
+      errors: errorDetails.length > 0 ? errorDetails : undefined,
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }

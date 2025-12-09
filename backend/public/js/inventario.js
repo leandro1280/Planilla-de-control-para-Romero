@@ -360,10 +360,27 @@ document.addEventListener('DOMContentLoaded', function () {
           }, 1500);
         } else {
           resultDiv.className = 'mt-3 alert alert-danger';
-          const errorMsg = result.message || 'Error al actualizar producto';
+          
+          // Mostrar errores detallados si existen
+          let errorMsg = result.message || 'Error al actualizar producto';
+          let errorDetails = '';
+          
+          if (result.errors && Array.isArray(result.errors) && result.errors.length > 0) {
+            errorDetails = '<ul class="mb-0 mt-2">';
+            result.errors.forEach(err => {
+              const field = err.field || err.path || 'Campo desconocido';
+              const message = err.message || err.msg || 'Error de validación';
+              errorDetails += `<li><strong>${field}:</strong> ${message}</li>`;
+            });
+            errorDetails += '</ul>';
+          } else if (result.error) {
+            errorDetails = `<small class="d-block mt-2">${result.error}</small>`;
+          }
+          
           resultDiv.innerHTML = `
             <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de validación</h6>
             <p class="mb-0">${errorMsg}</p>
+            ${errorDetails}
           `;
           console.error('Error del servidor:', result);
           if (submitBtn) {
