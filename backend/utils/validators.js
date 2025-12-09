@@ -88,8 +88,78 @@ exports.validateProduct = [
     .escape(),
   
   body('costoUnitario')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value) => {
+      if (value === null || value === '' || value === undefined) {
+        return true; // Permitir null, vacío o undefined
+      }
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0) {
+        throw new Error('El costo unitario debe ser un número mayor o igual a 0');
+      }
+      return true;
+    }),
+];
+
+// Validaciones para actualización de productos (más permisivas)
+exports.validateUpdateProduct = [
+  // NO validar referencia porque no se puede modificar
+  body('nombre')
     .optional()
-    .isFloat({ min: 0 }).withMessage('El costo unitario debe ser un número mayor o igual a 0'),
+    .trim()
+    .notEmpty().withMessage('El nombre no puede estar vacío')
+    .isLength({ max: 200 }).withMessage('El nombre no puede exceder 200 caracteres')
+    .escape(),
+  
+  body('equipo')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 }).withMessage('El equipo no puede exceder 200 caracteres')
+    .escape(),
+  
+  body('existencia')
+    .optional()
+    .custom((value) => {
+      if (value === undefined || value === null || value === '') {
+        return true; // Permitir que no se envíe
+      }
+      const num = parseInt(value);
+      if (isNaN(num) || num < 0) {
+        throw new Error('La existencia debe ser un número entero mayor o igual a 0');
+      }
+      return true;
+    }),
+  
+  body('detalle')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 }).withMessage('El detalle no puede exceder 500 caracteres')
+    .escape(),
+  
+  body('tipo')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 50 }).withMessage('El tipo no puede exceder 50 caracteres')
+    .escape(),
+  
+  body('costoUnitario')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value) => {
+      if (value === null || value === '' || value === undefined) {
+        return true; // Permitir null, vacío o undefined
+      }
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0) {
+        throw new Error('El costo unitario debe ser un número mayor o igual a 0');
+      }
+      return true;
+    }),
+  
+  body('codigoFabricante')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 }).withMessage('El código de fabricante no puede exceder 200 caracteres')
+    .escape(),
 ];
 
 // Validaciones para movimientos
