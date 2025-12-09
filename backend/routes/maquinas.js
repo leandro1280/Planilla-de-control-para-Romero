@@ -7,6 +7,7 @@ const machineController = require('../controllers/machineController');
 router.get('/', protect, machineController.getMachines);
 router.get('/qr/:codigo', protect, machineController.getMachineByCode);
 router.get('/nueva', protect, canCreate, machineController.renderNewMachine);
+router.get('/editar/:id', protect, canCreate, machineController.renderEditMachine);
 
 // API routes (estas rutas se montan en /maquinas, así que la ruta completa será /maquinas/api/...)
 router.get('/api/qr/:codigo', protect, machineController.getMachineByCodeAPI);

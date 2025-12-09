@@ -281,16 +281,35 @@ document.addEventListener('DOMContentLoaded', function () {
       const formData = new FormData(formEditProduct);
       const data = Object.fromEntries(formData);
 
-      // Preparar datos
-      const updateData = {
-        nombre: data.nombre,
-        equipo: data.equipo || '',
-        existencia: parseInt(data.existencia) || 0,
-        detalle: data.detalle || '',
-        tipo: data.tipo || null,
-        costoUnitario: data.costoUnitario ? parseFloat(data.costoUnitario) : null,
-        codigoFabricante: data.codigoFabricante || null
-      };
+      // Preparar datos - solo enviar campos que tienen valor o están explícitamente vacíos
+      const updateData = {};
+      
+      if (data.nombre !== undefined) {
+        updateData.nombre = data.nombre.trim();
+      }
+      if (data.equipo !== undefined) {
+        updateData.equipo = data.equipo.trim() || '';
+      }
+      if (data.existencia !== undefined) {
+        updateData.existencia = parseInt(data.existencia) || 0;
+      }
+      if (data.detalle !== undefined) {
+        updateData.detalle = data.detalle.trim() || '';
+      }
+      if (data.tipo !== undefined) {
+        // Si está vacío, enviar como null para quitar el tipo
+        updateData.tipo = data.tipo && data.tipo.trim() !== '' ? data.tipo.trim() : null;
+      }
+      if (data.costoUnitario !== undefined) {
+        updateData.costoUnitario = data.costoUnitario && data.costoUnitario.trim() !== '' 
+          ? parseFloat(data.costoUnitario) 
+          : null;
+      }
+      if (data.codigoFabricante !== undefined) {
+        updateData.codigoFabricante = data.codigoFabricante && data.codigoFabricante.trim() !== '' 
+          ? data.codigoFabricante.trim() 
+          : null;
+      }
 
       const resultDiv = document.getElementById('edit-result');
       // Usar e.submitter para obtener el botón que hizo el submit (compatible con formularios externos)
@@ -328,7 +347,12 @@ document.addEventListener('DOMContentLoaded', function () {
           }, 1500);
         } else {
           resultDiv.className = 'mt-3 alert alert-danger';
-          resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${result.message || 'Error al actualizar producto'}`;
+          const errorMsg = result.message || 'Error al actualizar producto';
+          resultDiv.innerHTML = `
+            <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de validación</h6>
+            <p class="mb-0">${errorMsg}</p>
+          `;
+          console.error('Error del servidor:', result);
           if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';
@@ -338,7 +362,10 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Error:', error);
         resultDiv.classList.remove('d-none');
         resultDiv.className = 'mt-3 alert alert-danger';
-        resultDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>Error de conexión`;
+        resultDiv.innerHTML = `
+          <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de conexión</h6>
+          <p class="mb-0">No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.</p>
+        `;
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';

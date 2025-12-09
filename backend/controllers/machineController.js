@@ -97,6 +97,9 @@ exports.getMachineByCode = async (req, res) => {
       .limit(10)
       .lean();
 
+    // Obtener el último mantenimiento
+    const ultimoMantenimiento = ultimosMantenimientos.length > 0 ? ultimosMantenimientos[0] : null;
+
     // Obtener estadísticas de mantenimientos
     const stats = {
       total: await Maintenance.countDocuments({ maquina: maquina._id }),
@@ -116,6 +119,7 @@ exports.getMachineByCode = async (req, res) => {
       },
       maquina,
       ultimosMantenimientos,
+      ultimoMantenimiento,
       stats
     });
   } catch (error) {
@@ -189,13 +193,60 @@ exports.renderNewMachine = async (req, res) => {
         email: req.user.email,
         rol: req.user.rol
       },
-      productos
+      productos,
+      maquina: null
     });
   } catch (error) {
     console.error('Error al cargar formulario:', error);
     res.status(500).render('error', {
       title: 'Error',
       message: 'Error al cargar el formulario',
+      layout: 'main'
+    });
+  }
+};
+
+// @desc    Renderizar formulario de edición de máquina
+// @route   GET /maquinas/editar/:id
+// @access  Private (solo supervisor y admin)
+exports.renderEditMachine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const maquina = await Machine.findById(id)
+      .populate('repuestos.producto', 'referencia nombre existencia tipo')
+      .lean();
+
+    if (!maquina) {
+      return res.status(404).render('error', {
+        title: 'Máquina no encontrada',
+        message: 'La máquina que intentas editar no existe',
+        layout: 'main'
+      });
+    }
+
+    const productos = await Product.find({ existencia: { $gt: 0 } })
+      .sort({ referencia: 1 })
+      .select('referencia nombre existencia tipo')
+      .lean();
+
+    res.render('maquinas/nueva', {
+      title: 'Editar Máquina - Romero Panificados',
+      currentPage: 'maquinas',
+      usuario: {
+        _id: req.user._id,
+        nombre: req.user.nombre,
+        email: req.user.email,
+        rol: req.user.rol
+      },
+      productos,
+      maquina
+    });
+  } catch (error) {
+    console.error('Error al cargar formulario de edición:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Error al cargar el formulario de edición',
       layout: 'main'
     });
   }

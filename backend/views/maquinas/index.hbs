@@ -98,18 +98,9 @@
                 <i class="bi bi-eye"></i>
               </a>
               {{#if (or (eq ../../usuario.rol 'administrador') (eq ../../usuario.rol 'supervisor'))}}
-              <button class="btn btn-sm btn-outline-primary btn-editar-maquina" 
-                data-id="{{this._id}}"
-                data-codigo="{{this.codigo}}"
-                data-nombre="{{this.nombre}}"
-                data-descripcion="{{this.descripcion}}"
-                data-ubicacion="{{this.ubicacion}}"
-                data-marca="{{this.marca}}"
-                data-modelo="{{this.modelo}}"
-                data-numero-serie="{{this.numeroSerie}}"
-                title="Editar máquina">
+              <a href="/maquinas/editar/{{this._id}}" class="btn btn-sm btn-outline-primary" title="Editar máquina">
                 <i class="bi bi-pencil"></i>
-              </button>
+              </a>
               {{/if}}
               {{#if (eq ../../usuario.rol 'administrador')}}
               <button class="btn btn-sm btn-outline-danger btn-eliminar-maquina" 

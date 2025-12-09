@@ -277,39 +277,64 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    const updateData = {
-      nombre: req.body.nombre !== undefined ? req.body.nombre.trim() : product.nombre,
-      equipo: req.body.equipo !== undefined ? req.body.equipo.trim() : product.equipo,
-      existencia: req.body.existencia !== undefined ? parseInt(req.body.existencia) : product.existencia,
-      detalle: req.body.detalle !== undefined ? req.body.detalle.trim() : product.detalle,
-      tipo: req.body.tipo !== undefined && req.body.tipo.trim() !== '' ? req.body.tipo.trim() : product.tipo,
-      costoUnitario: req.body.costoUnitario !== undefined && req.body.costoUnitario !== ''
-        ? parseFloat(req.body.costoUnitario) || null
-        : product.costoUnitario,
-      codigoFabricante: req.body.codigoFabricante !== undefined && req.body.codigoFabricante.trim() !== ''
+    // Preparar datos de actualización
+    const updateData = {};
+    
+    // Solo actualizar campos que vienen en el request
+    if (req.body.nombre !== undefined) {
+      updateData.nombre = req.body.nombre.trim();
+    }
+    if (req.body.equipo !== undefined) {
+      updateData.equipo = req.body.equipo.trim() || '';
+    }
+    if (req.body.existencia !== undefined) {
+      updateData.existencia = parseInt(req.body.existencia) || 0;
+    }
+    if (req.body.detalle !== undefined) {
+      updateData.detalle = req.body.detalle.trim() || '';
+    }
+    if (req.body.tipo !== undefined) {
+      // Si viene como cadena vacía, establecer como null
+      updateData.tipo = req.body.tipo && req.body.tipo.trim() !== '' ? req.body.tipo.trim() : null;
+    }
+    if (req.body.costoUnitario !== undefined) {
+      updateData.costoUnitario = req.body.costoUnitario && req.body.costoUnitario !== '' 
+        ? parseFloat(req.body.costoUnitario) || null 
+        : null;
+    }
+    if (req.body.codigoFabricante !== undefined) {
+      updateData.codigoFabricante = req.body.codigoFabricante && req.body.codigoFabricante.trim() !== ''
         ? req.body.codigoFabricante.trim()
-        : (req.body.codigoFabricante === '' ? null : product.codigoFabricante),
-      actualizadoPor: req.user._id
-    };
+        : null;
+    }
+    
+    updateData.actualizadoPor = req.user._id;
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     });
 
-    // Calcular cambios detallados
+    // Calcular cambios detallados - solo para campos que se actualizaron
     const cambios = {};
     const campos = ['nombre', 'equipo', 'existencia', 'detalle', 'tipo', 'costoUnitario', 'codigoFabricante'];
     
     campos.forEach(campo => {
-      const valorAnterior = product[campo];
-      const valorNuevo = updateData[campo];
-      
-      if (valorAnterior !== valorNuevo && (valorAnterior !== undefined || valorNuevo !== undefined)) {
-        cambios[campo] = {
-          anterior: valorAnterior !== undefined ? valorAnterior : null,
-          nuevo: valorNuevo !== undefined ? valorNuevo : null
-        };
+      // Solo comparar si el campo está en updateData (fue enviado para actualizar)
+      if (updateData.hasOwnProperty(campo)) {
+        const valorAnterior = product[campo];
+        const valorNuevo = updateData[campo];
+        
+        // Comparar valores (manejar null/undefined correctamente)
+        const anterior = valorAnterior !== undefined && valorAnterior !== null ? valorAnterior : null;
+        const nuevo = valorNuevo !== undefined && valorNuevo !== null ? valorNuevo : null;
+        
+        if (anterior !== nuevo) {
+          cambios[campo] = {
+            anterior: anterior,
+            nuevo: nuevo
+          };
+        }
       }
     });
 
@@ -330,9 +355,21 @@ exports.updateProduct = async (req, res) => {
       data: updatedProduct
     });
   } catch (error) {
+    console.error('Error al actualizar producto:', error);
+    
+    // Si es un error de validación de Mongoose, extraer mensajes más detallados
+    let errorMessage = error.message;
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      errorMessage = validationErrors.join(', ');
+    } else if (error.name === 'CastError') {
+      errorMessage = 'ID de producto inválido';
+    }
+    
     res.status(400).json({
       success: false,
-      message: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

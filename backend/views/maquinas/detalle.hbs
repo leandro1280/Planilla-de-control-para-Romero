@@ -14,6 +14,11 @@
         <a href="/maquinas" class="btn btn-outline-light px-3">
           <i class="bi bi-arrow-left me-1"></i>Volver a Máquinas
         </a>
+        {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
+        <a href="/maquinas/editar/{{maquina._id}}" class="btn btn-outline-light px-3">
+          <i class="bi bi-pencil me-1"></i>Editar Máquina
+        </a>
+        {{/if}}
         <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-light text-primary px-3 fw-semibold">
           <i class="bi bi-tools me-1"></i>Nuevo Mantenimiento
         </a>
@@ -72,6 +77,46 @@
           <strong class="text-primary">Creado:</strong>
           <p class="mb-0">{{formatDate maquina.createdAt}}</p>
         </div>
+        {{#if ultimoMantenimiento}}
+        <hr>
+        <div class="mb-3">
+          <strong class="text-primary">Último Mantenimiento:</strong>
+          <p class="mb-0">
+            <span class="badge bg-{{#if (eq ultimoMantenimiento.tipo 'preventivo')}}success{{else if (eq ultimoMantenimiento.tipo 'correctivo')}}warning{{else}}info{{/if}} text-capitalize">
+              {{ultimoMantenimiento.tipo}}
+            </span>
+            <br>
+            <small class="text-muted">{{formatDate ultimoMantenimiento.fechaInstalacion}}</small>
+            {{#if ultimoMantenimiento.tecnico}}
+            <br>
+            <small class="text-muted">Por: {{ultimoMantenimiento.tecnico.nombre}}</small>
+            {{/if}}
+          </p>
+        </div>
+        {{/if}}
+      </div>
+    </section>
+
+    <!-- Código QR -->
+    <section class="panel card border-0 shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-qr-code me-2"></i>Código QR
+        </h5>
+      </div>
+      <div class="card-body text-center">
+        <div id="qr-code-container" class="mb-3">
+          <canvas id="qr-canvas"></canvas>
+        </div>
+        <p class="text-muted small mb-2">
+          Escanea este código para acceder a la información de la máquina
+        </p>
+        <a href="javascript:void(0)" id="btn-descargar-qr" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-download me-1"></i>Descargar QR
+        </a>
+        <a href="javascript:void(0)" id="btn-imprimir-qr" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-printer me-1"></i>Imprimir QR
+        </a>
       </div>
     </section>
 
@@ -214,7 +259,14 @@
                 <td>
                   {{#if this.repuestosUtilizados}}
                   {{#if (gt this.repuestosUtilizados.length 0)}}
-                  <span class="badge bg-info">{{this.repuestosUtilizados.length}} repuesto(s)</span>
+                  <div class="d-flex flex-column gap-1">
+                    {{#each this.repuestosUtilizados}}
+                    <small>
+                      <span class="badge bg-secondary">{{this.producto.referencia}}</span>
+                      <span class="text-muted">x{{this.cantidad}}</span>
+                    </small>
+                    {{/each}}
+                  </div>
                   {{else}}
                   <span class="text-muted">-</span>
                   {{/if}}
@@ -268,4 +320,91 @@
     </section>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const qrCanvas = document.getElementById('qr-canvas');
+  const btnDescargarQr = document.getElementById('btn-descargar-qr');
+  const btnImprimirQr = document.getElementById('btn-imprimir-qr');
+  
+  if (qrCanvas) {
+    // Generar URL del QR
+    const baseUrl = window.location.origin;
+    const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
+    
+    // Generar QR
+    QRCode.toCanvas(qrCanvas, qrUrl, {
+      width: 250,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    }, function (error) {
+      if (error) {
+        console.error('Error generando QR:', error);
+        qrCanvas.parentElement.innerHTML = '<p class="text-danger">Error al generar el código QR</p>';
+      }
+    });
+    
+    // Descargar QR
+    if (btnDescargarQr) {
+      btnDescargarQr.addEventListener('click', function() {
+        const link = document.createElement('a');
+        link.download = `QR-{{maquina.codigo}}.png`;
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+    
+    // Imprimir QR
+    if (btnImprimirQr) {
+      btnImprimirQr.addEventListener('click', function() {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>QR - {{maquina.codigo}}</title>
+              <style>
+                body {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  height: 100vh;
+                  margin: 0;
+                  font-family: Arial, sans-serif;
+                }
+                h2 { margin-bottom: 20px; }
+                canvas { border: 2px solid #000; }
+                p { margin-top: 20px; font-size: 14px; }
+              </style>
+            </head>
+            <body>
+              <h2>{{maquina.nombre}}</h2>
+              <p>Código: {{maquina.codigo}}</p>
+              <canvas id="qr-print"></canvas>
+              <p>Escanea este código para ver los detalles de la máquina</p>
+              <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+              <script>
+                QRCode.toCanvas(document.getElementById('qr-print'), '${qrUrl}', {
+                  width: 300,
+                  margin: 2
+                });
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                  }, 500);
+                };
+              <\/script>
+            </body>
+          </html>
+        `);
+      });
+    }
+  }
+});
+</script>
 

@@ -1,11 +1,11 @@
 <header class="hero card border-0 shadow-lg text-white mb-4 bg-primary">
   <div class="card-body py-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
         <h1 class="hero__title mb-2">
           <i class="bi bi-gear me-2"></i>{{#if maquina}}Editar Máquina{{else}}Nueva Máquina{{/if}}
         </h1>
-        <p class="hero__subtitle mb-0">Registra una nueva máquina con sus repuestos asociados</p>
+        <p class="hero__subtitle mb-0">{{#if maquina}}Modifica los datos de la máquina y sus repuestos{{else}}Registra una nueva máquina con sus repuestos asociados{{/if}}</p>
       </div>
       <a href="/maquinas" class="btn btn-light btn-lg">
         <i class="bi bi-arrow-left me-2"></i>Volver a Máquinas
@@ -17,6 +17,9 @@
 <div class="card shadow-lg border-0">
   <div class="card-body p-4 p-md-5">
     <form id="maquinaForm" autocomplete="off">
+      {{#if maquina}}
+      <input type="hidden" id="maquina-id" value="{{maquina._id}}">
+      {{/if}}
       <!-- Información Básica -->
       <h5 class="text-primary mb-3">
         <i class="bi bi-info-circle me-2"></i>Información Básica
@@ -29,13 +32,15 @@
             class="form-control form-control-lg" 
             id="codigo" 
             name="codigo" 
+            value="{{#if maquina}}{{maquina.codigo}}{{/if}}"
             required 
             autofocus
             placeholder="Ej: MAQ-001"
             pattern="[A-Z0-9\-_]+"
             title="Solo letras mayúsculas, números, guiones y guiones bajos"
+            {{#if maquina}}readonly{{/if}}
           >
-          <small class="form-text text-muted">Este código se usará para el QR. Solo mayúsculas, números, guiones y guiones bajos.</small>
+          <small class="form-text text-muted">Este código se usará para el QR. Solo mayúsculas, números, guiones y guiones bajos.{{#if maquina}} (No se puede modificar){{/if}}</small>
         </div>
         
         <div class="col-12 col-md-6">
@@ -45,6 +50,7 @@
             class="form-control form-control-lg" 
             id="nombre" 
             name="nombre" 
+            value="{{#if maquina}}{{maquina.nombre}}{{/if}}"
             required
             placeholder="Ej: Amasadora Industrial"
           >
@@ -58,7 +64,7 @@
             name="descripcion" 
             rows="3"
             placeholder="Descripción detallada de la máquina..."
-          ></textarea>
+          >{{#if maquina}}{{maquina.descripcion}}{{/if}}</textarea>
         </div>
         
         <div class="col-12 col-md-4">
@@ -68,6 +74,7 @@
             class="form-control form-control-lg" 
             id="ubicacion" 
             name="ubicacion"
+            value="{{#if maquina}}{{maquina.ubicacion}}{{/if}}"
             placeholder="Ej: Planta Principal"
           >
         </div>
@@ -79,6 +86,7 @@
             class="form-control form-control-lg" 
             id="marca" 
             name="marca"
+            value="{{#if maquina}}{{maquina.marca}}{{/if}}"
             placeholder="Ej: Panadería Pro"
           >
         </div>
@@ -90,6 +98,7 @@
             class="form-control form-control-lg" 
             id="modelo" 
             name="modelo"
+            value="{{#if maquina}}{{maquina.modelo}}{{/if}}"
             placeholder="Ej: AM-5000"
           >
         </div>
@@ -101,6 +110,7 @@
             class="form-control form-control-lg" 
             id="numeroSerie" 
             name="numeroSerie"
+            value="{{#if maquina}}{{maquina.numeroSerie}}{{/if}}"
             placeholder="Ej: SN-123456789"
           >
         </div>
@@ -282,7 +292,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Cargar productos y preparar formulario
   cargarProductos().then(() => {
     // Si hay repuestos preexistentes (modo edición), agregarlos
-    // Por ahora, solo modo creación
+    {{#if maquina}}
+    {{#if maquina.repuestos}}
+    {{#each maquina.repuestos}}
+    agregarRepuesto({
+      producto: '{{this.producto._id}}',
+      cantidadRequerida: {{this.cantidadRequerida}},
+      descripcion: '{{this.descripcion}}'
+    });
+    {{/each}}
+    {{/if}}
+    {{/if}}
   });
 
   // Enviar formulario
@@ -324,8 +344,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch('/maquinas', {
-          method: 'POST',
+        const maquinaId = document.getElementById('maquina-id')?.value;
+        const url = maquinaId ? `/maquinas/${maquinaId}` : '/maquinas';
+        const method = maquinaId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -338,23 +362,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (result.success) {
           maquinaResult.className = 'mb-3 alert alert-success';
           maquinaResult.innerHTML = `
-            <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>¡Máquina creada correctamente!</h6>
-            <p class="mb-0">La máquina <strong>${result.data.nombre}</strong> ha sido creada exitosamente.</p>
+            <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>¡Máquina ${maquinaId ? 'actualizada' : 'creada'} correctamente!</h6>
+            <p class="mb-0">La máquina <strong>${result.data.nombre || result.data.codigo}</strong> ha sido ${maquinaId ? 'actualizada' : 'creada'} exitosamente.</p>
           `;
           maquinaResult.classList.remove('d-none');
           
-          // Limpiar formulario
-          this.reset();
-          repuestosContainer.innerHTML = '';
-          if (sinRepuestos) sinRepuestos.style.display = 'block';
-          repuestosCount = 0;
-          
           // Redirigir después de 2 segundos
           setTimeout(() => {
-            window.location.href = '/maquinas';
+            window.location.href = maquinaId ? `/maquinas/qr/${data.codigo}` : '/maquinas';
           }, 2000);
         } else {
-          const errorMsg = result.message || 'Error al crear la máquina';
+          const errorMsg = result.message || `Error al ${maquinaId ? 'actualizar' : 'crear'} la máquina`;
           maquinaResult.className = 'mb-3 alert alert-danger';
           maquinaResult.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error:</strong> ${errorMsg}`;
           maquinaResult.classList.remove('d-none');
