@@ -303,12 +303,24 @@ exports.updateMaintenance = async (req, res) => {
       estado: req.body.estado || maintenance.estado
     };
 
-    // Recalcular vencimiento si cambia a fecha o cambian los parámetros
-    if (updateData.tipoFrecuencia === 'fecha' && updateData.intervaloDias) {
-      const fechaInst = new Date(updateData.fechaInstalacion);
-      updateData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + updateData.intervaloDias));
-    } else if (req.body.fechaVencimiento) {
+    // Manejar fecha de vencimiento
+    if (req.body.fechaVencimiento) {
+      // Si se envía fechaVencimiento explícitamente, usarla (modo manual)
       updateData.fechaVencimiento = new Date(req.body.fechaVencimiento);
+    } else {
+      // Si no se envía, recalcular según el tipo de frecuencia
+      if (updateData.tipoFrecuencia === 'fecha' && updateData.intervaloDias) {
+        const fechaInst = new Date(updateData.fechaInstalacion);
+        updateData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + updateData.intervaloDias));
+      } else if (updateData.tipoFrecuencia === 'horas' && updateData.horasVidaUtil) {
+        // Calcular días basándose en horas (asumiendo 12 horas diarias por defecto)
+        const horasDiarias = req.body.horasDiarias ? parseFloat(req.body.horasDiarias) : 12;
+        if (horasDiarias > 0) {
+          const diasHastaCambio = Math.ceil(updateData.horasVidaUtil / horasDiarias);
+          const fechaInst = new Date(updateData.fechaInstalacion);
+          updateData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + diasHastaCambio));
+        }
+      }
     }
 
     // Guardar datos anteriores para auditoría

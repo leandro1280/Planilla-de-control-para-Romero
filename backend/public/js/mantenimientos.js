@@ -16,15 +16,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Toggle Frecuencia
   const radioHoras = document.getElementById('frecuencia-horas');
   const radioFecha = document.getElementById('frecuencia-fecha');
-  const camposHoras = document.getElementById('campos-horas');
-  const camposFecha = document.getElementById('campos-fecha');
+  const formularioHoras = document.getElementById('formulario-horas');
+  const formularioFecha = document.getElementById('formulario-fecha');
   const intervaloInput = document.getElementById('mantenimiento-intervalo');
 
   function toggleFrecuencia() {
     if (radioFecha && radioFecha.checked) {
-      // Modo por Fecha Fija
-      if (camposHoras) camposHoras.classList.add('d-none');
-      if (camposFecha) camposFecha.classList.remove('d-none');
+      // Modo por Fecha Fija - Mostrar formulario de fecha, ocultar formulario de horas
+      if (formularioHoras) formularioHoras.classList.add('d-none');
+      if (formularioFecha) formularioFecha.classList.remove('d-none');
       // Limpiar y deshabilitar campos de horas
       if (horasVidaUtilInput) {
         horasVidaUtilInput.value = '';
@@ -39,9 +39,9 @@ document.addEventListener('DOMContentLoaded', function () {
         intervaloInput.setAttribute('required', 'required');
       }
     } else {
-      // Modo por Horas de Uso
-      if (camposHoras) camposHoras.classList.remove('d-none');
-      if (camposFecha) camposFecha.classList.add('d-none');
+      // Modo por Horas de Uso - Mostrar formulario de horas, ocultar formulario de fecha
+      if (formularioHoras) formularioHoras.classList.remove('d-none');
+      if (formularioFecha) formularioFecha.classList.add('d-none');
       // Limpiar y deshabilitar campo de intervalo
       if (intervaloInput) {
         intervaloInput.value = '';
@@ -151,31 +151,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (esPorFecha) {
       const intervalo = parseInt(intervaloInput?.value) || 0;
-      if (!intervalo) {
+      if (!intervalo || intervalo <= 0) {
         limpiarCalculo();
         return;
       }
       diasHastaCambio = intervalo;
     } else {
+      // Modo por horas
       const horasVidaUtil = parseFloat(horasVidaUtilInput?.value) || 0;
-      const horasDiarias = parseFloat(horasDiariasInput?.value) || 12;
+      const horasDiarias = parseFloat(horasDiariasInput?.value) || 0;
 
-      if (!horasVidaUtil || !horasDiarias) {
+      if (!horasVidaUtil || horasVidaUtil <= 0 || !horasDiarias || horasDiarias <= 0) {
         limpiarCalculo();
         return;
       }
+      // Calcular días: horas de vida útil / horas diarias
       diasHastaCambio = horasVidaUtil / horasDiarias;
     }
 
     // Calcular fecha de próximo cambio
-    const fechaInst = new Date(fechaInstalacion);
+    const fechaInst = new Date(fechaInstalacion + 'T00:00:00');
+    if (isNaN(fechaInst.getTime())) {
+      limpiarCalculo();
+      return;
+    }
+    
+    // Sumar días
     fechaInst.setDate(fechaInst.getDate() + Math.ceil(diasHastaCambio));
 
-    // Formatear fecha
-    const fechaFormateada = fechaInst.toISOString().split('T')[0];
+    // Formatear fecha (YYYY-MM-DD)
+    const año = fechaInst.getFullYear();
+    const mes = String(fechaInst.getMonth() + 1).padStart(2, '0');
+    const dia = String(fechaInst.getDate()).padStart(2, '0');
+    const fechaFormateada = `${año}-${mes}-${dia}`;
 
-    if (fechaVencimientoInput && fechaVencimientoInput.readOnly) {
-      fechaVencimientoInput.value = fechaFormateada;
+    if (fechaVencimientoInput) {
+      if (fechaVencimientoInput.readOnly) {
+        fechaVencimientoInput.value = fechaFormateada;
+      }
     }
 
     mostrarCalculo(diasHastaCambio, fechaFormateada, esPorFecha);
@@ -250,15 +263,24 @@ document.addEventListener('DOMContentLoaded', function () {
   if (intervaloInput) {
     intervaloInput.addEventListener('input', calcularFechaProximoCambio);
     intervaloInput.addEventListener('change', calcularFechaProximoCambio);
+    intervaloInput.addEventListener('keyup', calcularFechaProximoCambio);
+  }
+
+  if (horasVidaUtilInput) {
+    horasVidaUtilInput.addEventListener('input', calcularFechaProximoCambio);
+    horasVidaUtilInput.addEventListener('change', calcularFechaProximoCambio);
+    horasVidaUtilInput.addEventListener('keyup', calcularFechaProximoCambio);
   }
 
   if (horasDiariasInput) {
     horasDiariasInput.addEventListener('input', calcularFechaProximoCambio);
     horasDiariasInput.addEventListener('change', calcularFechaProximoCambio);
+    horasDiariasInput.addEventListener('keyup', calcularFechaProximoCambio);
   }
 
   if (fechaInstalacionInput) {
     fechaInstalacionInput.addEventListener('change', calcularFechaProximoCambio);
+    fechaInstalacionInput.addEventListener('input', calcularFechaProximoCambio);
   }
 
   // Filtros
@@ -345,9 +367,6 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
       }
-
-      // Obtener tipo de registro (máquina o equipo manual)
-      const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
       const maquinaSelect = document.getElementById('mantenimiento-maquina');
       const equipoInput = document.getElementById('mantenimiento-equipo');
       
@@ -409,8 +428,13 @@ document.addEventListener('DOMContentLoaded', function () {
       submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Registrando...';
 
       try {
-        const response = await fetch('/mantenimientos', {
-          method: 'POST',
+        const url = modoEdicion && mantenimientoEditandoId 
+          ? `/mantenimientos/${mantenimientoEditandoId}`
+          : '/mantenimientos';
+        const method = modoEdicion ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -422,37 +446,148 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (result.success) {
           // Mostrar mensaje de éxito
-          const mensajeExito = result.message || 'Mantenimiento registrado correctamente';
+          const mensajeExito = result.message || (modoEdicion ? 'Mantenimiento actualizado correctamente' : 'Mantenimiento registrado correctamente');
           alert('✅ ' + mensajeExito);
 
-          // Limpiar formulario
-          formularioMantenimiento.reset();
+          // Cerrar modal
+          modalMantenimiento.hide();
 
-          // Restablecer fecha actual
-          if (fechaInstalacionInput) {
-            const hoy = new Date();
-            fechaInstalacionInput.value = hoy.toISOString().split('T')[0];
-          }
-
-          // Recargar la página después de 500ms para mostrar el nuevo mantenimiento
+          // Recargar la página después de 500ms para mostrar los cambios
           setTimeout(() => {
             window.location.reload();
           }, 500);
         } else {
           // Mostrar error detallado
-          const mensajeError = result.message || 'Error al registrar el mantenimiento';
+          const mensajeError = result.message || (modoEdicion ? 'Error al actualizar el mantenimiento' : 'Error al registrar el mantenimiento');
           alert('❌ Error: ' + mensajeError + '\n\nPor favor verifica los datos e intenta nuevamente.');
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalBtnText;
         }
       } catch (error) {
-        console.error('Error al registrar mantenimiento:', error);
+        console.error('Error al procesar mantenimiento:', error);
         alert('❌ Error de conexión con el servidor.\n\nPor favor verifica tu conexión a internet e intenta nuevamente.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
       }
     });
   }
+
+  // Botones de editar mantenimiento
+  const botonesEditar = document.querySelectorAll('.btn-editar-mantenimiento');
+  const modalMantenimiento = new bootstrap.Modal(document.getElementById('modalMantenimiento'));
+  const modalTitle = document.querySelector('#modalMantenimiento .modal-title');
+  const formularioMantenimiento = document.getElementById('formulario-mantenimiento');
+  let modoEdicion = false;
+  let mantenimientoEditandoId = null;
+
+  botonesEditar.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const id = this.dataset.id;
+      const productoId = this.dataset.producto;
+      const tipo = this.dataset.tipo;
+      const equipo = this.dataset.equipo;
+      const fechaInstalacion = this.dataset.fechaInstalacion;
+      const fechaVencimiento = this.dataset.fechaVencimiento;
+      const horas = this.dataset.horas;
+      const observaciones = this.dataset.observaciones || '';
+      const costo = this.dataset.costo || '';
+      const estado = this.dataset.estado;
+
+      // Cambiar título del modal
+      if (modalTitle) {
+        modalTitle.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Mantenimiento';
+      }
+
+      // Activar modo edición
+      modoEdicion = true;
+      mantenimientoEditandoId = id;
+
+      // Llenar formulario con datos existentes
+      if (productoId) {
+        const productoSelect = document.getElementById('mantenimiento-producto');
+        if (productoSelect) productoSelect.value = productoId;
+      }
+      if (tipo) {
+        const tipoSelect = document.getElementById('mantenimiento-tipo');
+        if (tipoSelect) tipoSelect.value = tipo;
+      }
+      if (equipo) {
+        const equipoInput = document.getElementById('mantenimiento-equipo');
+        if (equipoInput) equipoInput.value = equipo;
+      }
+      if (fechaInstalacion) {
+        const fechaInstInput = document.getElementById('mantenimiento-fecha-instalacion');
+        if (fechaInstInput) {
+          const fecha = new Date(fechaInstalacion);
+          fechaInstInput.value = fecha.toISOString().split('T')[0];
+        }
+      }
+      if (fechaVencimiento) {
+        const fechaVencInput = document.getElementById('mantenimiento-fecha-vencimiento');
+        if (fechaVencInput) {
+          const fecha = new Date(fechaVencimiento);
+          fechaVencInput.value = fecha.toISOString().split('T')[0];
+          // Hacer editable la fecha
+          fechaVencInput.readOnly = false;
+          fechaVencInput.classList.remove('bg-light');
+          const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
+          if (fechaAutomaticaSwitch) fechaAutomaticaSwitch.checked = false;
+        }
+      }
+      if (horas) {
+        const horasInput = document.getElementById('mantenimiento-horas');
+        if (horasInput) horasInput.value = horas;
+        // Activar modo por horas
+        const radioHoras = document.getElementById('frecuencia-horas');
+        if (radioHoras) {
+          radioHoras.checked = true;
+          toggleFrecuencia();
+        }
+      }
+      if (observaciones) {
+        const obsTextarea = document.getElementById('mantenimiento-observaciones');
+        if (obsTextarea) obsTextarea.value = observaciones;
+      }
+      if (costo) {
+        const costoInput = document.getElementById('mantenimiento-costo');
+        if (costoInput) costoInput.value = costo;
+      }
+      if (estado) {
+        // Si hay un campo de estado, llenarlo
+        const estadoSelect = document.getElementById('mantenimiento-estado');
+        if (estadoSelect) estadoSelect.value = estado;
+      }
+
+      // Abrir modal
+      modalMantenimiento.show();
+    });
+  });
+
+  // Resetear modal cuando se cierra
+  document.getElementById('modalMantenimiento')?.addEventListener('hidden.bs.modal', function () {
+    modoEdicion = false;
+    mantenimientoEditandoId = null;
+    if (modalTitle) {
+      modalTitle.innerHTML = '<i class="bi bi-tools me-2"></i>Registrar Mantenimiento Preventivo';
+    }
+    if (formularioMantenimiento) {
+      formularioMantenimiento.reset();
+      // Restablecer fecha actual
+      const fechaInstalacionInput = document.getElementById('mantenimiento-fecha-instalacion');
+      if (fechaInstalacionInput) {
+        const hoy = new Date();
+        fechaInstalacionInput.value = hoy.toISOString().split('T')[0];
+      }
+      // Restablecer fecha automática
+      const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
+      if (fechaAutomaticaSwitch) fechaAutomaticaSwitch.checked = true;
+      const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
+      if (fechaVencimientoInput) {
+        fechaVencimientoInput.readOnly = true;
+        fechaVencimientoInput.classList.add('bg-light');
+      }
+    }
+  });
 
   // Botones de eliminar mantenimiento
   const botonesEliminar = document.querySelectorAll('.btn-eliminar-mantenimiento');

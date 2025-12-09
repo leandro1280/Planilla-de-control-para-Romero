@@ -225,219 +225,318 @@
 
 <!-- Modal Registrar Mantenimiento -->
 <div class="modal fade" id="modalMantenimiento" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title fw-bold">
-          <i class="bi bi-tools me-2"></i>Registrar Mantenimiento
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-gradient-primary text-white py-4">
+        <h5 class="modal-title fw-bold fs-4">
+          <i class="bi bi-tools me-2"></i>Registrar Mantenimiento Preventivo
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <p class="text-muted mb-3">Cuando colocas una pieza en un equipo, regístralo aquí. El stock se descontará
-          automáticamente.</p>
+      <div class="modal-body p-4">
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Información:</strong> Cuando colocas una pieza en un equipo, regístralo aquí. El stock se descontará automáticamente.
+        </div>
+
+        <!-- Selector de Tipo de Frecuencia -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <label class="form-label fw-bold text-primary fs-5 mb-3">
+              <i class="bi bi-clock-history me-2"></i>Frecuencia de Mantenimiento
+            </label>
+            <div class="d-flex gap-4 mt-3">
+              <div class="form-check form-check-lg">
+                <input class="form-check-input" type="radio" name="tipoFrecuencia" id="frecuencia-horas" value="horas" checked>
+                <label class="form-check-label fw-semibold fs-6" for="frecuencia-horas">
+                  <i class="bi bi-hourglass-split me-2 text-primary"></i>Por Horas de Uso
+                </label>
+              </div>
+              <div class="form-check form-check-lg">
+                <input class="form-check-input" type="radio" name="tipoFrecuencia" id="frecuencia-fecha" value="fecha">
+                <label class="form-check-label fw-semibold fs-6" for="frecuencia-fecha">
+                  <i class="bi bi-calendar-check me-2 text-success"></i>Por Fecha Fija
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <form id="formulario-mantenimiento" autocomplete="off">
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Frecuencia de Mantenimiento</label>
-              <div class="d-flex gap-3 mt-2">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tipoFrecuencia" id="frecuencia-horas" value="horas"
-                    checked>
-                  <label class="form-check-label" for="frecuencia-horas">Por Horas de Uso</label>
+
+          <!-- Información General -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light py-3">
+              <h6 class="mb-0 fw-bold text-primary">
+                <i class="bi bi-info-square me-2"></i>Información General
+              </h6>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-4">
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-tag me-2 text-primary"></i>Tipo de Pieza
+                  </label>
+                  <select id="filtro-categoria-producto" class="form-select form-select-lg mb-3">
+                    <option value="">Todas las categorías</option>
+                    {{#each tipos}}
+                    <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                  </select>
+                  <small class="text-muted d-block mb-3">
+                    <i class="bi bi-funnel me-1"></i>Filtra por tipo: perno, cadena, acople, etc.
+                  </small>
+
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-box-seam me-2 text-primary"></i>Producto *
+                  </label>
+                  <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg" required>
+                    <option value="">Seleccione una pieza del inventario</option>
+                    {{#each productos}}
+                    <option value="{{this._id}}" data-referencia="{{this.referencia}}" data-stock="{{this.existencia}}"
+                      data-tipo="{{this.tipo}}" data-nombre="{{this.nombre}}">
+                      {{this.referencia}} - {{this.nombre}} (Stock: {{this.existencia}}){{#if (eq this.existencia 0)}}
+                      ⚠️{{/if}}
+                    </option>
+                    {{/each}}
+                  </select>
+                  <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>Selecciona una pieza del inventario. Si tiene stock, se descontará automáticamente.
+                  </small>
                 </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tipoFrecuencia" id="frecuencia-fecha"
-                    value="fecha">
-                  <label class="form-check-label" for="frecuencia-fecha">Por Fecha Fija</label>
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-wrench-adjustable me-2 text-primary"></i>Tipo de Mantenimiento *
+                  </label>
+                  <select id="mantenimiento-tipo" name="tipo" class="form-select form-select-lg" required>
+                    <option value="preventivo">Preventivo</option>
+                    <option value="correctivo">Correctivo</option>
+                    <option value="instalacion">Instalación</option>
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Tipo de Pieza</label>
-              <select id="filtro-categoria-producto" class="form-select form-select-lg mb-3">
-                <option value="">Todas las categorías</option>
-                {{#each tipos}}
-                <option value="{{this}}">{{this}}</option>
-                {{/each}}
-              </select>
-              <small class="text-muted d-block mb-2">Filtra por tipo: perno, cadena, acople, etc.</small>
-
-              <label class="form-label fw-semibold text-primary">Producto *</label>
-              <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg" required>
-                <option value="">Seleccione una pieza del inventario</option>
-                {{#each productos}}
-                <option value="{{this._id}}" data-referencia="{{this.referencia}}" data-stock="{{this.existencia}}"
-                  data-tipo="{{this.tipo}}" data-nombre="{{this.nombre}}">
-                  {{this.referencia}} - {{this.nombre}} (Stock: {{this.existencia}}){{#if (eq this.existencia 0)}}
-                  ⚠️{{/if}}
-                </option>
-                {{/each}}
-              </select>
-              <small class="text-muted">Selecciona una pieza del inventario. Si tiene stock, se descontará
-                automáticamente.</small>
+          <!-- Máquina/Equipo y Fecha -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light py-3">
+              <h6 class="mb-0 fw-bold text-primary">
+                <i class="bi bi-gear me-2"></i>Máquina/Equipo y Fecha
+              </h6>
             </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Tipo de Mantenimiento *</label>
-              <select id="mantenimiento-tipo" name="tipo" class="form-select form-select-lg" required>
-                <option value="preventivo">Preventivo</option>
-                <option value="correctivo">Correctivo</option>
-                <option value="instalacion">Instalación</option>
-              </select>
+            <div class="card-body p-4">
+              <div class="row g-4">
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-3">
+                    <i class="bi bi-diagram-3 me-2 text-primary"></i>Tipo de Registro
+                  </label>
+                  <div class="d-flex gap-4 mb-4">
+                    <div class="form-check form-check-lg">
+                      <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-maquina" value="maquina" checked>
+                      <label class="form-check-label fw-semibold" for="tipo-maquina">
+                        <i class="bi bi-cpu me-2 text-success"></i>Máquina Registrada
+                      </label>
+                    </div>
+                    <div class="form-check form-check-lg">
+                      <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-equipo" value="equipo">
+                      <label class="form-check-label fw-semibold" for="tipo-equipo">
+                        <i class="bi bi-pencil-square me-2 text-warning"></i>Equipo Manual
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div id="selector-maquina" class="mb-3">
+                    <label class="form-label fw-bold text-dark mb-2">
+                      <i class="bi bi-gear-wide me-2 text-primary"></i>Máquina *
+                    </label>
+                    <select id="mantenimiento-maquina" name="maquinaId" class="form-select form-select-lg">
+                      <option value="">Seleccione una máquina</option>
+                      {{#each maquinas}}
+                      <option value="{{this._id}}" data-codigo="{{this.codigo}}" data-nombre="{{this.nombre}}">
+                        {{this.codigo}} - {{this.nombre}}{{#if this.ubicacion}} ({{this.ubicacion}}){{/if}}
+                      </option>
+                      {{/each}}
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                      <i class="bi bi-info-circle me-1"></i>Al seleccionar una máquina, podrás agregar sus repuestos automáticamente.
+                    </small>
+                  </div>
+                  
+                  <div id="input-equipo" class="mb-3 d-none">
+                    <label class="form-label fw-bold text-dark mb-2">
+                      <i class="bi bi-pencil-square me-2 text-primary"></i>Máquina/Equipo *
+                    </label>
+                    <input type="text" id="mantenimiento-equipo" name="equipo" class="form-control form-control-lg"
+                      placeholder="Ej: Horno 1, Mezcladora 2..." list="equipos-sugeridos">
+                    <datalist id="equipos-sugeridos">
+                      <option value="Horno 1">
+                      <option value="Horno 2">
+                      <option value="Mezcladora 1">
+                      <option value="Mezcladora 2">
+                      <option value="Amasadora">
+                      <option value="Túnel de enfriado">
+                      <option value="Cortadora">
+                      <option value="Empacadora">
+                    </datalist>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-calendar-event me-2 text-primary"></i>Fecha de Instalación *
+                  </label>
+                  <input type="date" id="mantenimiento-fecha-instalacion" name="fechaInstalacion"
+                    class="form-control form-control-lg" required>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Tipo de Registro</label>
-              <div class="d-flex gap-3 mt-2 mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-maquina" value="maquina" checked>
-                  <label class="form-check-label" for="tipo-maquina">Máquina Registrada</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="tipoRegistro" id="tipo-equipo" value="equipo">
-                  <label class="form-check-label" for="tipo-equipo">Equipo Manual</label>
-                </div>
-              </div>
-              
-              <div id="selector-maquina" class="mb-3">
-                <label class="form-label fw-semibold text-primary">Máquina *</label>
-                <select id="mantenimiento-maquina" name="maquinaId" class="form-select form-select-lg">
-                  <option value="">Seleccione una máquina</option>
-                  {{#each maquinas}}
-                  <option value="{{this._id}}" data-codigo="{{this.codigo}}" data-nombre="{{this.nombre}}">
-                    {{this.codigo}} - {{this.nombre}}{{#if this.ubicacion}} ({{this.ubicacion}}){{/if}}
-                  </option>
-                  {{/each}}
-                </select>
-                <small class="text-muted">Al seleccionar una máquina, podrás agregar sus repuestos automáticamente.</small>
-              </div>
-              
-              <div id="input-equipo" class="mb-3 d-none">
-                <label class="form-label fw-semibold text-primary">Máquina/Equipo *</label>
-                <input type="text" id="mantenimiento-equipo" name="equipo" class="form-control form-control-lg"
-                  placeholder="Ej: Horno 1, Mezcladora 2..." list="equipos-sugeridos">
-                <datalist id="equipos-sugeridos">
-                  <option value="Horno 1">
-                  <option value="Horno 2">
-                  <option value="Mezcladora 1">
-                  <option value="Mezcladora 2">
-                  <option value="Amasadora">
-                  <option value="Túnel de enfriado">
-                  <option value="Cortadora">
-                  <option value="Empacadora">
-                </datalist>
-              </div>
+          <!-- Formulario: Por Horas de Uso -->
+          <div class="card border-0 shadow-sm mb-4" id="formulario-horas">
+            <div class="card-header bg-info bg-opacity-10 py-3 border-bottom border-info">
+              <h6 class="mb-0 fw-bold text-info">
+                <i class="bi bi-hourglass-split me-2"></i>Configuración: Por Horas de Uso
+              </h6>
             </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Fecha de Instalación *</label>
-              <input type="date" id="mantenimiento-fecha-instalacion" name="fechaInstalacion"
-                class="form-control form-control-lg" required>
-            </div>
-          </div>
-
-          <!-- Campos para Frecuencia por Horas -->
-          <div class="row g-3 mb-3" id="campos-horas">
-            <div class="col-12">
-              <div class="alert alert-info mb-3">
+            <div class="card-body p-4">
+              <div class="alert alert-info border-0 mb-4">
                 <i class="bi bi-info-circle me-2"></i>
                 <strong>Modo: Por Horas de Uso</strong> - El sistema calculará la fecha de vencimiento basándose en las horas de trabajo diarias.
               </div>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Horas de Vida Útil *</label>
-              <input type="number" id="mantenimiento-horas" name="horasVidaUtil" min="0" step="1"
-                class="form-control form-control-lg" placeholder="Ej: 500" required>
-              <small class="text-muted">Total de horas que puede funcionar antes del cambio</small>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Horas de Trabajo Diarias *</label>
-              <input type="number" id="mantenimiento-horas-diarias" name="horasDiarias" min="1" max="24" step="0.5"
-                class="form-control form-control-lg" placeholder="Ej: 12" value="12" required>
-              <small class="text-muted">Promedio de horas de uso por día</small>
+              <div class="row g-4">
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Horas de Vida Útil *
+                  </label>
+                  <input type="number" id="mantenimiento-horas" name="horasVidaUtil" min="0" step="1"
+                    class="form-control form-control-lg" placeholder="Ej: 500" required>
+                  <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>Total de horas que puede funcionar antes del cambio
+                  </small>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-calendar-day me-2 text-primary"></i>Horas de Trabajo Diarias *
+                  </label>
+                  <input type="number" id="mantenimiento-horas-diarias" name="horasDiarias" min="1" max="24" step="0.5"
+                    class="form-control form-control-lg" placeholder="Ej: 12" value="12" required>
+                  <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>Promedio de horas de uso por día
+                  </small>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Campos para Frecuencia por Fecha -->
-          <div class="row g-3 mb-3 d-none" id="campos-fecha">
-            <div class="col-12">
-              <div class="alert alert-warning mb-3">
+          <!-- Formulario: Por Fecha Fija -->
+          <div class="card border-0 shadow-sm mb-4 d-none" id="formulario-fecha">
+            <div class="card-header bg-success bg-opacity-10 py-3 border-bottom border-success">
+              <h6 class="mb-0 fw-bold text-success">
+                <i class="bi bi-calendar-check me-2"></i>Configuración: Por Fecha Fija
+              </h6>
+            </div>
+            <div class="card-body p-4">
+              <div class="alert alert-success border-0 mb-4">
                 <i class="bi bi-calendar-event me-2"></i>
                 <strong>Modo: Por Fecha Fija</strong> - El sistema calculará la fecha de vencimiento sumando días a la fecha de instalación.
               </div>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Intervalo de Cambio (Días) *</label>
-              <input type="number" id="mantenimiento-intervalo" name="intervaloDias" min="1" step="1"
-                class="form-control form-control-lg" placeholder="Ej: 30">
-              <small class="text-muted">Cada cuántos días se debe realizar el mantenimiento</small>
-            </div>
-          </div>
-
-          <div class="row g-3 mb-3">
-            <div class="col-12">
-              <div class="alert alert-info py-2">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="form-label fw-semibold text-primary mb-0">Fecha de Próximo Cambio</label>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="fecha-automatica" checked>
-                    <label class="form-check-label small" for="fecha-automatica">
-                      Cálculo Automático
-                    </label>
-                  </div>
+              <div class="row g-4">
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-calendar-range me-2 text-primary"></i>Intervalo de Cambio (Días) *
+                  </label>
+                  <input type="number" id="mantenimiento-intervalo" name="intervaloDias" min="1" step="1"
+                    class="form-control form-control-lg" placeholder="Ej: 30">
+                  <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>Cada cuántos días se debe realizar el mantenimiento
+                  </small>
                 </div>
-                <div id="calculo-mantenimiento" class="mb-2">
-                  <small class="text-muted">Completa los datos para calcular el vencimiento.</small>
-                </div>
-                <input type="date" id="mantenimiento-fecha-vencimiento" name="fechaVencimiento"
-                  class="form-control form-control-lg" readonly>
-                <small class="text-muted d-block mt-1">Activa/desactiva "Cálculo Automático" para ingresar la fecha manualmente.</small>
               </div>
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Costo (Opcional)</label>
-              <input type="number" id="mantenimiento-costo" name="costo" min="0" step="0.01"
-                class="form-control form-control-lg" placeholder="0.00">
+          <!-- Fecha de Próximo Cambio -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-warning bg-opacity-10 py-3 border-bottom border-warning">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-warning">
+                  <i class="bi bi-calendar-x me-2"></i>Fecha de Próximo Cambio
+                </h6>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="fecha-automatica" checked>
+                  <label class="form-check-label fw-semibold small" for="fecha-automatica">
+                    <i class="bi bi-calculator me-1"></i>Cálculo Automático
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="card-body p-4">
+              <div id="calculo-mantenimiento" class="mb-3 p-3 bg-light rounded">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>Completa los datos para calcular el vencimiento.
+                </small>
+              </div>
+              <input type="date" id="mantenimiento-fecha-vencimiento" name="fechaVencimiento"
+                class="form-control form-control-lg" readonly>
+              <small class="text-muted d-block mt-2">
+                <i class="bi bi-lightbulb me-1"></i>Activa/desactiva "Cálculo Automático" para ingresar la fecha manualmente.
+              </small>
+            </div>
+          </div>
+
+          <!-- Costo y Observaciones -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light py-3">
+              <h6 class="mb-0 fw-bold text-primary">
+                <i class="bi bi-file-text me-2"></i>Información Adicional
+              </h6>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-4">
+                <div class="col-12 col-md-6">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-currency-dollar me-2 text-primary"></i>Costo (Opcional)
+                  </label>
+                  <input type="number" id="mantenimiento-costo" name="costo" min="0" step="0.01"
+                    class="form-control form-control-lg" placeholder="0.00">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-bold text-dark mb-2">
+                    <i class="bi bi-chat-left-text me-2 text-primary"></i>Observaciones
+                  </label>
+                  <textarea id="mantenimiento-observaciones" name="observaciones" class="form-control form-control-lg"
+                    rows="3" placeholder="Notas adicionales sobre el mantenimiento..."></textarea>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Repuestos Utilizados -->
-          <div class="row g-3 mb-3" id="seccion-repuestos" style="display: none;">
-            <div class="col-12">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <label class="form-label fw-semibold text-primary mb-0">
+          <div class="card border-0 shadow-sm mb-4" id="seccion-repuestos" style="display: none;">
+            <div class="card-header bg-primary text-white py-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
                   <i class="bi bi-box-seam me-2"></i>Repuestos Utilizados
-                </label>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-agregar-repuesto-mantenimiento">
+                </h6>
+                <button type="button" class="btn btn-light btn-sm" id="btn-agregar-repuesto-mantenimiento">
                   <i class="bi bi-plus-circle me-1"></i>Agregar Repuesto
                 </button>
               </div>
-              <div id="repuestos-mantenimiento-container" class="mb-3">
+            </div>
+            <div class="card-body p-4">
+              <div id="repuestos-mantenimiento-container">
                 <!-- Los repuestos se agregarán dinámicamente aquí -->
               </div>
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12">
-              <label class="form-label fw-semibold text-primary">Observaciones</label>
-              <textarea id="mantenimiento-observaciones" name="observaciones" class="form-control form-control-lg"
-                rows="2" placeholder="Notas..."></textarea>
-            </div>
-          </div>
-
-          <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-check-circle me-2"></i>Registrar
+          <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+            <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-2"></i>Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg px-4">
+              <i class="bi bi-check-circle me-2"></i>Registrar Mantenimiento
             </button>
           </div>
         </form>
