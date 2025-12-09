@@ -394,23 +394,37 @@ exports.updateProduct = async (req, res) => {
 
     console.log('🔄 Datos a actualizar:', JSON.stringify(updateData, null, 2));
 
-    // Usar findOneAndUpdate con setDefaultsOnInsert: false para no afectar campos no enviados
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id, 
-      { $set: updateData },
-      {
-        new: true,
-        runValidators: true,
-        setDefaultsOnInsert: false
+    // Actualizar campos del producto existente
+    Object.keys(updateData).forEach(key => {
+      if (key !== 'actualizadoPor') {
+        product[key] = updateData[key];
       }
-    );
+    });
+    product.actualizadoPor = updateData.actualizadoPor;
 
-    if (!updatedProduct) {
-      return res.status(404).json({
+    // Validar y guardar
+    try {
+      await product.validate();
+    } catch (validationError) {
+      console.error('❌ Error de validación de Mongoose:', validationError);
+      const mongooseErrors = [];
+      if (validationError.errors) {
+        Object.keys(validationError.errors).forEach(key => {
+          mongooseErrors.push({
+            field: key,
+            message: validationError.errors[key].message,
+            path: validationError.errors[key].path
+          });
+        });
+      }
+      return res.status(400).json({
         success: false,
-        message: 'No se pudo actualizar el producto'
+        message: 'Error de validación',
+        errors: mongooseErrors.length > 0 ? mongooseErrors : [{ field: 'general', message: validationError.message }]
       });
     }
+
+    const updatedProduct = await product.save();
 
     // Calcular cambios detallados - solo para campos que se actualizaron
     const cambios = {};

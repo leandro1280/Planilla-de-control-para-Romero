@@ -344,6 +344,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         console.log('📥 Respuesta recibida:', result);
+        
+        // Expandir errores en consola para debugging
+        if (result.errors && Array.isArray(result.errors)) {
+          console.error('❌ Errores de validación:', result.errors);
+          result.errors.forEach((err, index) => {
+            console.error(`  Error ${index + 1}:`, err);
+          });
+        }
 
         resultDiv.classList.remove('d-none');
 
@@ -366,9 +374,9 @@ document.addEventListener('DOMContentLoaded', function () {
           let errorDetails = '';
           
           if (result.errors && Array.isArray(result.errors) && result.errors.length > 0) {
-            errorDetails = '<ul class="mb-0 mt-2">';
+            errorDetails = '<ul class="mb-0 mt-2" style="text-align: left;">';
             result.errors.forEach(err => {
-              const field = err.field || err.path || 'Campo desconocido';
+              const field = err.field || err.path || err.key || 'Campo desconocido';
               const message = err.message || err.msg || 'Error de validación';
               errorDetails += `<li><strong>${field}:</strong> ${message}</li>`;
             });
@@ -381,8 +389,9 @@ document.addEventListener('DOMContentLoaded', function () {
             <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de validación</h6>
             <p class="mb-0">${errorMsg}</p>
             ${errorDetails}
+            <small class="d-block mt-2 text-muted">Revisa la consola del navegador (F12) para más detalles.</small>
           `;
-          console.error('Error del servidor:', result);
+          console.error('❌ Error completo del servidor:', JSON.stringify(result, null, 2));
           if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';
