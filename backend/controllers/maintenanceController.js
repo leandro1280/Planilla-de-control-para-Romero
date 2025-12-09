@@ -79,6 +79,10 @@ exports.getMaintenances = async (req, res) => {
       .select('referencia nombre tipo existencia')
       .lean();
 
+    // Obtener tipos únicos de productos para el filtro
+    const tiposUnicos = await Product.distinct('tipo').lean();
+    const tiposFiltrados = tiposUnicos.filter(t => t && t.trim() !== '').sort();
+
     // Obtener máquinas para el formulario
     const maquinas = await Machine.find({ activo: true })
       .sort({ nombre: 1 })
@@ -96,6 +100,7 @@ exports.getMaintenances = async (req, res) => {
       },
       maintenances,
       productos,
+      tipos: tiposFiltrados,
       maquinas,
       equipos: equiposFiltrados,
       paginaActual,

@@ -21,19 +21,46 @@ document.addEventListener('DOMContentLoaded', function () {
   const intervaloInput = document.getElementById('mantenimiento-intervalo');
 
   function toggleFrecuencia() {
-    if (radioFecha.checked) {
-      camposHoras.classList.add('d-none');
-      camposFecha.classList.remove('d-none');
-      // Limpiar campos de horas
-      horasVidaUtilInput.value = '';
-      horasDiariasInput.value = '12';
+    if (radioFecha && radioFecha.checked) {
+      // Modo por Fecha Fija
+      if (camposHoras) camposHoras.classList.add('d-none');
+      if (camposFecha) camposFecha.classList.remove('d-none');
+      // Limpiar y deshabilitar campos de horas
+      if (horasVidaUtilInput) {
+        horasVidaUtilInput.value = '';
+        horasVidaUtilInput.removeAttribute('required');
+      }
+      if (horasDiariasInput) {
+        horasDiariasInput.value = '12';
+        horasDiariasInput.removeAttribute('required');
+      }
+      // Habilitar campo de intervalo
+      if (intervaloInput) {
+        intervaloInput.setAttribute('required', 'required');
+      }
     } else {
-      camposHoras.classList.remove('d-none');
-      camposFecha.classList.add('d-none');
-      // Limpiar campos de fecha
-      intervaloInput.value = '';
+      // Modo por Horas de Uso
+      if (camposHoras) camposHoras.classList.remove('d-none');
+      if (camposFecha) camposFecha.classList.add('d-none');
+      // Limpiar y deshabilitar campo de intervalo
+      if (intervaloInput) {
+        intervaloInput.value = '';
+        intervaloInput.removeAttribute('required');
+      }
+      // Habilitar campos de horas
+      if (horasVidaUtilInput) {
+        horasVidaUtilInput.setAttribute('required', 'required');
+      }
+      if (horasDiariasInput) {
+        horasDiariasInput.setAttribute('required', 'required');
+      }
     }
     calcularFechaProximoCambio();
+  }
+
+  // Inicializar estado del formulario
+  if (radioHoras && radioFecha) {
+    toggleFrecuencia();
   }
 
   if (radioHoras && radioFecha) {
@@ -86,13 +113,41 @@ document.addEventListener('DOMContentLoaded', function () {
   const horasDiariasInput = document.getElementById('mantenimiento-horas-diarias');
   const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
   const calculoDiv = document.getElementById('calculo-mantenimiento');
+  const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
+
+  // Toggle fecha automática/manual
+  if (fechaAutomaticaSwitch) {
+    fechaAutomaticaSwitch.addEventListener('change', function() {
+      if (this.checked) {
+        // Modo automático
+        fechaVencimientoInput.readOnly = true;
+        fechaVencimientoInput.classList.add('bg-light');
+        calcularFechaProximoCambio();
+      } else {
+        // Modo manual
+        fechaVencimientoInput.readOnly = false;
+        fechaVencimientoInput.classList.remove('bg-light');
+        if (calculoDiv) {
+          calculoDiv.innerHTML = '<small class="text-info"><i class="bi bi-info-circle me-1"></i>Ingresa la fecha manualmente.</small>';
+        }
+      }
+    });
+  }
 
   function calcularFechaProximoCambio() {
+    // Si el modo automático está desactivado, no calcular
+    if (fechaAutomaticaSwitch && !fechaAutomaticaSwitch.checked) {
+      return;
+    }
+
     const fechaInstalacion = fechaInstalacionInput?.value;
     let diasHastaCambio = 0;
     let esPorFecha = radioFecha?.checked;
 
-    if (!fechaInstalacion) return;
+    if (!fechaInstalacion) {
+      limpiarCalculo();
+      return;
+    }
 
     if (esPorFecha) {
       const intervalo = parseInt(intervaloInput?.value) || 0;
@@ -119,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Formatear fecha
     const fechaFormateada = fechaInst.toISOString().split('T')[0];
 
-    if (fechaVencimientoInput) {
+    if (fechaVencimientoInput && fechaVencimientoInput.readOnly) {
       fechaVencimientoInput.value = fechaFormateada;
     }
 

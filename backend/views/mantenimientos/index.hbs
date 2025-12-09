@@ -258,11 +258,14 @@
 
           <div class="row g-3 mb-3">
             <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Filtrar Piezas por Categoría</label>
-              <select id="filtro-categoria-producto" class="form-select mb-2">
+              <label class="form-label fw-semibold text-primary">Tipo de Pieza</label>
+              <select id="filtro-categoria-producto" class="form-select form-select-lg mb-3">
                 <option value="">Todas las categorías</option>
-                <!-- Se llenará dinámicamente con JS -->
+                {{#each tipos}}
+                <option value="{{this}}">{{this}}</option>
+                {{/each}}
               </select>
+              <small class="text-muted d-block mb-2">Filtra por tipo: perno, cadena, acople, etc.</small>
 
               <label class="form-label fw-semibold text-primary">Producto *</label>
               <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg" required>
@@ -340,36 +343,60 @@
 
           <!-- Campos para Frecuencia por Horas -->
           <div class="row g-3 mb-3" id="campos-horas">
+            <div class="col-12">
+              <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Modo: Por Horas de Uso</strong> - El sistema calculará la fecha de vencimiento basándose en las horas de trabajo diarias.
+              </div>
+            </div>
             <div class="col-12 col-md-6">
               <label class="form-label fw-semibold text-primary">Horas de Vida Útil *</label>
               <input type="number" id="mantenimiento-horas" name="horasVidaUtil" min="0" step="1"
-                class="form-control form-control-lg" placeholder="Ej: 500">
+                class="form-control form-control-lg" placeholder="Ej: 500" required>
+              <small class="text-muted">Total de horas que puede funcionar antes del cambio</small>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold text-primary">Horas de Trabajo Diarias</label>
+              <label class="form-label fw-semibold text-primary">Horas de Trabajo Diarias *</label>
               <input type="number" id="mantenimiento-horas-diarias" name="horasDiarias" min="1" max="24" step="0.5"
-                class="form-control form-control-lg" placeholder="Ej: 12" value="12">
+                class="form-control form-control-lg" placeholder="Ej: 12" value="12" required>
+              <small class="text-muted">Promedio de horas de uso por día</small>
             </div>
           </div>
 
           <!-- Campos para Frecuencia por Fecha -->
           <div class="row g-3 mb-3 d-none" id="campos-fecha">
+            <div class="col-12">
+              <div class="alert alert-warning mb-3">
+                <i class="bi bi-calendar-event me-2"></i>
+                <strong>Modo: Por Fecha Fija</strong> - El sistema calculará la fecha de vencimiento sumando días a la fecha de instalación.
+              </div>
+            </div>
             <div class="col-12 col-md-6">
               <label class="form-label fw-semibold text-primary">Intervalo de Cambio (Días) *</label>
               <input type="number" id="mantenimiento-intervalo" name="intervaloDias" min="1" step="1"
                 class="form-control form-control-lg" placeholder="Ej: 30">
+              <small class="text-muted">Cada cuántos días se debe realizar el mantenimiento</small>
             </div>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-12">
               <div class="alert alert-info py-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label fw-semibold text-primary mb-0">Fecha de Próximo Cambio</label>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="fecha-automatica" checked>
+                    <label class="form-check-label small" for="fecha-automatica">
+                      Cálculo Automático
+                    </label>
+                  </div>
+                </div>
                 <div id="calculo-mantenimiento" class="mb-2">
                   <small class="text-muted">Completa los datos para calcular el vencimiento.</small>
                 </div>
-                <label class="form-label fw-semibold text-primary mb-1">Fecha de Próximo Cambio</label>
                 <input type="date" id="mantenimiento-fecha-vencimiento" name="fechaVencimiento"
-                  class="form-control form-control-lg bg-light" readonly>
+                  class="form-control form-control-lg" readonly>
+                <small class="text-muted d-block mt-1">Activa/desactiva "Cálculo Automático" para ingresar la fecha manualmente.</small>
               </div>
             </div>
           </div>

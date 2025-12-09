@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const Movement = require('../models/Movement');
 const User = require('../models/User');
 const Maintenance = require('../models/Maintenance');
+const Machine = require('../models/Machine');
 
 const { checkUpcomingMaintenances } = require('./maintenanceController');
 
@@ -143,6 +144,19 @@ exports.renderDashboard = async (req, res) => {
         ((mesActual.consumo - mesAnterior.consumo) / mesAnterior.consumo * 100).toFixed(1) : 0
     };
 
+    // Obtener productos y máquinas para QR codes (últimos 20)
+    const productosParaQR = await Product.find({})
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('referencia nombre')
+      .lean();
+
+    const maquinasParaQR = await Machine.find({ activo: true })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('codigo nombre')
+      .lean();
+
     res.render('dashboard/index', {
       title: 'Dashboard - Sistema de Gestión Interna',
       currentPage: 'dashboard',
@@ -165,7 +179,9 @@ exports.renderDashboard = async (req, res) => {
       productosCriticosLista,
       proximosMantenimientos,
       mantenimientosVencidos,
-      mantenimientosProximos
+      mantenimientosProximos,
+      productosParaQR,
+      maquinasParaQR
     });
   } catch (error) {
     console.error('Error renderizando dashboard:', error);
