@@ -102,8 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Filtrar productos al cambiar categoría
     filtroCategoria.addEventListener('change', () => {
-      const categoriaSeleccionada = filtroCategoria.value.trim().toLowerCase();
-      let hayOpcionesVisibles = false;
+      const categoriaSeleccionada = filtroCategoria.value.trim();
       
       Array.from(productoSelect.options).forEach(option => {
         if (option.value === "") {
@@ -112,11 +111,13 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        const tipoProducto = (option.getAttribute('data-tipo') || option.dataset.tipo || '').trim().toLowerCase();
+        // Obtener el tipo del producto (sin convertir a minúsculas para comparación exacta)
+        const tipoProducto = (option.getAttribute('data-tipo') || option.dataset.tipo || '').trim();
         
+        // Si no hay categoría seleccionada, mostrar todos
+        // Si hay categoría seleccionada, mostrar solo los que coincidan exactamente
         if (!categoriaSeleccionada || tipoProducto === categoriaSeleccionada) {
           option.style.display = '';
-          hayOpcionesVisibles = true;
         } else {
           option.style.display = 'none';
         }
@@ -128,6 +129,11 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSelect.value = "";
       }
     });
+    
+    // Aplicar filtro inicial si hay una categoría seleccionada
+    if (filtroCategoria.value) {
+      filtroCategoria.dispatchEvent(new Event('change'));
+    }
   }
 
   // Cálculo automático de fecha de próximo cambio
@@ -138,22 +144,33 @@ document.addEventListener('DOMContentLoaded', function () {
   const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
 
   // Toggle fecha automática/manual
-  if (fechaAutomaticaSwitch) {
+  if (fechaAutomaticaSwitch && fechaVencimientoInput) {
     fechaAutomaticaSwitch.addEventListener('change', function() {
       if (this.checked) {
         // Modo automático
         fechaVencimientoInput.readOnly = true;
         fechaVencimientoInput.classList.add('bg-light');
+        fechaVencimientoInput.removeAttribute('required');
         calcularFechaProximoCambio();
       } else {
         // Modo manual
         fechaVencimientoInput.readOnly = false;
         fechaVencimientoInput.classList.remove('bg-light');
+        fechaVencimientoInput.setAttribute('required', 'required');
         if (calculoDiv) {
           calculoDiv.innerHTML = '<small class="text-info"><i class="bi bi-info-circle me-1"></i>Ingresa la fecha manualmente.</small>';
         }
       }
     });
+    
+    // Inicializar estado del switch
+    if (fechaAutomaticaSwitch.checked) {
+      fechaVencimientoInput.readOnly = true;
+      fechaVencimientoInput.classList.add('bg-light');
+    } else {
+      fechaVencimientoInput.readOnly = false;
+      fechaVencimientoInput.classList.remove('bg-light');
+    }
   }
 
   function calcularFechaProximoCambio() {
@@ -208,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const fechaFormateada = `${año}-${mes}-${dia}`;
 
     if (fechaVencimientoInput) {
+      // Solo actualizar si está en modo automático
       if (fechaVencimientoInput.readOnly) {
         fechaVencimientoInput.value = fechaFormateada;
       }
@@ -281,29 +299,54 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Agregar listeners para cálculo automático
+  // Agregar listeners para cálculo automático - Usar debounce para mejor rendimiento
+  let timeoutCalculo = null;
+  function triggerCalculo() {
+    if (timeoutCalculo) clearTimeout(timeoutCalculo);
+    timeoutCalculo = setTimeout(() => {
+      calcularFechaProximoCambio();
+    }, 300);
+  }
+
   if (intervaloInput) {
-    intervaloInput.addEventListener('input', calcularFechaProximoCambio);
+    intervaloInput.addEventListener('input', triggerCalculo);
     intervaloInput.addEventListener('change', calcularFechaProximoCambio);
-    intervaloInput.addEventListener('keyup', calcularFechaProximoCambio);
+    intervaloInput.addEventListener('blur', calcularFechaProximoCambio);
   }
 
   if (horasVidaUtilInput) {
-    horasVidaUtilInput.addEventListener('input', calcularFechaProximoCambio);
+    horasVidaUtilInput.addEventListener('input', triggerCalculo);
     horasVidaUtilInput.addEventListener('change', calcularFechaProximoCambio);
-    horasVidaUtilInput.addEventListener('keyup', calcularFechaProximoCambio);
+    horasVidaUtilInput.addEventListener('blur', calcularFechaProximoCambio);
   }
 
   if (horasDiariasInput) {
-    horasDiariasInput.addEventListener('input', calcularFechaProximoCambio);
+    horasDiariasInput.addEventListener('input', triggerCalculo);
     horasDiariasInput.addEventListener('change', calcularFechaProximoCambio);
-    horasDiariasInput.addEventListener('keyup', calcularFechaProximoCambio);
+    horasDiariasInput.addEventListener('blur', calcularFechaProximoCambio);
   }
 
   if (fechaInstalacionInput) {
     fechaInstalacionInput.addEventListener('change', calcularFechaProximoCambio);
-    fechaInstalacionInput.addEventListener('input', calcularFechaProximoCambio);
+    fechaInstalacionInput.addEventListener('input', triggerCalculo);
   }
+  
+  // Recalcular cuando cambia el tipo de frecuencia
+  if (radioHoras && radioFecha) {
+    radioHoras.addEventListener('change', () => {
+      setTimeout(calcularFechaProximoCambio, 100);
+    });
+    radioFecha.addEventListener('change', () => {
+      setTimeout(calcularFechaProximoCambio, 100);
+    });
+  }
+  
+  // Calcular inicialmente si hay datos
+  setTimeout(() => {
+    if (fechaAutomaticaSwitch && fechaAutomaticaSwitch.checked) {
+      calcularFechaProximoCambio();
+    }
+  }, 500);
 
   // Filtros
   if (buscadorReferencia) {
