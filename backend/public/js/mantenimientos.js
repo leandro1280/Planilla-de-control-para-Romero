@@ -58,8 +58,16 @@ document.addEventListener('DOMContentLoaded', function () {
     calcularFechaProximoCambio();
   }
 
-  // Inicializar estado del formulario
-  if (radioHoras && radioFecha) {
+  // Inicializar estado del formulario - Asegurar que solo uno esté visible
+  if (radioHoras && radioFecha && formularioHoras && formularioFecha) {
+    // Inicializar: mostrar formulario de horas, ocultar formulario de fecha
+    if (radioHoras.checked) {
+      formularioHoras.classList.remove('d-none');
+      formularioFecha.classList.add('d-none');
+    } else {
+      formularioHoras.classList.add('d-none');
+      formularioFecha.classList.remove('d-none');
+    }
     toggleFrecuencia();
   }
 
@@ -73,16 +81,19 @@ document.addEventListener('DOMContentLoaded', function () {
   const productoSelect = document.getElementById('mantenimiento-producto');
 
   if (filtroCategoria && productoSelect) {
-    // Obtener categorías únicas
+    // Obtener categorías únicas desde las opciones del select
     const categorias = new Set();
     Array.from(productoSelect.options).forEach(option => {
-      if (option.dataset.tipo) {
-        categorias.add(option.dataset.tipo);
+      // Buscar el atributo data-tipo en la opción
+      const tipo = option.getAttribute('data-tipo') || option.dataset.tipo;
+      if (tipo && tipo.trim() !== '') {
+        categorias.add(tipo.trim());
       }
     });
 
-    // Llenar select de categorías
-    categorias.forEach(cat => {
+    // Llenar select de categorías (ordenar alfabéticamente)
+    const categoriasOrdenadas = Array.from(categorias).sort();
+    categoriasOrdenadas.forEach(cat => {
       const option = document.createElement('option');
       option.value = cat;
       option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
@@ -91,18 +102,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Filtrar productos al cambiar categoría
     filtroCategoria.addEventListener('change', () => {
-      const categoriaSeleccionada = filtroCategoria.value;
+      const categoriaSeleccionada = filtroCategoria.value.trim().toLowerCase();
+      let hayOpcionesVisibles = false;
+      
       Array.from(productoSelect.options).forEach(option => {
-        if (option.value === "") return; // Mantener opción por defecto
-
-        if (!categoriaSeleccionada || option.dataset.tipo === categoriaSeleccionada) {
+        if (option.value === "") {
+          // Mantener opción por defecto siempre visible
           option.style.display = '';
+          return;
+        }
+
+        const tipoProducto = (option.getAttribute('data-tipo') || option.dataset.tipo || '').trim().toLowerCase();
+        
+        if (!categoriaSeleccionada || tipoProducto === categoriaSeleccionada) {
+          option.style.display = '';
+          hayOpcionesVisibles = true;
         } else {
           option.style.display = 'none';
         }
       });
+      
       // Resetear selección si el actual queda oculto
-      if (productoSelect.selectedOptions[0].style.display === 'none') {
+      const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+      if (selectedOption && selectedOption.style.display === 'none') {
         productoSelect.value = "";
       }
     });
@@ -389,6 +411,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       }
 
+      // Obtener tipo de frecuencia del radio button seleccionado
+      const tipoFrecuenciaSeleccionado = document.querySelector('input[name="tipoFrecuencia"]:checked')?.value || 'horas';
+      
       // Preparar datos
       const maintenanceData = {
         maquinaId: tipoRegistro === 'maquina' && maquinaSelect?.value ? maquinaSelect.value : null,
@@ -397,9 +422,10 @@ document.addEventListener('DOMContentLoaded', function () {
         equipo: tipoRegistro === 'equipo' ? (equipoInput?.value || '') : (maquinaSelect?.selectedOptions[0]?.dataset.nombre || ''),
         fechaInstalacion: data.fechaInstalacion || new Date().toISOString().split('T')[0],
         fechaVencimiento: data.fechaVencimiento || null,
-        tipoFrecuencia: data.tipoFrecuencia || 'horas',
-        intervaloDias: data.intervaloDias ? parseInt(data.intervaloDias) : null,
-        horasVidaUtil: data.horasVidaUtil ? parseInt(data.horasVidaUtil) : null,
+        tipoFrecuencia: tipoFrecuenciaSeleccionado,
+        intervaloDias: tipoFrecuenciaSeleccionado === 'fecha' && data.intervaloDias ? parseInt(data.intervaloDias) : null,
+        horasVidaUtil: tipoFrecuenciaSeleccionado === 'horas' && data.horasVidaUtil ? parseInt(data.horasVidaUtil) : null,
+        horasDiarias: tipoFrecuenciaSeleccionado === 'horas' && data.horasDiarias ? parseFloat(data.horasDiarias) : null,
         observaciones: data.observaciones || '',
         costo: data.costo ? parseFloat(data.costo) : null,
         repuestosUtilizados: repuestosUtilizados

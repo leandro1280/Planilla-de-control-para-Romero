@@ -74,8 +74,9 @@ exports.getMaintenances = async (req, res) => {
     const equiposFiltrados = equipos.filter(e => e && e.trim() !== '').sort();
 
     // Obtener TODOS los productos para el formulario (mostrar todos, marcar los sin stock)
+    // Ordenar primero por tipo (alfabético), luego por nombre (alfabético)
     const productos = await Product.find({})
-      .sort({ referencia: 1 })
+      .sort({ tipo: 1, nombre: 1 })
       .select('referencia nombre tipo existencia')
       .lean();
 
@@ -227,12 +228,24 @@ exports.createMaintenance = async (req, res) => {
       repuestosUtilizados: repuestosArray
     };
 
-    // Calcular fecha de vencimiento si es por fecha
-    if (maintenanceData.tipoFrecuencia === 'fecha' && maintenanceData.intervaloDias) {
-      const fechaInst = new Date(maintenanceData.fechaInstalacion);
-      maintenanceData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + maintenanceData.intervaloDias));
-    } else if (fechaVencimiento) {
+    // Calcular fecha de vencimiento
+    if (fechaVencimiento) {
+      // Si se envía fechaVencimiento explícitamente, usarla (modo manual)
       maintenanceData.fechaVencimiento = new Date(fechaVencimiento);
+    } else {
+      // Si no se envía, recalcular según el tipo de frecuencia
+      if (maintenanceData.tipoFrecuencia === 'fecha' && maintenanceData.intervaloDias) {
+        const fechaInst = new Date(maintenanceData.fechaInstalacion);
+        maintenanceData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + maintenanceData.intervaloDias));
+      } else if (maintenanceData.tipoFrecuencia === 'horas' && maintenanceData.horasVidaUtil) {
+        // Calcular días basándose en horas
+        const horasDiarias = req.body.horasDiarias ? parseFloat(req.body.horasDiarias) : 12;
+        if (horasDiarias > 0) {
+          const diasHastaCambio = Math.ceil(maintenanceData.horasVidaUtil / horasDiarias);
+          const fechaInst = new Date(maintenanceData.fechaInstalacion);
+          maintenanceData.fechaVencimiento = new Date(fechaInst.setDate(fechaInst.getDate() + diasHastaCambio));
+        }
+      }
     }
 
     const maintenance = await Maintenance.create(maintenanceData);
