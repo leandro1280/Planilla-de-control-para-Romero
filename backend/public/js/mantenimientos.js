@@ -1,5 +1,12 @@
 // Funcionalidad de Mantenimientos Preventivos
 document.addEventListener('DOMContentLoaded', function () {
+  // Verificar que no esté ya declarado (por si el script se carga dos veces)
+  if (typeof window.formularioMantenimientoLoaded !== 'undefined') {
+    console.warn('⚠️ El script de mantenimientos ya se cargó. Evitando duplicación.');
+    return;
+  }
+  window.formularioMantenimientoLoaded = true;
+  
   const formularioMantenimiento = document.getElementById('formulario-mantenimiento');
   const buscadorReferencia = document.getElementById('buscador-referencia');
   const filtroEquipo = document.getElementById('filtro-equipo');
