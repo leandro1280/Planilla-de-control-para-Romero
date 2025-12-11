@@ -101,6 +101,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Función para filtrar y reconstruir el select de productos
     function filtrarProductos() {
       const categoriaSeleccionada = filtroCategoria.value.trim();
+      console.log('🔍 Filtrando productos. Categoría seleccionada:', categoriaSeleccionada);
+      console.log('📦 Total opciones originales:', opcionesOriginales.length);
       
       // Guardar la selección actual
       const valorSeleccionado = productoSelect.value;
@@ -110,8 +112,11 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSelect.remove(1);
       }
       
+      let productosAgregados = 0;
+      
       // Si no hay categoría seleccionada, mostrar todos
       if (!categoriaSeleccionada) {
+        console.log('📋 Sin filtro: mostrando todos los productos');
         opcionesOriginales.forEach(opcion => {
           const option = document.createElement('option');
           option.value = opcion.value;
@@ -121,14 +126,16 @@ document.addEventListener('DOMContentLoaded', function () {
           option.setAttribute('data-stock', opcion.dataStock);
           option.setAttribute('data-nombre', opcion.dataNombre);
           productoSelect.appendChild(option);
+          productosAgregados++;
         });
       } else {
         // Filtrar por categoría seleccionada
+        console.log('🔎 Filtrando por tipo:', categoriaSeleccionada);
         opcionesOriginales.forEach(opcion => {
           const tipoProducto = (opcion.dataTipo || '').trim();
+          const coincide = tipoProducto.toLowerCase() === categoriaSeleccionada.toLowerCase();
           
-          // Comparación case-insensitive
-          if (tipoProducto.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
+          if (coincide) {
             const option = document.createElement('option');
             option.value = opcion.value;
             option.textContent = opcion.text;
@@ -137,8 +144,10 @@ document.addEventListener('DOMContentLoaded', function () {
             option.setAttribute('data-stock', opcion.dataStock);
             option.setAttribute('data-nombre', opcion.dataNombre);
             productoSelect.appendChild(option);
+            productosAgregados++;
           }
         });
+        console.log(`✅ Productos agregados: ${productosAgregados}`);
       }
       
       // Restaurar la selección si el producto sigue disponible
@@ -153,18 +162,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Filtrar productos al cambiar categoría
-    filtroCategoria.addEventListener('change', filtrarProductos);
+    filtroCategoria.addEventListener('change', function(e) {
+      console.log('🔄 Evento change detectado en filtro de categoría');
+      filtrarProductos();
+    });
     
     // También escuchar cuando se abre el modal para aplicar el filtro
-    const modalMantenimiento = document.getElementById('modalMantenimiento');
-    if (modalMantenimiento) {
-      modalMantenimiento.addEventListener('shown.bs.modal', function() {
+    const modalMantenimientoElement = document.getElementById('modalMantenimiento');
+    if (modalMantenimientoElement) {
+      modalMantenimientoElement.addEventListener('shown.bs.modal', function() {
+        console.log('📱 Modal abierto, re-aplicando filtro');
         // Re-aplicar el filtro cuando se abre el modal
         if (filtroCategoria.value) {
           filtrarProductos();
         }
       });
     }
+    
+    console.log('✅ Filtro de categoría inicializado correctamente');
+    console.log('📋 Opciones originales guardadas:', opcionesOriginales.length);
+  } else {
+    console.error('❌ No se encontraron los elementos del filtro:', {
+      filtroCategoria: !!filtroCategoria,
+      productoSelect: !!productoSelect,
+      opcionesProductos: productoSelect ? productoSelect.options.length : 0
+    });
   }
 
   // Campo de fecha de vencimiento (siempre manual)
@@ -348,7 +370,9 @@ document.addEventListener('DOMContentLoaded', function () {
           alert('✅ ' + mensajeExito);
 
           // Cerrar modal
-          modalMantenimiento.hide();
+          if (modalMantenimiento) {
+            modalMantenimiento.hide();
+          }
 
           // Recargar la página después de 500ms para mostrar los cambios
           setTimeout(() => {
@@ -372,9 +396,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Botones de editar mantenimiento
   const botonesEditar = document.querySelectorAll('.btn-editar-mantenimiento');
-  const modalMantenimiento = new bootstrap.Modal(document.getElementById('modalMantenimiento'));
+  const modalMantenimientoElement = document.getElementById('modalMantenimiento');
+  const modalMantenimiento = modalMantenimientoElement ? new bootstrap.Modal(modalMantenimientoElement) : null;
   const modalTitle = document.querySelector('#modalMantenimiento .modal-title');
-  const formularioMantenimiento = document.getElementById('formulario-mantenimiento');
   let modoEdicion = false;
   let mantenimientoEditandoId = null;
 
@@ -452,7 +476,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       // Abrir modal
-      modalMantenimiento.show();
+      if (modalMantenimiento) {
+        modalMantenimiento.show();
+      }
     });
   });
 
