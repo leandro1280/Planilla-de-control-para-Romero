@@ -72,7 +72,9 @@
         <th>Disponibles</th>
         <th>Detalle</th>
         <th>Tipo</th>
+        {{#unless (eq usuario.rol 'operario')}}
         <th>Costo unidad</th>
+        {{/unless}}
         <th>Acciones</th>
       </tr>
     </thead>
@@ -113,6 +115,7 @@
         </td>
         <td data-label="Detalle:">{{#if this.detalle}}{{this.detalle}}{{else}}<span class="text-muted">-</span>{{/if}}</td>
         <td class="text-capitalize" data-label="Tipo:">{{#if this.tipo}}{{this.tipo}}{{else}}<span class="text-muted">Sin tipo</span>{{/if}}</td>
+        {{#unless (eq ../usuario.rol 'operario')}}
         <td class="text-end" data-label="Costo unitario:">
           {{#if this.costoUnitario}}
           $ {{formatCurrency this.costoUnitario}}
@@ -120,6 +123,7 @@
           <span class="text-muted">-</span>
           {{/if}}
         </td>
+        {{/unless}}
         <td class="text-end" data-label="">
           <div class="btn-group" role="group">
             {{#if (or (eq ../usuario.rol 'administrador') (eq ../usuario.rol 'supervisor'))}}
@@ -142,6 +146,13 @@
                title="Ver historial de cambios">
               <i class="bi bi-clock-history"></i>
             </a>
+            {{#if (eq ../usuario.rol 'operario')}}
+            <a href="/inventario/productos/{{this._id}}/descargar" 
+               class="btn btn-sm btn-outline-success" 
+               title="Descargar producto">
+              <i class="bi bi-download"></i>
+            </a>
+            {{/if}}
             {{#if (eq ../usuario.rol 'administrador')}}
             <button class="btn btn-sm btn-outline-danger btn-delete" 
               data-id="{{this._id}}"
@@ -161,14 +172,14 @@
       {{/each}}
       {{else}}
       <tr>
-        <td colspan="8" class="text-center text-muted py-4">
+        <td colspan="{{#if (eq ../usuario.rol 'operario')}}7{{else}}8{{/if}}" class="text-center text-muted py-4">
           No hay productos para mostrar con los filtros seleccionados
         </td>
       </tr>
       {{/if}}
       {{else}}
       <tr>
-        <td colspan="8" class="text-center text-muted py-4">No hay productos en el inventario</td>
+        <td colspan="{{#if (eq ../usuario.rol 'operario')}}7{{else}}8{{/if}}" class="text-center text-muted py-4">No hay productos en el inventario</td>
       </tr>
       {{/if}}
     </tbody>
@@ -253,6 +264,7 @@
           <input id="movimiento-cantidad" name="cantidad" type="number" min="1" step="1"
             class="form-control form-control-lg" required>
         </div>
+        {{#unless (eq usuario.rol 'operario')}}
         <div class="col-12 col-md-3">
           <label class="form-label fw-semibold text-primary">Costo unitario <small
               class="text-muted">(opcional)</small></label>
@@ -260,6 +272,7 @@
             class="form-control form-control-lg" placeholder="Opcional - Puede agregarse después">
           <small class="form-text text-muted">Puede dejarse vacío y definirse más tarde</small>
         </div>
+        {{/unless}}
       </div>
       <div class="row g-3 mb-3">
         <div class="col-12">
@@ -309,10 +322,12 @@
           <label class="form-label fw-semibold text-primary">Stock inicial *</label>
           <input name="existencia" type="number" min="0" step="1" class="form-control form-control-lg" required>
         </div>
+        {{#unless (eq usuario.rol 'operario')}}
         <div class="col-12 col-md-6">
           <label class="form-label fw-semibold text-primary">Costo unitario</label>
           <input name="costoUnitario" type="number" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00">
         </div>
+        {{/unless}}
       </div>
 
       <div class="row g-3 mb-3">
@@ -487,8 +502,10 @@
               <small class="text-muted">Selecciona un tipo existente o crea uno nuevo</small>
             </div>
             <div class="col-12 col-md-6">
+              {{#unless (eq usuario.rol 'operario')}}
               <label class="form-label fw-semibold text-primary">Costo Unitario</label>
               <input type="number" id="edit-costo" name="costoUnitario" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00">
+              {{/unless}}
             </div>
           </div>
 

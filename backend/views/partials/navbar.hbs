@@ -26,6 +26,7 @@
             <i class="bi bi-box-seam me-1"></i>Inventario
           </a>
         </li>
+        {{#unless (eq usuario.rol 'operario')}}
         <li class="nav-item">
           <a class="nav-link {{#if (eq currentPage 'movimientos')}}active{{/if}}" href="/movimientos">
             <i class="bi bi-list-check me-1"></i>Movimientos
@@ -36,16 +37,19 @@
             <i class="bi bi-tools me-1"></i>Mantenimientos
           </a>
         </li>
+        {{/unless}}
         <li class="nav-item">
           <a class="nav-link {{#if (eq currentPage 'maquinas')}}active{{/if}}" href="/maquinas">
             <i class="bi bi-gear me-1"></i>Máquinas
           </a>
         </li>
+        {{#unless (eq usuario.rol 'operario')}}
         <li class="nav-item">
           <a class="nav-link {{#if (eq currentPage 'estadisticas')}}active{{/if}}" href="/estadisticas">
             <i class="bi bi-graph-up me-1"></i>Estadísticas
           </a>
         </li>
+        {{/unless}}
         
       </ul>
 

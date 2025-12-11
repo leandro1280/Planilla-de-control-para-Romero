@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, canViewMovements } = require('../middleware/auth');
 const movimientosController = require('../controllers/movimientosController');
 
-// Todas las rutas requieren autenticación
+// Todas las rutas requieren autenticación y bloquean operarios
 router.use(protect);
 router.use(canViewMovements);
 

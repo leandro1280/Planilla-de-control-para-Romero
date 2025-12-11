@@ -11,7 +11,8 @@ const {
     createMovement,
     exportToExcel,
     importFromExcel,
-    buscarProductoPorCodigo
+    buscarProductoPorCodigo,
+    downloadProduct
 } = require('../controllers/inventarioController');
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.use(protect);
 router.get('/', getProducts);
 router.get('/exportar', exportToExcel);
 router.get('/productos/buscar', buscarProductoPorCodigo);
+router.get('/productos/:id/descargar', downloadProduct);
 router.post('/importar', upload.single('archivo'), validateExcelFile, importFromExcel);
 router.post('/productos', canCreate, validateProduct, handleValidationErrors, createProduct);
 router.put('/productos/:id', canCreate, validateUpdateProduct, handleValidationErrors, updateProduct);

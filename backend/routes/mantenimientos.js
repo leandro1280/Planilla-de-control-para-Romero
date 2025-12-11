@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect, canCreate, canDelete, authorize } = require('../middleware/auth');
+const { protect, canCreate, canDelete, authorize, blockOperarios } = require('../middleware/auth');
 const {
   getMaintenances,
   createMaintenance,
@@ -11,6 +11,7 @@ const {
 const router = express.Router();
 
 router.use(protect);
+router.use(blockOperarios); // Bloquear acceso de operarios a mantenimientos
 
 router.get('/', getMaintenances);
 router.get('/productos', getProductsForMaintenance);

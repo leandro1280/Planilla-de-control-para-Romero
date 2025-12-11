@@ -662,6 +662,65 @@ exports.createMovement = async (req, res) => {
   }
 };
 
+// @desc    Descargar un producto individual (para operarios)
+// @route   GET /inventario/productos/:id/descargar
+// @access  Private
+exports.downloadProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).lean();
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Crear datos del producto (sin costo para operarios)
+    const datos = [{
+      Referencia: product.referencia,
+      Nombre: product.nombre,
+      Equipo: product.equipo || '',
+      Existencia: product.existencia,
+      Tipo: product.tipo || '',
+      Detalle: product.detalle || '',
+      'Código Fabricante': product.codigoFabricante || ''
+    }];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+
+    // Ajustar ancho de columnas
+    const wscols = [
+      { wch: 20 }, // Referencia
+      { wch: 40 }, // Nombre
+      { wch: 20 }, // Equipo
+      { wch: 10 }, // Existencia
+      { wch: 15 }, // Tipo
+      { wch: 30 }, // Detalle
+      { wch: 20 }  // Código Fabricante
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Producto');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    const fecha = new Date().toISOString().split('T')[0];
+    const nombreArchivo = `producto_${product.referencia}_${fecha}.xlsx`;
+
+    res.setHeader('Content-Disposition', `attachment; filename=${nombreArchivo}`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error descargando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar el archivo'
+    });
+  }
+};
+
 // @desc    Exportar inventario a Excel
 // @route   GET /inventario/exportar
 // @access  Private

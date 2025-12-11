@@ -121,7 +121,30 @@ exports.canViewMovements = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No autorizado' });
   }
 
-  // Todos los usuarios autenticados pueden ver movimientos
+  // Los operarios no pueden ver movimientos
+  if (req.user.rol === 'operario') {
+    if (req.path.startsWith('/api/')) {
+      return res.status(403).json({ success: false, message: 'No tiene permisos para ver movimientos' });
+    }
+    return res.redirect('/inventario');
+  }
+
+  return next();
+};
+
+// Middleware para bloquear acceso de operarios a mantenimientos
+exports.blockOperarios = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  if (req.user.rol === 'operario') {
+    if (req.path.startsWith('/api/')) {
+      return res.status(403).json({ success: false, message: 'No tiene permisos para acceder a esta sección' });
+    }
+    return res.redirect('/inventario');
+  }
+
   return next();
 };
 

@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect, blockOperarios } = require('../middleware/auth');
 
 router.use(protect);
+router.use(blockOperarios); // Bloquear acceso de operarios a estadísticas
 
 // Vista de estadísticas avanzadas
 router.get('/', (req, res) => {
