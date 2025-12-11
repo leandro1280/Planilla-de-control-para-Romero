@@ -80,13 +80,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const productoSelect = document.getElementById('mantenimiento-producto');
 
   if (filtroCategoria && productoSelect) {
-    // Obtener categorías únicas desde las opciones del select
-    const categorias = new Set();
+    // Guardar todas las opciones originales (excepto la opción por defecto)
+    const opcionesOriginales = [];
     Array.from(productoSelect.options).forEach(option => {
-      // Buscar el atributo data-tipo en la opción
-      const tipo = option.getAttribute('data-tipo') || option.dataset.tipo;
-      if (tipo && tipo.trim() !== '') {
-        categorias.add(tipo.trim());
+      if (option.value !== "") {
+        opcionesOriginales.push({
+          value: option.value,
+          text: option.text,
+          dataTipo: option.getAttribute('data-tipo') || option.dataset.tipo || '',
+          dataReferencia: option.getAttribute('data-referencia') || option.dataset.referencia || '',
+          dataStock: option.getAttribute('data-stock') || option.dataset.stock || '',
+          dataNombre: option.getAttribute('data-nombre') || option.dataset.nombre || ''
+        });
+      }
+    });
+
+    // Obtener categorías únicas desde las opciones
+    const categorias = new Set();
+    opcionesOriginales.forEach(opcion => {
+      const tipo = opcion.dataTipo.trim();
+      if (tipo !== '') {
+        categorias.add(tipo);
       }
     });
 
@@ -99,39 +113,53 @@ document.addEventListener('DOMContentLoaded', function () {
       filtroCategoria.appendChild(option);
     });
 
-    // Filtrar productos al cambiar categoría
-    filtroCategoria.addEventListener('change', () => {
+    // Función para filtrar y reconstruir el select de productos
+    function filtrarProductos() {
       const categoriaSeleccionada = filtroCategoria.value.trim();
       
-      Array.from(productoSelect.options).forEach(option => {
-        if (option.value === "") {
-          // Mantener opción por defecto siempre visible
-          option.style.display = '';
-          return;
-        }
-
-        // Obtener el tipo del producto (sin convertir a minúsculas para comparación exacta)
-        const tipoProducto = (option.getAttribute('data-tipo') || option.dataset.tipo || '').trim();
+      // Guardar la selección actual
+      const valorSeleccionado = productoSelect.value;
+      
+      // Limpiar el select (mantener solo la opción por defecto)
+      while (productoSelect.options.length > 1) {
+        productoSelect.remove(1);
+      }
+      
+      // Agregar solo los productos que coincidan con el filtro
+      opcionesOriginales.forEach(opcion => {
+        const tipoProducto = opcion.dataTipo.trim();
         
         // Si no hay categoría seleccionada, mostrar todos
         // Si hay categoría seleccionada, mostrar solo los que coincidan exactamente
         if (!categoriaSeleccionada || tipoProducto === categoriaSeleccionada) {
-          option.style.display = '';
-        } else {
-          option.style.display = 'none';
+          const option = document.createElement('option');
+          option.value = opcion.value;
+          option.textContent = opcion.text;
+          option.setAttribute('data-tipo', opcion.dataTipo);
+          option.setAttribute('data-referencia', opcion.dataReferencia);
+          option.setAttribute('data-stock', opcion.dataStock);
+          option.setAttribute('data-nombre', opcion.dataNombre);
+          productoSelect.appendChild(option);
         }
       });
       
-      // Resetear selección si el actual queda oculto
-      const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-      if (selectedOption && selectedOption.style.display === 'none') {
-        productoSelect.value = "";
+      // Restaurar la selección si el producto sigue disponible
+      if (valorSeleccionado) {
+        const opcionExiste = Array.from(productoSelect.options).some(opt => opt.value === valorSeleccionado);
+        if (opcionExiste) {
+          productoSelect.value = valorSeleccionado;
+        } else {
+          productoSelect.value = "";
+        }
       }
-    });
+    }
+
+    // Filtrar productos al cambiar categoría
+    filtroCategoria.addEventListener('change', filtrarProductos);
     
     // Aplicar filtro inicial si hay una categoría seleccionada
     if (filtroCategoria.value) {
-      filtroCategoria.dispatchEvent(new Event('change'));
+      filtrarProductos();
     }
   }
 
