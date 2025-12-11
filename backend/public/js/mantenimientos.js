@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function () {
         horasDiariasInput.setAttribute('required', 'required');
       }
     }
-    calcularFechaProximoCambio();
   }
 
   // Inicializar estado del formulario - Asegurar que solo uno esté visible
@@ -136,217 +135,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Cálculo automático de fecha de próximo cambio
-  const horasVidaUtilInput = document.getElementById('mantenimiento-horas');
-  const horasDiariasInput = document.getElementById('mantenimiento-horas-diarias');
+  // Campo de fecha de vencimiento (siempre manual)
   const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
-  const calculoDiv = document.getElementById('calculo-mantenimiento');
-  const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
-
-  // Toggle fecha automática/manual
-  if (fechaAutomaticaSwitch && fechaVencimientoInput) {
-    fechaAutomaticaSwitch.addEventListener('change', function() {
-      if (this.checked) {
-        // Modo automático
-        fechaVencimientoInput.readOnly = true;
-        fechaVencimientoInput.classList.add('bg-light');
-        fechaVencimientoInput.removeAttribute('required');
-        calcularFechaProximoCambio();
-      } else {
-        // Modo manual
-        fechaVencimientoInput.readOnly = false;
-        fechaVencimientoInput.classList.remove('bg-light');
-        fechaVencimientoInput.setAttribute('required', 'required');
-        if (calculoDiv) {
-          calculoDiv.innerHTML = '<small class="text-info"><i class="bi bi-info-circle me-1"></i>Ingresa la fecha manualmente.</small>';
-        }
-      }
-    });
-    
-    // Inicializar estado del switch
-    if (fechaAutomaticaSwitch.checked) {
-      fechaVencimientoInput.readOnly = true;
-      fechaVencimientoInput.classList.add('bg-light');
-    } else {
-      fechaVencimientoInput.readOnly = false;
-      fechaVencimientoInput.classList.remove('bg-light');
-    }
-  }
-
-  function calcularFechaProximoCambio() {
-    // Si el modo automático está desactivado, no calcular
-    if (fechaAutomaticaSwitch && !fechaAutomaticaSwitch.checked) {
-      return;
-    }
-
-    const fechaInstalacion = fechaInstalacionInput?.value;
-    let diasHastaCambio = 0;
-    let esPorFecha = radioFecha?.checked;
-
-    if (!fechaInstalacion) {
-      limpiarCalculo();
-      return;
-    }
-
-    if (esPorFecha) {
-      const intervalo = parseInt(intervaloInput?.value) || 0;
-      if (!intervalo || intervalo <= 0) {
-        limpiarCalculo();
-        return;
-      }
-      diasHastaCambio = intervalo;
-    } else {
-      // Modo por horas
-      const horasVidaUtil = parseFloat(horasVidaUtilInput?.value) || 0;
-      const horasDiarias = parseFloat(horasDiariasInput?.value) || 0;
-
-      if (!horasVidaUtil || horasVidaUtil <= 0 || !horasDiarias || horasDiarias <= 0) {
-        limpiarCalculo();
-        return;
-      }
-      // Calcular días: horas de vida útil / horas diarias
-      diasHastaCambio = horasVidaUtil / horasDiarias;
-    }
-
-    // Calcular fecha de próximo cambio
-    const fechaInst = new Date(fechaInstalacion + 'T00:00:00');
-    if (isNaN(fechaInst.getTime())) {
-      limpiarCalculo();
-      return;
-    }
-    
-    // Sumar días
-    fechaInst.setDate(fechaInst.getDate() + Math.ceil(diasHastaCambio));
-
-    // Formatear fecha (YYYY-MM-DD)
-    const año = fechaInst.getFullYear();
-    const mes = String(fechaInst.getMonth() + 1).padStart(2, '0');
-    const dia = String(fechaInst.getDate()).padStart(2, '0');
-    const fechaFormateada = `${año}-${mes}-${dia}`;
-
-    if (fechaVencimientoInput) {
-      // Solo actualizar si está en modo automático
-      if (fechaVencimientoInput.readOnly) {
-        fechaVencimientoInput.value = fechaFormateada;
-      }
-    }
-
-    mostrarCalculo(diasHastaCambio, fechaFormateada, esPorFecha);
-  }
-
-  function limpiarCalculo() {
-    if (calculoDiv) {
-      calculoDiv.innerHTML = '<small class="text-muted">Completa los datos de frecuencia para calcular automáticamente la fecha de próximo cambio.</small>';
-    }
-    if (fechaVencimientoInput) {
-      fechaVencimientoInput.value = '';
-    }
-  }
-
-  function mostrarCalculo(diasHastaCambio, fechaFormateada, esPorFecha) {
-    if (calculoDiv) {
-      const diasTotales = Math.ceil(diasHastaCambio);
-      const semanas = Math.floor(diasTotales / 7);
-      const meses = Math.floor(diasTotales / 30);
-      const años = Math.floor(diasTotales / 365);
-
-      // Formatear fecha en español
-      const fechaObj = new Date(fechaFormateada);
-      const opcionesFecha = { year: 'numeric', month: 'long', day: 'numeric' };
-      const fechaFormateadaEsp = fechaObj.toLocaleDateString('es-AR', opcionesFecha);
-
-      let mensaje = `<div class="row g-2 mb-2">`;
-
-      if (esPorFecha) {
-        mensaje += `<div class="col-12">`;
-        mensaje += `<small class="text-muted d-block mb-1">Intervalo fijo</small>`;
-        mensaje += `<strong class="fs-6">${diasTotales} días</strong>`;
-        mensaje += `</div>`;
-      } else {
-        mensaje += `<div class="col-6">`;
-        mensaje += `<small class="text-muted d-block mb-1">Horas de vida útil</small>`;
-        mensaje += `<strong class="fs-6">${parseFloat(horasVidaUtilInput.value).toLocaleString()} hrs</strong>`;
-        mensaje += `</div>`;
-        mensaje += `<div class="col-6">`;
-        mensaje += `<small class="text-muted d-block mb-1">Horas trabajo/día</small>`;
-        mensaje += `<strong class="fs-6">${parseFloat(horasDiariasInput.value)} hrs/día</strong>`;
-        mensaje += `</div>`;
-      }
-
-      mensaje += `</div>`;
-      mensaje += `<hr class="my-2">`;
-      mensaje += `<div class="mb-2">`;
-      mensaje += `<small class="text-muted d-block mb-1">Tiempo hasta el cambio</small>`;
-      mensaje += `<div class="d-flex align-items-center gap-2">`;
-      mensaje += `<span class="badge bg-primary">${diasTotales} días</span>`;
-
-      if (semanas > 0 && semanas < 8) {
-        mensaje += `<small class="text-muted">(~${semanas} semana${semanas > 1 ? 's' : ''})</small>`;
-      } else if (meses > 0 && meses < 13) {
-        mensaje += `<small class="text-muted">(~${meses} mes${meses > 1 ? 'es' : ''})</small>`;
-      } else if (años > 0) {
-        mensaje += `<small class="text-muted">(~${años} año${años > 1 ? 's' : ''})</small>`;
-      }
-
-      mensaje += `</div>`;
-      mensaje += `</div>`;
-      mensaje += `<div class="p-2 bg-success bg-opacity-10 border border-success rounded">`;
-      mensaje += `<small class="text-muted d-block mb-1">📅 Fecha de próximo cambio</small>`;
-      mensaje += `<strong class="text-success fs-5">${fechaFormateadaEsp}</strong>`;
-      mensaje += `</div>`;
-
-      calculoDiv.innerHTML = mensaje;
-    }
-  }
-
-  // Agregar listeners para cálculo automático - Usar debounce para mejor rendimiento
-  let timeoutCalculo = null;
-  function triggerCalculo() {
-    if (timeoutCalculo) clearTimeout(timeoutCalculo);
-    timeoutCalculo = setTimeout(() => {
-      calcularFechaProximoCambio();
-    }, 300);
-  }
-
-  if (intervaloInput) {
-    intervaloInput.addEventListener('input', triggerCalculo);
-    intervaloInput.addEventListener('change', calcularFechaProximoCambio);
-    intervaloInput.addEventListener('blur', calcularFechaProximoCambio);
-  }
-
-  if (horasVidaUtilInput) {
-    horasVidaUtilInput.addEventListener('input', triggerCalculo);
-    horasVidaUtilInput.addEventListener('change', calcularFechaProximoCambio);
-    horasVidaUtilInput.addEventListener('blur', calcularFechaProximoCambio);
-  }
-
-  if (horasDiariasInput) {
-    horasDiariasInput.addEventListener('input', triggerCalculo);
-    horasDiariasInput.addEventListener('change', calcularFechaProximoCambio);
-    horasDiariasInput.addEventListener('blur', calcularFechaProximoCambio);
-  }
-
-  if (fechaInstalacionInput) {
-    fechaInstalacionInput.addEventListener('change', calcularFechaProximoCambio);
-    fechaInstalacionInput.addEventListener('input', triggerCalculo);
-  }
   
-  // Recalcular cuando cambia el tipo de frecuencia
-  if (radioHoras && radioFecha) {
-    radioHoras.addEventListener('change', () => {
-      setTimeout(calcularFechaProximoCambio, 100);
-    });
-    radioFecha.addEventListener('change', () => {
-      setTimeout(calcularFechaProximoCambio, 100);
-    });
+  // Asegurar que el campo de fecha siempre sea editable
+  if (fechaVencimientoInput) {
+    fechaVencimientoInput.readOnly = false;
+    fechaVencimientoInput.classList.remove('bg-light');
+    fechaVencimientoInput.setAttribute('required', 'required');
   }
-  
-  // Calcular inicialmente si hay datos
-  setTimeout(() => {
-    if (fechaAutomaticaSwitch && fechaAutomaticaSwitch.checked) {
-      calcularFechaProximoCambio();
-    }
-  }, 500);
 
   // Filtros
   if (buscadorReferencia) {
@@ -596,11 +393,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fechaVencInput) {
           const fecha = new Date(fechaVencimiento);
           fechaVencInput.value = fecha.toISOString().split('T')[0];
-          // Hacer editable la fecha
-          fechaVencInput.readOnly = false;
-          fechaVencInput.classList.remove('bg-light');
-          const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
-          if (fechaAutomaticaSwitch) fechaAutomaticaSwitch.checked = false;
         }
       }
       if (horas) {
@@ -647,13 +439,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const hoy = new Date();
         fechaInstalacionInput.value = hoy.toISOString().split('T')[0];
       }
-      // Restablecer fecha automática
-      const fechaAutomaticaSwitch = document.getElementById('fecha-automatica');
-      if (fechaAutomaticaSwitch) fechaAutomaticaSwitch.checked = true;
+      // Limpiar fecha de vencimiento
       const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
       if (fechaVencimientoInput) {
-        fechaVencimientoInput.readOnly = true;
-        fechaVencimientoInput.classList.add('bg-light');
+        fechaVencimientoInput.value = '';
       }
     }
   });

@@ -402,7 +402,7 @@
             <div class="card-body p-4">
               <div class="alert alert-info border-0 mb-4">
                 <i class="bi bi-info-circle me-2"></i>
-                <strong>Modo: Por Horas de Uso</strong> - El sistema calculará la fecha de vencimiento basándose en las horas de trabajo diarias.
+                <strong>Modo: Por Horas de Uso</strong> - Registra las horas de vida útil y las horas de trabajo diarias para referencia.
               </div>
               <div class="row g-4">
                 <div class="col-12 col-md-6">
@@ -439,7 +439,7 @@
             <div class="card-body p-4">
               <div class="alert alert-success border-0 mb-4">
                 <i class="bi bi-calendar-event me-2"></i>
-                <strong>Modo: Por Fecha Fija</strong> - El sistema calculará la fecha de vencimiento sumando días a la fecha de instalación.
+                <strong>Modo: Por Fecha Fija</strong> - Registra el intervalo de días para referencia.
               </div>
               <div class="row g-4">
                 <div class="col-12 col-md-6">
@@ -459,28 +459,18 @@
           <!-- Fecha de Próximo Cambio -->
           <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-warning bg-opacity-10 py-3 border-bottom border-warning">
-              <div class="d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-warning">
-                  <i class="bi bi-calendar-x me-2"></i>Fecha de Próximo Cambio
-                </h6>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="fecha-automatica" checked>
-                  <label class="form-check-label fw-semibold small" for="fecha-automatica">
-                    <i class="bi bi-calculator me-1"></i>Cálculo Automático
-                  </label>
-                </div>
-              </div>
+              <h6 class="mb-0 fw-bold text-warning">
+                <i class="bi bi-calendar-x me-2"></i>Fecha de Próximo Cambio *
+              </h6>
             </div>
             <div class="card-body p-4">
-              <div id="calculo-mantenimiento" class="mb-3 p-3 bg-light rounded">
-                <small class="text-muted">
-                  <i class="bi bi-info-circle me-1"></i>Completa los datos para calcular el vencimiento.
-                </small>
-              </div>
+              <label class="form-label fw-bold text-dark mb-2">
+                <i class="bi bi-calendar-event me-2 text-primary"></i>Fecha de Vencimiento *
+              </label>
               <input type="date" id="mantenimiento-fecha-vencimiento" name="fechaVencimiento"
-                class="form-control form-control-lg" readonly>
+                class="form-control form-control-lg" required>
               <small class="text-muted d-block mt-2">
-                <i class="bi bi-lightbulb me-1"></i>Activa/desactiva "Cálculo Automático" para ingresar la fecha manualmente.
+                <i class="bi bi-info-circle me-1"></i>Ingresa la fecha en que se debe realizar el próximo mantenimiento.
               </small>
             </div>
           </div>
