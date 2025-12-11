@@ -145,25 +145,26 @@
                 target="_blank" class="btn btn-sm btn-success me-1" title="Enviar aviso por WhatsApp">
                 <i class="bi bi-whatsapp"></i>
               </a>
-              {{#if (eq ../../usuario.rol 'administrador')}}
-              <button class="btn btn-sm btn-outline-primary btn-editar-mantenimiento" data-id="{{this._id}}"
-                data-producto="{{this.producto._id}}" data-tipo="{{this.tipo}}" data-equipo="{{this.equipo}}"
-                data-fecha-instalacion="{{this.fechaInstalacion}}" data-fecha-vencimiento="{{this.fechaVencimiento}}"
-                data-horas="{{this.horasVidaUtil}}" data-observaciones="{{this.observaciones}}"
-                data-costo="{{this.costo}}" data-estado="{{this.estado}}" 
-                data-tipo-frecuencia="{{this.tipoFrecuencia}}" data-intervalo-dias="{{this.intervaloDias}}"
-                data-horas-diarias="{{this.horasDiarias}}" title="Editar mantenimiento">
-                <i class="bi bi-pencil"></i>
-              </button>
-              {{/if}}
-              {{#if (eq ../../usuario.rol 'administrador')}}
-              <button class="btn btn-sm btn-outline-danger btn-eliminar-mantenimiento" data-id="{{this._id}}"
-                data-referencia="{{this.referencia}}" 
-                data-equipo="{{this.equipo}}" 
-                data-producto-nombre="{{#if this.producto}}{{this.producto.nombre}}{{else}}Producto eliminado{{/if}}"
-                title="Eliminar mantenimiento">
-                <i class="bi bi-trash"></i>
-              </button>
+              {{#if ../usuario}}
+                {{#if (eq ../usuario.rol 'administrador')}}
+                <button class="btn btn-sm btn-outline-primary btn-editar-mantenimiento" data-id="{{this._id}}"
+                  data-producto="{{this.producto._id}}" data-tipo="{{this.tipo}}" data-equipo="{{this.equipo}}"
+                  data-fecha-instalacion="{{this.fechaInstalacion}}" data-fecha-vencimiento="{{this.fechaVencimiento}}"
+                  data-horas="{{this.horasVidaUtil}}" data-observaciones="{{this.observaciones}}"
+                  data-costo="{{this.costo}}" data-estado="{{this.estado}}" 
+                  data-tipo-frecuencia="{{this.tipoFrecuencia}}" data-intervalo-dias="{{this.intervaloDias}}"
+                  data-horas-diarias="{{this.horasDiarias}}" title="Editar mantenimiento">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger btn-eliminar-mantenimiento" data-id="{{this._id}}"
+                  data-referencia="{{this.referencia}}" 
+                  data-equipo="{{this.equipo}}" 
+                  data-producto-nombre="{{#if this.producto}}{{this.producto.nombre}}{{else}}Producto eliminado{{/if}}"
+                  data-maquina-nombre="{{#if this.maquina}}{{this.maquina.nombre}}{{else}}{{/if}}"
+                  title="Eliminar mantenimiento">
+                  <i class="bi bi-trash"></i>
+                </button>
+                {{/if}}
               {{/if}}
             </td>
           </tr>

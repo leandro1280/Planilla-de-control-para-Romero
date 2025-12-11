@@ -269,7 +269,14 @@ exports.createMaintenance = async (req, res) => {
     await createNotificationForAdmins(
       'Nuevo mantenimiento registrado',
       descripcion,
-      req.user._id
+      {
+        mantenimientoId: maintenance._id,
+        tipo: tipo,
+        creadoPor: req.user.nombre,
+        maquina: maquina ? `${maquina.codigo} - ${maquina.nombre}` : null,
+        producto: producto ? `${producto.referencia} - ${producto.nombre}` : null
+      },
+      maintenance._id
     );
 
     const mensaje = repuestosArray.length > 0
@@ -350,13 +357,32 @@ exports.updateMaintenance = async (req, res) => {
     maintenance = await Maintenance.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
-    }).populate('producto', 'referencia nombre tipo').populate('tecnico', 'nombre email');
+    }).populate('producto', 'referencia nombre tipo')
+      .populate('maquina', 'codigo nombre ubicacion')
+      .populate('tecnico', 'nombre email');
 
     // Registrar auditoría
     await registrarAuditoria(req, 'MODIFICAR', 'Mantenimiento', maintenance._id, {
       referencia: maintenance.referencia,
       cambios: Object.keys(cambios).length > 0 ? cambios : undefined
     });
+
+    // Notificar a administradores sobre la modificación
+    const descripcionModificacion = maintenance.maquina
+      ? `Mantenimiento modificado en máquina ${maintenance.maquina.codigo || 'N/A'}`
+      : `Mantenimiento modificado en ${maintenance.referencia || 'N/A'}`;
+    
+    await createNotificationForAdmins(
+      'Mantenimiento modificado',
+      descripcionModificacion,
+      {
+        mantenimientoId: maintenance._id,
+        modificadoPor: req.user.nombre,
+        cambios: Object.keys(cambios).length > 0 ? cambios : undefined,
+        estado: maintenance.estado
+      },
+      maintenance._id
+    );
 
     res.status(200).json({
       success: true,
@@ -391,6 +417,31 @@ exports.deleteMaintenance = async (req, res) => {
       equipo: maintenance.equipo,
       estado: maintenance.estado
     });
+
+    // Obtener datos completos del mantenimiento antes de eliminarlo para la notificación
+    const maintenancePopulated = await Maintenance.findById(maintenance._id)
+      .populate('maquina', 'codigo nombre')
+      .populate('producto', 'referencia nombre')
+      .lean();
+
+    // Notificar a administradores sobre la eliminación
+    const descripcionEliminacion = maintenancePopulated?.maquina
+      ? `Mantenimiento eliminado de máquina ${maintenancePopulated.maquina.codigo || 'N/A'} - ${maintenancePopulated.maquina.nombre || 'N/A'}`
+      : `Mantenimiento eliminado: ${maintenancePopulated?.referencia || maintenancePopulated?.producto?.referencia || 'N/A'}`;
+    
+    await createNotificationForAdmins(
+      'Mantenimiento eliminado',
+      descripcionEliminacion,
+      {
+        mantenimientoId: maintenance._id,
+        eliminadoPor: req.user.nombre,
+        estado: maintenance.estado,
+        equipo: maintenance.equipo,
+        maquina: maintenancePopulated?.maquina ? `${maintenancePopulated.maquina.codigo} - ${maintenancePopulated.maquina.nombre}` : null,
+        producto: maintenancePopulated?.producto ? `${maintenancePopulated.producto.referencia} - ${maintenancePopulated.producto.nombre}` : null
+      },
+      maintenance._id
+    );
 
     // Devolver el stock al inventario (solo si el mantenimiento estaba activo)
     // Esto permite que los administradores borren cualquier mantenimiento
