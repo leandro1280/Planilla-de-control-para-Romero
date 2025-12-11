@@ -110,8 +110,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Función para filtrar y reconstruir el select de productos
     function filtrarProductos() {
       const categoriaSeleccionada = filtroCategoria.value.trim();
-      console.log('🔍 Filtrando productos. Categoría seleccionada:', categoriaSeleccionada);
-      console.log('📦 Total opciones originales:', opcionesOriginales.length);
       
       // Guardar la selección actual
       const valorSeleccionado = productoSelect.value;
@@ -121,11 +119,8 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSelect.remove(1);
       }
       
-      let productosAgregados = 0;
-      
       // Si no hay categoría seleccionada, mostrar todos
       if (!categoriaSeleccionada) {
-        console.log('📋 Sin filtro: mostrando todos los productos');
         opcionesOriginales.forEach(opcion => {
           const option = document.createElement('option');
           option.value = opcion.value;
@@ -135,11 +130,9 @@ document.addEventListener('DOMContentLoaded', function () {
           option.setAttribute('data-stock', opcion.dataStock);
           option.setAttribute('data-nombre', opcion.dataNombre);
           productoSelect.appendChild(option);
-          productosAgregados++;
         });
       } else {
         // Filtrar por categoría seleccionada
-        console.log('🔎 Filtrando por tipo:', categoriaSeleccionada);
         opcionesOriginales.forEach(opcion => {
           const tipoProducto = (opcion.dataTipo || '').trim();
           const coincide = tipoProducto.toLowerCase() === categoriaSeleccionada.toLowerCase();
@@ -153,10 +146,8 @@ document.addEventListener('DOMContentLoaded', function () {
             option.setAttribute('data-stock', opcion.dataStock);
             option.setAttribute('data-nombre', opcion.dataNombre);
             productoSelect.appendChild(option);
-            productosAgregados++;
           }
         });
-        console.log(`✅ Productos agregados: ${productosAgregados}`);
       }
       
       // Restaurar la selección si el producto sigue disponible
@@ -172,8 +163,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Filtrar productos al cambiar categoría
     filtroCategoria.addEventListener('change', function(e) {
-      console.log('🔄 Evento change detectado en filtro de categoría');
-      console.log('📋 Valor seleccionado:', filtroCategoria.value);
       filtrarProductos();
     });
     
@@ -181,17 +170,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalMantenimientoElement = document.getElementById('modalMantenimiento');
     if (modalMantenimientoElement) {
       modalMantenimientoElement.addEventListener('shown.bs.modal', function() {
-        console.log('📱 Modal abierto, re-aplicando filtro');
         // Re-aplicar el filtro cuando se abre el modal
         if (filtroCategoria.value) {
           filtrarProductos();
         }
       });
     }
-    
-    console.log('✅ Filtro de categoría inicializado correctamente');
-    console.log('📋 Opciones originales guardadas:', opcionesOriginales.length);
-    console.log('📋 Tipos únicos encontrados:', [...new Set(opcionesOriginales.map(o => o.dataTipo).filter(t => t))]);
   } else {
     console.error('❌ No se encontraron los elementos del filtro:', {
       filtroCategoria: !!filtroCategoria,
@@ -246,15 +230,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Formulario de mantenimiento
   if (formularioMantenimiento) {
-    console.log('✅ Formulario de mantenimiento encontrado y funcional');
-
     formularioMantenimiento.addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log('📝 Enviando formulario de mantenimiento...');
 
       const formData = new FormData(formularioMantenimiento);
       const data = Object.fromEntries(formData);
-      console.log('📦 Datos del formulario:', data);
 
       // Validar según tipo de registro
       const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
