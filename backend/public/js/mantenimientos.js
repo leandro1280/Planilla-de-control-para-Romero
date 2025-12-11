@@ -20,12 +20,14 @@ document.addEventListener('DOMContentLoaded', function () {
     fechaInstalacionInput.value = fechaFormateada;
   }
 
-  // Toggle Frecuencia
+  // Toggle Frecuencia - Declarar todas las variables primero
   const radioHoras = document.getElementById('frecuencia-horas');
   const radioFecha = document.getElementById('frecuencia-fecha');
   const formularioHoras = document.getElementById('formulario-horas');
   const formularioFecha = document.getElementById('formulario-fecha');
   const intervaloInput = document.getElementById('mantenimiento-intervalo');
+  const horasVidaUtilInput = document.getElementById('mantenimiento-horas');
+  const horasDiariasInput = document.getElementById('mantenimiento-horas-diarias');
 
   function toggleFrecuencia() {
     if (radioFecha && radioFecha.checked) {
@@ -171,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filtrar productos al cambiar categoría
     filtroCategoria.addEventListener('change', function(e) {
       console.log('🔄 Evento change detectado en filtro de categoría');
+      console.log('📋 Valor seleccionado:', filtroCategoria.value);
       filtrarProductos();
     });
     
@@ -188,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     console.log('✅ Filtro de categoría inicializado correctamente');
     console.log('📋 Opciones originales guardadas:', opcionesOriginales.length);
+    console.log('📋 Tipos únicos encontrados:', [...new Set(opcionesOriginales.map(o => o.dataTipo).filter(t => t))]);
   } else {
     console.error('❌ No se encontraron los elementos del filtro:', {
       filtroCategoria: !!filtroCategoria,
