@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect, canCreate, canDelete } = require('../middleware/auth');
+const { protect, canCreate, canDelete, authorize } = require('../middleware/auth');
 const {
   getMaintenances,
   createMaintenance,
@@ -15,7 +15,7 @@ router.use(protect);
 router.get('/', getMaintenances);
 router.get('/productos', getProductsForMaintenance);
 router.post('/', canCreate, createMaintenance);
-router.put('/:id', canCreate, updateMaintenance);
+router.put('/:id', authorize('administrador'), updateMaintenance);
 router.delete('/:id', canDelete, deleteMaintenance);
 
 module.exports = router;

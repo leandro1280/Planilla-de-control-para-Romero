@@ -358,17 +358,76 @@ document.addEventListener('DOMContentLoaded', function () {
         if (result.success) {
           // Mostrar mensaje de éxito
           const mensajeExito = result.message || (modoEdicion ? 'Mantenimiento actualizado correctamente' : 'Mantenimiento registrado correctamente');
-          alert('✅ ' + mensajeExito);
-
-          // Cerrar modal
-          if (modalMantenimiento) {
-            modalMantenimiento.hide();
+          
+          if (modoEdicion) {
+            // Si es edición, cerrar modal y recargar
+            alert('✅ ' + mensajeExito);
+            if (modalMantenimiento) {
+              modalMantenimiento.hide();
+            }
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          } else {
+            // Si es creación, preguntar si quiere agregar otro
+            const agregarOtro = confirm('✅ ' + mensajeExito + '\n\n¿Deseas agregar otro mantenimiento?');
+            
+            if (agregarOtro) {
+              // Limpiar formulario y mantener modal abierto
+              formularioMantenimiento.reset();
+              
+              // Restablecer fecha actual
+              const fechaInstalacionInput = document.getElementById('mantenimiento-fecha-instalacion');
+              if (fechaInstalacionInput) {
+                const hoy = new Date();
+                fechaInstalacionInput.value = hoy.toISOString().split('T')[0];
+              }
+              
+              // Limpiar fecha de vencimiento
+              const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
+              if (fechaVencimientoInput) {
+                fechaVencimientoInput.value = '';
+              }
+              
+              // Resetear tipo de frecuencia a "horas"
+              const radioHoras = document.getElementById('frecuencia-horas');
+              if (radioHoras) {
+                radioHoras.checked = true;
+                toggleFrecuencia();
+              }
+              
+              // Limpiar repuestos
+              const repuestosContainer = document.getElementById('repuestos-mantenimiento-container');
+              if (repuestosContainer) {
+                repuestosContainer.innerHTML = '';
+              }
+              
+              // Resetear tipo de registro a "maquina"
+              const tipoMaquina = document.getElementById('tipo-maquina');
+              if (tipoMaquina) {
+                tipoMaquina.checked = true;
+                tipoMaquina.dispatchEvent(new Event('change'));
+              }
+              
+              // Enfocar en el primer campo
+              const productoSelect = document.getElementById('mantenimiento-producto');
+              if (productoSelect) {
+                productoSelect.focus();
+              }
+              
+              // Habilitar botón
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalBtnText;
+            } else {
+              // Cerrar modal y recargar
+              if (modalMantenimiento) {
+                modalMantenimiento.hide();
+              }
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            }
           }
-
-          // Recargar la página después de 500ms para mostrar los cambios
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
         } else {
           // Mostrar error detallado
           const mensajeError = result.message || (modoEdicion ? 'Error al actualizar el mantenimiento' : 'Error al registrar el mantenimiento');
@@ -405,6 +464,9 @@ document.addEventListener('DOMContentLoaded', function () {
       const observaciones = this.dataset.observaciones || '';
       const costo = this.dataset.costo || '';
       const estado = this.dataset.estado;
+      const tipoFrecuencia = this.dataset.tipoFrecuencia || 'horas';
+      const intervaloDias = this.dataset.intervaloDias || '';
+      const horasDiarias = this.dataset.horasDiarias || '12';
 
       // Cambiar título del modal
       if (modalTitle) {
@@ -442,16 +504,34 @@ document.addEventListener('DOMContentLoaded', function () {
           fechaVencInput.value = fecha.toISOString().split('T')[0];
         }
       }
-      if (horas) {
-        const horasInput = document.getElementById('mantenimiento-horas');
-        if (horasInput) horasInput.value = horas;
-        // Activar modo por horas
+      
+      // Configurar tipo de frecuencia
+      if (tipoFrecuencia === 'fecha') {
+        const radioFecha = document.getElementById('frecuencia-fecha');
+        if (radioFecha) {
+          radioFecha.checked = true;
+          toggleFrecuencia();
+        }
+        if (intervaloDias) {
+          const intervaloInput = document.getElementById('mantenimiento-intervalo');
+          if (intervaloInput) intervaloInput.value = intervaloDias;
+        }
+      } else {
         const radioHoras = document.getElementById('frecuencia-horas');
         if (radioHoras) {
           radioHoras.checked = true;
           toggleFrecuencia();
         }
+        if (horas) {
+          const horasInput = document.getElementById('mantenimiento-horas');
+          if (horasInput) horasInput.value = horas;
+        }
+        if (horasDiarias) {
+          const horasDiariasInput = document.getElementById('mantenimiento-horas-diarias');
+          if (horasDiariasInput) horasDiariasInput.value = horasDiarias;
+        }
       }
+      
       if (observaciones) {
         const obsTextarea = document.getElementById('mantenimiento-observaciones');
         if (obsTextarea) obsTextarea.value = observaciones;
@@ -492,6 +572,23 @@ document.addEventListener('DOMContentLoaded', function () {
       const fechaVencimientoInput = document.getElementById('mantenimiento-fecha-vencimiento');
       if (fechaVencimientoInput) {
         fechaVencimientoInput.value = '';
+      }
+      // Resetear tipo de frecuencia
+      const radioHoras = document.getElementById('frecuencia-horas');
+      if (radioHoras) {
+        radioHoras.checked = true;
+        toggleFrecuencia();
+      }
+      // Limpiar repuestos
+      const repuestosContainer = document.getElementById('repuestos-mantenimiento-container');
+      if (repuestosContainer) {
+        repuestosContainer.innerHTML = '';
+      }
+      // Resetear tipo de registro
+      const tipoMaquina = document.getElementById('tipo-maquina');
+      if (tipoMaquina) {
+        tipoMaquina.checked = true;
+        tipoMaquina.dispatchEvent(new Event('change'));
       }
     }
   });

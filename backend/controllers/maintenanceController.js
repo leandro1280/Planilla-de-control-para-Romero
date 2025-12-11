@@ -394,10 +394,26 @@ exports.deleteMaintenance = async (req, res) => {
 
     // Si el mantenimiento está activo, devolver el stock al inventario
     if (maintenance.estado === 'activo') {
-      const producto = await Product.findById(maintenance.producto);
-      if (producto) {
-        producto.existencia += 1;
-        await producto.save();
+      // Devolver stock del producto principal si existe
+      if (maintenance.producto) {
+        const producto = await Product.findById(maintenance.producto);
+        if (producto) {
+          producto.existencia += 1;
+          await producto.save();
+        }
+      }
+      
+      // Devolver stock de los repuestos utilizados
+      if (maintenance.repuestosUtilizados && maintenance.repuestosUtilizados.length > 0) {
+        for (const repuesto of maintenance.repuestosUtilizados) {
+          if (repuesto.producto && repuesto.cantidad) {
+            const productoRepuesto = await Product.findById(repuesto.producto);
+            if (productoRepuesto) {
+              productoRepuesto.existencia += repuesto.cantidad;
+              await productoRepuesto.save();
+            }
+          }
+        }
       }
     }
 
