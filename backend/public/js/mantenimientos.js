@@ -75,19 +75,20 @@ document.addEventListener('DOMContentLoaded', function () {
     radioFecha.addEventListener('change', toggleFrecuencia);
   }
 
-  // Filtro de Categoría
+  // Filtro de Categoría - Esperar a que el DOM esté completamente cargado
   const filtroCategoria = document.getElementById('filtro-categoria-producto');
   const productoSelect = document.getElementById('mantenimiento-producto');
 
-  if (filtroCategoria && productoSelect) {
+  if (filtroCategoria && productoSelect && productoSelect.options.length > 1) {
     // Guardar todas las opciones originales (excepto la opción por defecto)
     const opcionesOriginales = [];
     Array.from(productoSelect.options).forEach(option => {
       if (option.value !== "") {
+        const dataTipo = option.getAttribute('data-tipo') || option.dataset.tipo || '';
         opcionesOriginales.push({
           value: option.value,
           text: option.text,
-          dataTipo: option.getAttribute('data-tipo') || option.dataset.tipo || '',
+          dataTipo: dataTipo,
           dataReferencia: option.getAttribute('data-referencia') || option.dataset.referencia || '',
           dataStock: option.getAttribute('data-stock') || option.dataset.stock || '',
           dataNombre: option.getAttribute('data-nombre') || option.dataset.nombre || ''
@@ -95,23 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    // Obtener categorías únicas desde las opciones
-    const categorias = new Set();
-    opcionesOriginales.forEach(opcion => {
-      const tipo = opcion.dataTipo.trim();
-      if (tipo !== '') {
-        categorias.add(tipo);
-      }
-    });
-
-    // Llenar select de categorías (ordenar alfabéticamente)
-    const categoriasOrdenadas = Array.from(categorias).sort();
-    categoriasOrdenadas.forEach(cat => {
-      const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-      filtroCategoria.appendChild(option);
-    });
+    // Las categorías ya vienen del servidor desde el template Handlebars
 
     // Función para filtrar y reconstruir el select de productos
     function filtrarProductos() {
@@ -125,13 +110,9 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSelect.remove(1);
       }
       
-      // Agregar solo los productos que coincidan con el filtro
-      opcionesOriginales.forEach(opcion => {
-        const tipoProducto = opcion.dataTipo.trim();
-        
-        // Si no hay categoría seleccionada, mostrar todos
-        // Si hay categoría seleccionada, mostrar solo los que coincidan exactamente
-        if (!categoriaSeleccionada || tipoProducto === categoriaSeleccionada) {
+      // Si no hay categoría seleccionada, mostrar todos
+      if (!categoriaSeleccionada) {
+        opcionesOriginales.forEach(opcion => {
           const option = document.createElement('option');
           option.value = opcion.value;
           option.textContent = opcion.text;
@@ -140,8 +121,25 @@ document.addEventListener('DOMContentLoaded', function () {
           option.setAttribute('data-stock', opcion.dataStock);
           option.setAttribute('data-nombre', opcion.dataNombre);
           productoSelect.appendChild(option);
-        }
-      });
+        });
+      } else {
+        // Filtrar por categoría seleccionada
+        opcionesOriginales.forEach(opcion => {
+          const tipoProducto = (opcion.dataTipo || '').trim();
+          
+          // Comparación case-insensitive
+          if (tipoProducto.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
+            const option = document.createElement('option');
+            option.value = opcion.value;
+            option.textContent = opcion.text;
+            option.setAttribute('data-tipo', opcion.dataTipo);
+            option.setAttribute('data-referencia', opcion.dataReferencia);
+            option.setAttribute('data-stock', opcion.dataStock);
+            option.setAttribute('data-nombre', opcion.dataNombre);
+            productoSelect.appendChild(option);
+          }
+        });
+      }
       
       // Restaurar la selección si el producto sigue disponible
       if (valorSeleccionado) {
@@ -157,9 +155,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filtrar productos al cambiar categoría
     filtroCategoria.addEventListener('change', filtrarProductos);
     
-    // Aplicar filtro inicial si hay una categoría seleccionada
-    if (filtroCategoria.value) {
-      filtrarProductos();
+    // También escuchar cuando se abre el modal para aplicar el filtro
+    const modalMantenimiento = document.getElementById('modalMantenimiento');
+    if (modalMantenimiento) {
+      modalMantenimiento.addEventListener('shown.bs.modal', function() {
+        // Re-aplicar el filtro cuando se abre el modal
+        if (filtroCategoria.value) {
+          filtrarProductos();
+        }
+      });
     }
   }
 
