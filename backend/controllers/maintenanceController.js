@@ -392,7 +392,8 @@ exports.deleteMaintenance = async (req, res) => {
       estado: maintenance.estado
     });
 
-    // Si el mantenimiento está activo, devolver el stock al inventario
+    // Devolver el stock al inventario (solo si el mantenimiento estaba activo)
+    // Esto permite que los administradores borren cualquier mantenimiento
     if (maintenance.estado === 'activo') {
       // Devolver stock del producto principal si existe
       if (maintenance.producto) {
@@ -416,6 +417,8 @@ exports.deleteMaintenance = async (req, res) => {
         }
       }
     }
+    // Si el mantenimiento está completado o cancelado, no devolver stock
+    // Los administradores pueden borrar cualquier mantenimiento para limpiar registros
 
     await Maintenance.findByIdAndDelete(req.params.id);
 

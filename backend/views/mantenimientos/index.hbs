@@ -292,7 +292,7 @@
                   <label class="form-label fw-bold text-dark mb-2">
                     <i class="bi bi-box-seam me-2 text-primary"></i>Producto *
                   </label>
-                  <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg" required>
+                  <select id="mantenimiento-producto" name="productoId" class="form-select form-select-lg">
                     <option value="">Seleccione una pieza del inventario</option>
                     {{#each productos}}
                     <option value="{{this._id}}" data-referencia="{{this.referencia}}" data-stock="{{this.existencia}}"

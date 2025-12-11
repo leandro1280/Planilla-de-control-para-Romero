@@ -373,6 +373,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const agregarOtro = confirm('✅ ' + mensajeExito + '\n\n¿Deseas agregar otro mantenimiento?');
             
             if (agregarOtro) {
+              // Guardar máquina seleccionada para recordarla
+              const maquinaSelect = document.getElementById('mantenimiento-maquina');
+              const maquinaSeleccionada = maquinaSelect ? maquinaSelect.value : null;
+              const tipoRegistroSeleccionado = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
+              
               // Limpiar formulario y mantener modal abierto
               formularioMantenimiento.reset();
               
@@ -402,18 +407,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 repuestosContainer.innerHTML = '';
               }
               
-              // Resetear tipo de registro a "maquina"
-              const tipoMaquina = document.getElementById('tipo-maquina');
-              if (tipoMaquina) {
-                tipoMaquina.checked = true;
-                tipoMaquina.dispatchEvent(new Event('change'));
+              // Restaurar tipo de registro y máquina seleccionada
+              if (tipoRegistroSeleccionado === 'maquina') {
+                const tipoMaquina = document.getElementById('tipo-maquina');
+                if (tipoMaquina) {
+                  tipoMaquina.checked = true;
+                  tipoMaquina.dispatchEvent(new Event('change'));
+                  
+                  // Restaurar máquina seleccionada
+                  if (maquinaSeleccionada && maquinaSelect) {
+                    setTimeout(() => {
+                      maquinaSelect.value = maquinaSeleccionada;
+                      // Disparar evento para cargar repuestos si es necesario
+                      maquinaSelect.dispatchEvent(new Event('change'));
+                    }, 100);
+                  }
+                }
+              } else {
+                const tipoEquipo = document.getElementById('tipo-equipo');
+                if (tipoEquipo) {
+                  tipoEquipo.checked = true;
+                  tipoEquipo.dispatchEvent(new Event('change'));
+                }
               }
               
-              // Enfocar en el primer campo
-              const productoSelect = document.getElementById('mantenimiento-producto');
-              if (productoSelect) {
-                productoSelect.focus();
-              }
+              // Enfocar en el primer campo disponible
+              setTimeout(() => {
+                if (tipoRegistroSeleccionado === 'maquina' && maquinaSeleccionada) {
+                  // Si hay máquina seleccionada, enfocar en tipo de mantenimiento
+                  const tipoSelect = document.getElementById('mantenimiento-tipo');
+                  if (tipoSelect) tipoSelect.focus();
+                } else {
+                  // Si no, enfocar en producto
+                  const productoSelect = document.getElementById('mantenimiento-producto');
+                  if (productoSelect) productoSelect.focus();
+                }
+              }, 200);
               
               // Habilitar botón
               submitBtn.disabled = false;
@@ -671,6 +700,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Inicializar: si el tipo por defecto es máquina, hacer producto no requerido
+  const tipoRegistroInicial = document.querySelector('input[name="tipoRegistro"]:checked')?.value || 'maquina';
+  if (tipoRegistroInicial === 'maquina' && mantenimientoProducto) {
+    mantenimientoProducto.removeAttribute('required');
+  }
+
   // Toggle entre máquina y equipo manual
   if (tipoRegistroRadios.length > 0) {
     tipoRegistroRadios.forEach(radio => {
@@ -684,6 +719,12 @@ document.addEventListener('DOMContentLoaded', function () {
           // Hacer equipo opcional cuando es máquina
           const equipoInput = document.getElementById('mantenimiento-equipo');
           if (equipoInput) equipoInput.removeAttribute('required');
+          
+          // Hacer producto NO requerido cuando es máquina
+          if (mantenimientoProducto) {
+            mantenimientoProducto.removeAttribute('required');
+            mantenimientoProducto.value = ''; // Limpiar selección
+          }
         } else {
           selectorMaquina?.classList.add('d-none');
           inputEquipo?.classList.remove('d-none');
@@ -693,6 +734,11 @@ document.addEventListener('DOMContentLoaded', function () {
           // Hacer equipo requerido cuando es manual
           const equipoInput = document.getElementById('mantenimiento-equipo');
           if (equipoInput) equipoInput.setAttribute('required', 'required');
+          
+          // Hacer producto requerido cuando es equipo manual
+          if (mantenimientoProducto) {
+            mantenimientoProducto.setAttribute('required', 'required');
+          }
           
           // Limpiar repuestos
           if (repuestosMantenimientoContainer) {
