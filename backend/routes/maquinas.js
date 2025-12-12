@@ -19,6 +19,7 @@ router.get('/api/productos', protect, machineController.getProductsForRepuestos)
 router.post('/', protect, canCreateMachine, machineController.createMachine);
 router.put('/:id', protect, canCreateMachine, machineController.updateMachine);
 router.delete('/:id', protect, canCreateMachine, machineController.deleteMachine);
+router.post('/:id/regenerar-qr', protect, canCreateMachine, machineController.regenerarQR);
 
 module.exports = router;
 

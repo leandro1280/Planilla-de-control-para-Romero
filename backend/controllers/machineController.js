@@ -4,6 +4,43 @@ const Maintenance = require('../models/Maintenance');
 const Movement = require('../models/Movement');
 const { registrarAuditoria } = require('../middleware/auditoria');
 const { createNotificationForAdmins } = require('./notificationController');
+const QRCode = require('qrcode');
+
+// Función helper para generar QR Code y guardarlo en la máquina
+async function generarYGuardarQR(maquina, req = null) {
+  try {
+    // Obtener la URL base
+    let baseUrl = process.env.APP_URL;
+    if (!baseUrl && req) {
+      baseUrl = `${req.protocol}://${req.get('host')}`;
+    }
+    if (!baseUrl) {
+      baseUrl = 'http://localhost:3000';
+    }
+    
+    const qrUrl = `${baseUrl}/maquinas/qr/${maquina.codigo}`;
+    
+    // Generar QR como base64
+    const qrCodeBase64 = await QRCode.toDataURL(qrUrl, {
+      width: 250,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'M'
+    });
+    
+    // Guardar en la máquina
+    maquina.qrCodeImage = qrCodeBase64;
+    await maquina.save();
+    
+    return qrCodeBase64;
+  } catch (error) {
+    console.error('Error al generar QR Code:', error);
+    return null;
+  }
+}
 
 // @desc    Obtener todas las máquinas
 // @route   GET /maquinas
@@ -322,6 +359,9 @@ exports.createMachine = async (req, res) => {
       creadoPor: req.user._id
     });
 
+    // Generar y guardar QR Code
+    await generarYGuardarQR(maquina, req);
+
     // Registrar auditoría
     await registrarAuditoria(req, 'CREAR', 'Máquina', maquina._id, {
       codigo: maquina.codigo,
@@ -392,6 +432,11 @@ exports.updateMachine = async (req, res) => {
         success: false,
         message: 'Máquina no encontrada'
       });
+    }
+
+    // Regenerar QR Code si el código cambió o si no existe
+    if (!maquina.qrCodeImage || (updateData.codigo && updateData.codigo !== maquina.codigo)) {
+      await generarYGuardarQR(maquina, req);
     }
 
     // Registrar auditoría

@@ -95,6 +95,11 @@ const machineSchema = new mongoose.Schema({
   actualizadoPor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  // QR Code generado en el servidor (base64)
+  qrCodeImage: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
