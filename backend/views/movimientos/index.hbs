@@ -296,7 +296,7 @@
     }
   };
 </script>
-{{#if (eq usuario.rol 'administrador')}}
+{{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
 <script src="/js/movimientos.js"></script>
 {{/if}}
 
