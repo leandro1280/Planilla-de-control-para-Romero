@@ -76,6 +76,7 @@
 </section>
 
 {{#if estadisticasMensuales}}
+{{#if (eq usuario.rol 'administrador')}}
 <!-- Comparativa Mensual -->
 <section class="row g-4 mb-4">
     <div class="col-12">
@@ -93,6 +94,7 @@
         </div>
     </div>
 </section>
+{{/if}}
 {{/if}}
 
 <!-- Predicciones de Stock -->
@@ -116,6 +118,7 @@
     </div>
 </section>
 
+{{#if (eq usuario.rol 'administrador')}}
 <div class="row g-4 mb-4">
     <!-- Gráfico de Distribución -->
     <div class="col-12 col-lg-8">
@@ -132,6 +135,7 @@
             </div>
         </div>
     </div>
+{{/if}}
 
     <!-- Resumen Rápido -->
     <div class="col-12 col-lg-4">
@@ -541,6 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
     // Gráfico de comparativa mensual
     {{#if estadisticasMensuales}}
+    {{#if (eq usuario.rol 'administrador')}}
     document.addEventListener('DOMContentLoaded', function() {
         const ctxComparativa = document.getElementById('graficoComparativaMensual');
         if (ctxComparativa) {
@@ -640,7 +645,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
     {{/if}}
+    {{/if}}
 </script>
+{{#if (eq usuario.rol 'administrador')}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('productosChart');
@@ -700,3 +707,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
+{{/if}}
