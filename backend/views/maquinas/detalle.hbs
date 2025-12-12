@@ -11,7 +11,6 @@
         </p>
       </div>
       <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
-        {{#if usuario._id}}
         <a href="/maquinas" class="btn btn-outline-light px-3">
           <i class="bi bi-arrow-left me-1"></i>Volver a Máquinas
         </a>
@@ -23,11 +22,6 @@
         {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
         <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-light text-primary px-3 fw-semibold">
           <i class="bi bi-tools me-1"></i>Nuevo Mantenimiento
-        </a>
-        {{/if}}
-        {{else}}
-        <a href="/auth/login" class="btn btn-outline-light px-3">
-          <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
         </a>
         {{/if}}
       </div>
@@ -105,8 +99,7 @@
       </div>
     </section>
 
-    <!-- Código QR (solo visible si hay usuario autenticado) -->
-    {{#if usuario._id}}
+    <!-- Código QR -->
     <section class="panel card border-0 shadow-sm mb-4">
       <div class="card-header bg-dark text-white">
         <h5 class="mb-0">
@@ -128,7 +121,6 @@
         </a>
       </div>
     </section>
-    {{/if}}
 
     <!-- Estadísticas -->
     <section class="panel card border-0 shadow-sm mb-4">
@@ -331,7 +323,6 @@
   </div>
 </div>
 
-{{#if usuario._id}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Esperar a que QRCode esté disponible (ya está cargado en el layout)
@@ -473,5 +464,4 @@ document.addEventListener('DOMContentLoaded', function() {
   generarQR();
 });
 </script>
-{{/if}}
 

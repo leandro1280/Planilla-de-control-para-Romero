@@ -71,7 +71,7 @@ exports.getMachines = async (req, res) => {
 
 // @desc    Obtener máquina por código (para QR)
 // @route   GET /maquinas/qr/:codigo
-// @access  Public (accesible sin autenticación para escáner QR)
+// @access  Private (todos los usuarios autenticados pueden acceder)
 exports.getMachineByCode = async (req, res) => {
   try {
     const { codigo } = req.params;
@@ -108,28 +108,19 @@ exports.getMachineByCode = async (req, res) => {
       activos: await Maintenance.countDocuments({ maquina: maquina._id, estado: 'activo' })
     };
 
-    // Si hay usuario autenticado, usar sus datos, sino crear un usuario genérico para la vista
-    const usuario = req.user ? {
-      _id: req.user._id,
-      nombre: req.user.nombre,
-      email: req.user.email,
-      rol: req.user.rol
-    } : {
-      _id: null,
-      nombre: 'Visitante',
-      email: '',
-      rol: 'operario' // Rol por defecto para mostrar información básica
-    };
-
     res.render('maquinas/detalle', {
       title: `${maquina.nombre} - Detalle`,
       currentPage: 'maquinas',
-      usuario,
+      usuario: {
+        _id: req.user._id,
+        nombre: req.user.nombre,
+        email: req.user.email,
+        rol: req.user.rol
+      },
       maquina,
       ultimosMantenimientos,
       ultimoMantenimiento,
-      stats,
-      desdeQR: true // Flag para indicar que viene del QR
+      stats
     });
   } catch (error) {
     console.error('Error al obtener máquina:', error);

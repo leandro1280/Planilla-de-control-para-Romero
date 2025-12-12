@@ -5,8 +5,8 @@ const machineController = require('../controllers/machineController');
 
 // Rutas públicas (requieren autenticación)
 router.get('/', protect, machineController.getMachines);
-// Ruta QR accesible sin autenticación (para escáner QR de la app)
-router.get('/qr/:codigo', machineController.getMachineByCode);
+// Ruta QR accesible para todos los usuarios autenticados (operarios, supervisores, administradores)
+router.get('/qr/:codigo', protect, machineController.getMachineByCode);
 router.get('/nueva', protect, canCreate, machineController.renderNewMachine);
 router.get('/editar/:id', protect, canCreate, machineController.renderEditMachine);
 
