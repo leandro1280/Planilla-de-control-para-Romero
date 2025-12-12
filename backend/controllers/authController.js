@@ -133,6 +133,16 @@ exports.login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
     });
 
+    // Si el usuario tiene passwordResetRequired, guardarlo en la sesión para mostrar aviso
+    if (user.passwordResetRequired) {
+      res.cookie('passwordResetRequired', 'true', {
+        httpOnly: false, // Necesario para que el cliente pueda leerlo
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -305,6 +315,7 @@ exports.cambiarPassword = async (req, res) => {
 
     // Actualizar contraseña
     user.password = nuevaPassword;
+    user.passwordResetRequired = false; // Marcar que ya no requiere reset
     await user.save();
 
     // Registrar auditoría

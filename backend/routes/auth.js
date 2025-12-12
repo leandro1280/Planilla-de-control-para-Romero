@@ -25,6 +25,7 @@ router.put('/cambiar-password', protect, require('../utils/validators').validate
 const usuariosController = require('../controllers/usuariosController');
 router.get('/usuarios', protect, authorize('administrador'), usuariosController.getUsuarios);
 router.put('/usuarios/:id', protect, authorize('administrador'), usuariosController.updateUsuario);
+router.post('/usuarios/:id/reset-password', protect, authorize('administrador'), usuariosController.resetPassword);
 router.delete('/usuarios/:id', protect, authorize('administrador'), usuariosController.deleteUsuario);
 
 module.exports = router;

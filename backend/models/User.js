@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  passwordResetRequired: {
+    type: Boolean,
+    default: false
+  },
   creadoPor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

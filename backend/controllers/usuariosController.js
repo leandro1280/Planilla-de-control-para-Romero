@@ -132,6 +132,88 @@ exports.updateUsuario = async (req, res) => {
   }
 };
 
+// @desc    Resetear contraseña de usuario
+// @route   POST /auth/usuarios/:id/reset-password
+// @access  Private (solo administrador)
+exports.resetPassword = async (req, res) => {
+  try {
+    const usuarioId = req.params.id;
+
+    // No permitir que un admin resetee su propia contraseña
+    if (usuarioId === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'No puedes resetear tu propia contraseña. Usa la opción "Cambiar contraseña" en tu perfil.'
+      });
+    }
+
+    const usuario = await User.findById(usuarioId);
+
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Generar contraseña temporal aleatoria (8 caracteres: letras y números)
+    const generateTempPassword = () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      let password = '';
+      for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return password;
+    };
+
+    const tempPassword = generateTempPassword();
+
+    // Guardar la contraseña temporal (se hasheará automáticamente por el pre-save hook)
+    usuario.password = tempPassword;
+    usuario.passwordResetRequired = true;
+    await usuario.save();
+
+    // Registrar auditoría
+    await registrarAuditoria(req, 'MODIFICAR', 'Usuario', usuario._id, {
+      email: usuario.email,
+      nombre: usuario.nombre,
+      accion: 'Contraseña reseteada',
+      passwordResetRequired: true
+    });
+
+    // Crear notificación
+    await createNotificationForAdmins(
+      'password_reset',
+      `${req.user.nombre} reseteó la contraseña de ${usuario.nombre}`,
+      {
+        usuarioId: usuario._id.toString(),
+        nombre: usuario.nombre,
+        email: usuario.email
+      }
+    );
+
+    // IMPORTANTE: Devolver la contraseña temporal SOLO UNA VEZ
+    // Esta es la única vez que se mostrará en texto plano
+    res.status(200).json({
+      success: true,
+      message: 'Contraseña reseteada correctamente',
+      tempPassword: tempPassword, // Solo se muestra esta vez
+      usuario: {
+        _id: usuario._id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol
+      }
+    });
+  } catch (error) {
+    console.error('Error al resetear contraseña:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Error al resetear la contraseña'
+    });
+  }
+};
+
 // @desc    Eliminar usuario
 // @route   DELETE /auth/usuarios/:id
 // @access  Private (solo administrador)

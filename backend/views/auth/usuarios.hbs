@@ -66,6 +66,11 @@
                 <i class="bi bi-x-circle me-1"></i>Inactivo
               </span>
               {{/if}}
+              {{#if this.passwordResetRequired}}
+              <span class="badge bg-warning text-dark ms-2" title="El usuario debe cambiar su contraseña">
+                <i class="bi bi-key me-1"></i>Cambiar contraseña
+              </span>
+              {{/if}}
             </td>
             <td>
               {{#if this.creadoPor}}
@@ -87,6 +92,18 @@
                   title="{{#if this.activo}}Desactivar{{else}}Activar{{/if}} usuario">
                   <i class="bi {{#if this.activo}}bi-toggle-on{{else}}bi-toggle-off{{/if}}"></i>
                 </button>
+                {{/unless}}
+                {{#unless (eq (toString this._id) (toString ../usuario._id))}}
+                {{#if (or (eq this.rol 'supervisor') (eq this.rol 'operario'))}}
+                <button 
+                  class="btn btn-sm btn-info btn-reset-password" 
+                  data-id="{{this._id}}"
+                  data-nombre="{{this.nombre}}"
+                  data-email="{{this.email}}"
+                  title="Resetear contraseña">
+                  <i class="bi bi-key"></i>
+                </button>
+                {{/if}}
                 {{/unless}}
                 {{#if (eq this.rol 'administrador')}}
                 <span class="badge bg-dark ms-2" title="No se puede eliminar un administrador">
@@ -139,6 +156,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Resetear contraseña
+  const botonesResetPassword = document.querySelectorAll('.btn-reset-password');
+  botonesResetPassword.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      const nombre = this.dataset.nombre;
+      const email = this.dataset.email;
+      
+      const confirmacion = confirm(
+        `🔑 ¿RESETEAR CONTRASEÑA?\n\n` +
+        `Usuario: ${nombre}\n` +
+        `Email: ${email}\n\n` +
+        `Se generará una nueva contraseña temporal.\n` +
+        `La contraseña se mostrará UNA SOLA VEZ.\n\n` +
+        `¿Continuar?`
+      );
+      
+      if (confirmacion) {
+        resetPassword(id, nombre, email);
+      }
+    });
+  });
+
   // Eliminar usuario
   const botonesEliminar = document.querySelectorAll('.btn-eliminar-usuario');
   botonesEliminar.forEach(btn => {
@@ -179,6 +219,55 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.reload();
       } else {
         alert(result.message || 'Error al actualizar el usuario');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión');
+    }
+  }
+
+  async function resetPassword(id, nombre, email) {
+    try {
+      const response = await fetch(`/auth/usuarios/${id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Mostrar la contraseña temporal en un modal o alerta
+        const mensaje = 
+          `✅ CONTRASEÑA RESETEADA\n\n` +
+          `Usuario: ${nombre}\n` +
+          `Email: ${email}\n\n` +
+          `🔑 NUEVA CONTRASEÑA TEMPORAL:\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+          `${result.tempPassword}\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `⚠️ IMPORTANTE:\n` +
+          `• Esta contraseña se muestra UNA SOLA VEZ\n` +
+          `• Compártela con el usuario de forma segura\n` +
+          `• El usuario deberá cambiarla en su primer inicio de sesión\n\n` +
+          `¿Copiar contraseña al portapapeles?`;
+        
+        if (confirm(mensaje)) {
+          // Copiar al portapapeles
+          navigator.clipboard.writeText(result.tempPassword).then(() => {
+            alert('✅ Contraseña copiada al portapapeles');
+          }).catch(() => {
+            alert('⚠️ No se pudo copiar automáticamente. Por favor, copia manualmente.');
+          });
+        }
+        
+        // Recargar la página después de un momento
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        alert(result.message || 'Error al resetear la contraseña');
       }
     } catch (error) {
       console.error('Error:', error);
