@@ -276,45 +276,73 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Buscar primero si es una máquina, luego producto
     try {
-      // Intentar buscar máquina primero
-      let isMachine = false;
-      try {
-        const machineResponse = await fetch(`/maquinas/api/qr/${encodeURIComponent(decodedText)}`);
-        if (machineResponse.ok) {
-          const machineData = await machineResponse.json();
-          if (machineData.success && machineData.data.maquina) {
-            isMachine = true;
-            const maquina = machineData.data.maquina;
-            
-            // Máquina encontrada - éxito
-            universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-success';
-            universalQrResult.style.marginTop = '60px !important';
-            universalQrResult.innerHTML = `
-              <h6 class="alert-heading d-flex align-items-center">
-                <i class="bi bi-gear-fill me-2 fs-5"></i>
-                Máquina encontrada
-              </h6>
-              <p class="mb-1"><strong>Código:</strong> ${maquina.codigo}</p>
-              <p class="mb-1"><strong>Nombre:</strong> ${maquina.nombre}</p>
-              ${maquina.ubicacion ? `<p class="mb-1"><strong>Ubicación:</strong> ${maquina.ubicacion}</p>` : ''}
-              ${maquina.repuestos && maquina.repuestos.length > 0 ? `<p class="mb-2"><strong>Repuestos:</strong> ${maquina.repuestos.length} repuesto(s) asociado(s)</p>` : ''}
-              <div class="d-grid gap-2">
-                <a href="/maquinas/qr/${encodeURIComponent(maquina.codigo)}" class="btn btn-sm btn-primary">
-                  <i class="bi bi-eye me-1"></i>Ver detalles y mantenimientos
-                </a>
-              </div>
-            `;
-            
-            // Auto-cerrar después de 3 segundos y redirigir
-            setTimeout(() => {
-              universalQrModal.hide();
-              window.location.href = `/maquinas/qr/${encodeURIComponent(maquina.codigo)}`;
-            }, 2000);
-            return;
-          }
+      // Extraer código de máquina si el QR contiene una URL
+      let machineCode = decodedText;
+      let extractedCode = null;
+      
+      // Si el QR contiene una URL, extraer el código de la máquina
+      if (decodedText.includes('/maquinas/qr/')) {
+        const urlParts = decodedText.split('/maquinas/qr/');
+        if (urlParts.length > 1) {
+          // Extraer el código (puede tener parámetros o terminar con /)
+          extractedCode = urlParts[1].split('/')[0].split('?')[0].trim();
         }
-      } catch (machineError) {
-        // Si falla la búsqueda de máquina, continuar con producto
+      } else if (decodedText.includes('maquinas/qr/')) {
+        // También manejar URLs relativas
+        const urlParts = decodedText.split('maquinas/qr/');
+        if (urlParts.length > 1) {
+          extractedCode = urlParts[1].split('/')[0].split('?')[0].trim();
+        }
+      }
+      
+      // Intentar buscar máquina primero (con código extraído si existe, sino con el texto completo)
+      let isMachine = false;
+      const codesToTry = extractedCode ? [extractedCode, decodedText] : [decodedText];
+      
+      for (const codeToTry of codesToTry) {
+        try {
+          const machineResponse = await fetch(`/maquinas/api/qr/${encodeURIComponent(codeToTry)}`);
+          if (machineResponse.ok) {
+            const machineData = await machineResponse.json();
+            if (machineData.success && machineData.data && machineData.data.maquina) {
+              isMachine = true;
+              const maquina = machineData.data.maquina;
+              
+              // Máquina encontrada - éxito
+              universalQrResult.className = 'position-absolute top-0 start-0 end-0 z-3 m-3 alert alert-success';
+              universalQrResult.style.marginTop = '60px !important';
+              universalQrResult.innerHTML = `
+                <h6 class="alert-heading d-flex align-items-center">
+                  <i class="bi bi-gear-fill me-2 fs-5"></i>
+                  Máquina encontrada
+                </h6>
+                <p class="mb-1"><strong>Código:</strong> ${maquina.codigo}</p>
+                <p class="mb-1"><strong>Nombre:</strong> ${maquina.nombre}</p>
+                ${maquina.ubicacion ? `<p class="mb-1"><strong>Ubicación:</strong> ${maquina.ubicacion}</p>` : ''}
+                ${maquina.repuestos && maquina.repuestos.length > 0 ? `<p class="mb-2"><strong>Repuestos:</strong> ${maquina.repuestos.length} repuesto(s) asociado(s)</p>` : ''}
+                <div class="d-grid gap-2">
+                  <a href="/maquinas/qr/${encodeURIComponent(maquina.codigo)}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Ver detalles y mantenimientos
+                  </a>
+                </div>
+              `;
+              
+              // Auto-cerrar después de 2 segundos y redirigir
+              setTimeout(() => {
+                universalQrModal.hide();
+                window.location.href = `/maquinas/qr/${encodeURIComponent(maquina.codigo)}`;
+              }, 2000);
+              return;
+            }
+          }
+        } catch (machineError) {
+          // Continuar con el siguiente código o buscar producto
+          continue;
+        }
+      }
+      
+      // Si no se encontró máquina, continuar con producto
+      if (!isMachine) {
         console.log('No es una máquina, buscando producto...');
       }
 
