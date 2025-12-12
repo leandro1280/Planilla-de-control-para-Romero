@@ -154,7 +154,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error en login:', error);
+    // No registrar detalles del error para evitar exposición de información sensible
     return res.status(500).json({
       success: false,
       message: 'Error en el servidor'
@@ -330,10 +330,10 @@ exports.cambiarPassword = async (req, res) => {
       message: 'Contraseña actualizada correctamente'
     });
   } catch (error) {
-    console.error('Error al cambiar contraseña:', error);
+    // No registrar detalles del error para evitar exposición de información sensible
     return res.status(500).json({
       success: false,
-      message: error.message || 'Error al cambiar la contraseña'
+      message: 'Error al cambiar la contraseña'
     });
   }
 };

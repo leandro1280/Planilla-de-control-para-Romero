@@ -38,11 +38,11 @@
         </div>
         <div class="col-md-2">
           <strong>Tipo:</strong><br>
-          {{producto.tipo || 'N/A'}}
+          {{#if producto.tipo}}{{producto.tipo}}{{else}}<span class="text-muted">N/A</span>{{/if}}
         </div>
         <div class="col-md-2">
           <strong>Costo:</strong><br>
-          ${{formatCurrency producto.costoUnitario}}
+          {{#if producto.costoUnitario}}${{formatCurrency producto.costoUnitario}}{{else}}<span class="text-muted">-</span>{{/if}}
         </div>
       </div>
     </div>
