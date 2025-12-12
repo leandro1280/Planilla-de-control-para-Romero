@@ -212,8 +212,7 @@
       </li>
       {{#each (generatePaginationPages paginacion.paginaActual paginacion.totalPaginas paginacion.baseUrl)}}
       <li class="page-item {{#if this.active}}active{{/if}} {{#if this.disabled}}disabled{{/if}}">
-        <a class="page-link" href="{{this.url}}" aria-label="Página {{this.numero}}" {{#if this.active}}
-          aria-current="page" {{/if}}>{{this.numero}}</a>
+        <a class="page-link" href="{{this.url}}" aria-label="Página {{this.numero}}" {{#if this.active}}aria-current="page"{{/if}}>{{this.numero}}</a>
       </li>
       {{/each}}
       <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
