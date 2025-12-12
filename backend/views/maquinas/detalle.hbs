@@ -333,4 +333,76 @@
   </div>
 </div>
 
+<script>
+function imprimirQR() {
+  const qrImage = '{{maquina.qrCodeImage}}';
+  if (!qrImage) {
+    alert('El código QR no está disponible');
+    return;
+  }
+  
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>QR - {{maquina.codigo}}</title>
+        <style>
+          body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+          }
+          h2 { margin-bottom: 20px; }
+          img { border: 2px solid #000; max-width: 300px; }
+          p { margin-top: 20px; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <h2>{{maquina.nombre}}</h2>
+        <p>Código: {{maquina.codigo}}</p>
+        <img src="${qrImage}" alt="QR Code">
+        <p>Escanea este código para ver los detalles de la máquina</p>
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          };
+        <\/script>
+      </body>
+    </html>
+  `);
+}
+
+async function regenerarQR() {
+  if (!confirm('¿Deseas regenerar el código QR?')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/maquinas/{{maquina._id}}/regenerar-qr', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Error: ' + (data.message || 'No se pudo regenerar el QR'));
+    }
+  } catch (error) {
+    alert('Error al regenerar el QR. Por favor, intenta nuevamente.');
+  }
+}
+</script>
 

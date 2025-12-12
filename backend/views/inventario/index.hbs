@@ -204,8 +204,9 @@
     <ul class="pagination pagination-sm mb-0">
       <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
         <a class="page-link {{#unless paginacion.tieneAnterior}}disabled{{/unless}}"
-          href="{{buildPaginationUrl paginacion.paginaActual -1 paginacion.baseUrl}}" aria-label="Anterior" {{#unless
-          paginacion.tieneAnterior}} tabindex="-1" aria-disabled="true" {{/unless}}>
+          href="{{buildPaginationUrl paginacion.paginaActual -1 paginacion.baseUrl}}" 
+          aria-label="Anterior" 
+          {{#unless paginacion.tieneAnterior}}tabindex="-1" aria-disabled="true"{{/unless}}>
           <span aria-hidden="true">&laquo;</span>
         </a>
       </li>
@@ -217,8 +218,9 @@
       {{/each}}
       <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
         <a class="page-link {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}"
-          href="{{buildPaginationUrl paginacion.paginaActual 1 paginacion.baseUrl}}" aria-label="Siguiente" {{#unless
-          paginacion.tieneSiguiente}} tabindex="-1" aria-disabled="true" {{/unless}}>
+          href="{{buildPaginationUrl paginacion.paginaActual 1 paginacion.baseUrl}}" 
+          aria-label="Siguiente" 
+          {{#unless paginacion.tieneSiguiente}}tabindex="-1" aria-disabled="true"{{/unless}}>
           <span aria-hidden="true">&raquo;</span>
         </a>
       </li>
