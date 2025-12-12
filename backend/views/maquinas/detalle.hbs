@@ -325,50 +325,32 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Esperar a que QRCode esté disponible (ya está cargado en el layout)
-  function generarQR() {
-    const qrCanvas = document.getElementById('qr-canvas');
-    const btnDescargarQr = document.getElementById('btn-descargar-qr');
-    const btnImprimirQr = document.getElementById('btn-imprimir-qr');
-    const container = document.getElementById('qr-code-container');
-    
-    if (!qrCanvas) {
-      if (container) {
-        container.innerHTML = '<p class="text-danger">Error: No se encontró el elemento canvas para el QR</p>';
-      }
-      return;
-    }
+  const qrCanvas = document.getElementById('qr-canvas');
+  const btnDescargarQr = document.getElementById('btn-descargar-qr');
+  const btnImprimirQr = document.getElementById('btn-imprimir-qr');
+  const container = document.getElementById('qr-code-container');
+  
+  if (!qrCanvas || !container) {
+    return;
+  }
+  
+  // Función para generar el QR
+  function generarQRCode() {
+    // Generar URL del QR
+    const baseUrl = window.location.origin;
+    const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
     
     // Verificar que QRCode esté disponible
     if (typeof QRCode === 'undefined') {
-      // Intentar cargar la librería si no está disponible
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-      script.onload = function() {
-        generarQRCode();
-      };
-      script.onerror = function() {
-        if (container) {
-          container.innerHTML = '<p class="text-danger">Error: No se pudo cargar la librería QR. Verifica tu conexión a internet.</p>';
-        }
-      };
-      document.head.appendChild(script);
+      container.innerHTML = '<p class="text-danger">Error: La librería QR no está disponible. Por favor, recarga la página.</p>';
       return;
     }
     
-    generarQRCode();
+    // Mostrar mensaje de carga
+    container.innerHTML = '<p class="text-muted">Generando código QR...</p>';
     
-    function generarQRCode() {
-      // Generar URL del QR
-      const baseUrl = window.location.origin;
-      const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
-      
-      // Mostrar mensaje de carga
-      if (container) {
-        container.innerHTML = '<p class="text-muted">Generando código QR...</p>';
-      }
-      
-      // Generar QR
+    // Generar QR
+    try {
       QRCode.toCanvas(qrCanvas, qrUrl, {
         width: 250,
         margin: 2,
@@ -379,89 +361,103 @@ document.addEventListener('DOMContentLoaded', function() {
         errorCorrectionLevel: 'M'
       }, function (error) {
         if (error) {
-          if (container) {
-            container.innerHTML = '<p class="text-danger">Error al generar el código QR. Por favor, recarga la página.</p>';
-          }
+          container.innerHTML = '<p class="text-danger">Error al generar el código QR: ' + error.message + '</p>';
         } else {
           // QR generado exitosamente
-          if (container) {
-            container.innerHTML = '';
-            container.appendChild(qrCanvas);
-            qrCanvas.style.display = 'block';
-          }
+          container.innerHTML = '';
+          container.appendChild(qrCanvas);
+          qrCanvas.style.display = 'block';
         }
       });
-    }
-    
-    // Descargar QR
-    if (btnDescargarQr) {
-      btnDescargarQr.addEventListener('click', function() {
-        if (qrCanvas && qrCanvas.width > 0) {
-          const link = document.createElement('a');
-          link.download = `QR-{{maquina.codigo}}.png`;
-          link.href = qrCanvas.toDataURL('image/png');
-          link.click();
-        } else {
-          alert('El código QR aún se está generando. Por favor, espera un momento.');
-        }
-      });
-    }
-    
-    // Imprimir QR
-    if (btnImprimirQr) {
-      btnImprimirQr.addEventListener('click', function() {
-        if (qrCanvas && qrCanvas.width > 0) {
-          const qrUrl = `${window.location.origin}/maquinas/qr/{{maquina.codigo}}`;
-          const printWindow = window.open('', '_blank');
-          printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>QR - {{maquina.codigo}}</title>
-                <style>
-                  body {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100vh;
-                    margin: 0;
-                    font-family: Arial, sans-serif;
-                  }
-                  h2 { margin-bottom: 20px; }
-                  canvas { border: 2px solid #000; }
-                  p { margin-top: 20px; font-size: 14px; }
-                </style>
-              </head>
-              <body>
-                <h2>{{maquina.nombre}}</h2>
-                <p>Código: {{maquina.codigo}}</p>
-                <canvas id="qr-print"></canvas>
-                <p>Escanea este código para ver los detalles de la máquina</p>
-                <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
-                <script>
-                  QRCode.toCanvas(document.getElementById('qr-print'), '${qrUrl}', {
-                    width: 300,
-                    margin: 2
-                  });
-                  window.onload = function() {
-                    setTimeout(function() {
-                      window.print();
-                    }, 500);
-                  };
-                <\/script>
-              </body>
-            </html>
-          `);
-        } else {
-          alert('El código QR aún se está generando. Por favor, espera un momento.');
-        }
-      });
+    } catch (error) {
+      container.innerHTML = '<p class="text-danger">Error: ' + error.message + '</p>';
     }
   }
   
-  // Ejecutar generación de QR
-  generarQR();
+  // Esperar un momento para asegurar que QRCode esté cargado
+  // La librería ya está cargada en el layout, pero puede tardar un momento
+  function intentarGenerarQR(intentos = 0) {
+    if (typeof QRCode !== 'undefined') {
+      generarQRCode();
+    } else if (intentos < 10) {
+      // Intentar cada 100ms hasta 10 veces (1 segundo máximo)
+      setTimeout(function() {
+        intentarGenerarQR(intentos + 1);
+      }, 100);
+    } else {
+      // Si después de 1 segundo no está disponible, mostrar error
+      container.innerHTML = '<p class="text-danger">Error: La librería QR no se cargó correctamente. Por favor, recarga la página.</p>';
+    }
+  }
+  
+  // Iniciar generación del QR
+  intentarGenerarQR();
+    
+  // Descargar QR
+  if (btnDescargarQr) {
+    btnDescargarQr.addEventListener('click', function() {
+      if (qrCanvas && qrCanvas.width > 0) {
+        const link = document.createElement('a');
+        link.download = `QR-{{maquina.codigo}}.png`;
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+      } else {
+        alert('El código QR aún se está generando. Por favor, espera un momento.');
+      }
+    });
+  }
+  
+  // Imprimir QR
+  if (btnImprimirQr) {
+    btnImprimirQr.addEventListener('click', function() {
+      if (qrCanvas && qrCanvas.width > 0) {
+        const qrUrl = `${window.location.origin}/maquinas/qr/{{maquina.codigo}}`;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>QR - {{maquina.codigo}}</title>
+              <style>
+                body {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  height: 100vh;
+                  margin: 0;
+                  font-family: Arial, sans-serif;
+                }
+                h2 { margin-bottom: 20px; }
+                canvas { border: 2px solid #000; }
+                p { margin-top: 20px; font-size: 14px; }
+              </style>
+            </head>
+            <body>
+              <h2>{{maquina.nombre}}</h2>
+              <p>Código: {{maquina.codigo}}</p>
+              <canvas id="qr-print"></canvas>
+              <p>Escanea este código para ver los detalles de la máquina</p>
+              <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+              <script>
+                QRCode.toCanvas(document.getElementById('qr-print'), '${qrUrl}', {
+                  width: 300,
+                  margin: 2
+                });
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                  }, 500);
+                };
+              <\/script>
+            </body>
+          </html>
+        `);
+      } else {
+        alert('El código QR aún se está generando. Por favor, espera un momento.');
+      }
+    });
+  }
 });
 </script>
 
