@@ -11,6 +11,7 @@
         </p>
       </div>
       <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
+        {{#if usuario._id}}
         <a href="/maquinas" class="btn btn-outline-light px-3">
           <i class="bi bi-arrow-left me-1"></i>Volver a Máquinas
         </a>
@@ -19,9 +20,16 @@
           <i class="bi bi-pencil me-1"></i>Editar Máquina
         </a>
         {{/if}}
+        {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
         <a href="/mantenimientos?maquina={{maquina.codigo}}" class="btn btn-light text-primary px-3 fw-semibold">
           <i class="bi bi-tools me-1"></i>Nuevo Mantenimiento
         </a>
+        {{/if}}
+        {{else}}
+        <a href="/auth/login" class="btn btn-outline-light px-3">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
+        </a>
+        {{/if}}
       </div>
     </div>
   </div>
@@ -97,7 +105,8 @@
       </div>
     </section>
 
-    <!-- Código QR -->
+    <!-- Código QR (solo visible si hay usuario autenticado) -->
+    {{#if usuario._id}}
     <section class="panel card border-0 shadow-sm mb-4">
       <div class="card-header bg-dark text-white">
         <h5 class="mb-0">
@@ -105,8 +114,8 @@
         </h5>
       </div>
       <div class="card-body text-center">
-        <div id="qr-code-container" class="mb-3">
-          <canvas id="qr-canvas"></canvas>
+        <div id="qr-code-container" class="mb-3" style="min-height: 250px; display: flex; align-items: center; justify-content: center;">
+          <canvas id="qr-canvas" width="250" height="250" style="max-width: 100%; height: auto; display: none;"></canvas>
         </div>
         <p class="text-muted small mb-2">
           Escanea este código para acceder a la información de la máquina
@@ -119,6 +128,7 @@
         </a>
       </div>
     </section>
+    {{/if}}
 
     <!-- Estadísticas -->
     <section class="panel card border-0 shadow-sm mb-4">
@@ -321,90 +331,147 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+{{#if usuario._id}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const qrCanvas = document.getElementById('qr-canvas');
-  const btnDescargarQr = document.getElementById('btn-descargar-qr');
-  const btnImprimirQr = document.getElementById('btn-imprimir-qr');
-  
-  if (qrCanvas) {
-    // Generar URL del QR
-    const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
+  // Esperar a que QRCode esté disponible (ya está cargado en el layout)
+  function generarQR() {
+    const qrCanvas = document.getElementById('qr-canvas');
+    const btnDescargarQr = document.getElementById('btn-descargar-qr');
+    const btnImprimirQr = document.getElementById('btn-imprimir-qr');
+    const container = document.getElementById('qr-code-container');
     
-    // Generar QR
-    QRCode.toCanvas(qrCanvas, qrUrl, {
-      width: 250,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
+    if (!qrCanvas) {
+      if (container) {
+        container.innerHTML = '<p class="text-danger">Error: No se encontró el elemento canvas para el QR</p>';
       }
-    }, function (error) {
-      if (error) {
-        console.error('Error generando QR:', error);
-        qrCanvas.parentElement.innerHTML = '<p class="text-danger">Error al generar el código QR</p>';
+      return;
+    }
+    
+    // Verificar que QRCode esté disponible
+    if (typeof QRCode === 'undefined') {
+      // Intentar cargar la librería si no está disponible
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+      script.onload = function() {
+        generarQRCode();
+      };
+      script.onerror = function() {
+        if (container) {
+          container.innerHTML = '<p class="text-danger">Error: No se pudo cargar la librería QR. Verifica tu conexión a internet.</p>';
+        }
+      };
+      document.head.appendChild(script);
+      return;
+    }
+    
+    generarQRCode();
+    
+    function generarQRCode() {
+      // Generar URL del QR
+      const baseUrl = window.location.origin;
+      const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
+      
+      // Mostrar mensaje de carga
+      if (container) {
+        container.innerHTML = '<p class="text-muted">Generando código QR...</p>';
       }
-    });
+      
+      // Generar QR
+      QRCode.toCanvas(qrCanvas, qrUrl, {
+        width: 250,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      }, function (error) {
+        if (error) {
+          if (container) {
+            container.innerHTML = '<p class="text-danger">Error al generar el código QR. Por favor, recarga la página.</p>';
+          }
+        } else {
+          // QR generado exitosamente
+          if (container) {
+            container.innerHTML = '';
+            container.appendChild(qrCanvas);
+            qrCanvas.style.display = 'block';
+          }
+        }
+      });
+    }
     
     // Descargar QR
     if (btnDescargarQr) {
       btnDescargarQr.addEventListener('click', function() {
-        const link = document.createElement('a');
-        link.download = `QR-{{maquina.codigo}}.png`;
-        link.href = qrCanvas.toDataURL('image/png');
-        link.click();
+        if (qrCanvas && qrCanvas.width > 0) {
+          const link = document.createElement('a');
+          link.download = `QR-{{maquina.codigo}}.png`;
+          link.href = qrCanvas.toDataURL('image/png');
+          link.click();
+        } else {
+          alert('El código QR aún se está generando. Por favor, espera un momento.');
+        }
       });
     }
     
     // Imprimir QR
     if (btnImprimirQr) {
       btnImprimirQr.addEventListener('click', function() {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>QR - {{maquina.codigo}}</title>
-              <style>
-                body {
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  height: 100vh;
-                  margin: 0;
-                  font-family: Arial, sans-serif;
-                }
-                h2 { margin-bottom: 20px; }
-                canvas { border: 2px solid #000; }
-                p { margin-top: 20px; font-size: 14px; }
-              </style>
-            </head>
-            <body>
-              <h2>{{maquina.nombre}}</h2>
-              <p>Código: {{maquina.codigo}}</p>
-              <canvas id="qr-print"></canvas>
-              <p>Escanea este código para ver los detalles de la máquina</p>
-              <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
-              <script>
-                QRCode.toCanvas(document.getElementById('qr-print'), '${qrUrl}', {
-                  width: 300,
-                  margin: 2
-                });
-                window.onload = function() {
-                  setTimeout(function() {
-                    window.print();
-                  }, 500);
-                };
-              <\/script>
-            </body>
-          </html>
-        `);
+        if (qrCanvas && qrCanvas.width > 0) {
+          const qrUrl = `${window.location.origin}/maquinas/qr/{{maquina.codigo}}`;
+          const printWindow = window.open('', '_blank');
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>QR - {{maquina.codigo}}</title>
+                <style>
+                  body {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    font-family: Arial, sans-serif;
+                  }
+                  h2 { margin-bottom: 20px; }
+                  canvas { border: 2px solid #000; }
+                  p { margin-top: 20px; font-size: 14px; }
+                </style>
+              </head>
+              <body>
+                <h2>{{maquina.nombre}}</h2>
+                <p>Código: {{maquina.codigo}}</p>
+                <canvas id="qr-print"></canvas>
+                <p>Escanea este código para ver los detalles de la máquina</p>
+                <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+                <script>
+                  QRCode.toCanvas(document.getElementById('qr-print'), '${qrUrl}', {
+                    width: 300,
+                    margin: 2
+                  });
+                  window.onload = function() {
+                    setTimeout(function() {
+                      window.print();
+                    }, 500);
+                  };
+                <\/script>
+              </body>
+            </html>
+          `);
+        } else {
+          alert('El código QR aún se está generando. Por favor, espera un momento.');
+        }
       });
     }
   }
+  
+  // Ejecutar generación de QR
+  generarQR();
 });
 </script>
+{{/if}}
 

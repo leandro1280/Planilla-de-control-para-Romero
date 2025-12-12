@@ -5,7 +5,8 @@ const machineController = require('../controllers/machineController');
 
 // Rutas públicas (requieren autenticación)
 router.get('/', protect, machineController.getMachines);
-router.get('/qr/:codigo', protect, machineController.getMachineByCode);
+// Ruta QR accesible sin autenticación (para escáner QR de la app)
+router.get('/qr/:codigo', machineController.getMachineByCode);
 router.get('/nueva', protect, canCreate, machineController.renderNewMachine);
 router.get('/editar/:id', protect, canCreate, machineController.renderEditMachine);
 
@@ -16,7 +17,7 @@ router.get('/api/productos', protect, machineController.getProductsForRepuestos)
 // Rutas de creación/edición (solo supervisor y admin)
 router.post('/', protect, canCreate, machineController.createMachine);
 router.put('/:id', protect, canCreate, machineController.updateMachine);
-router.delete('/:id', protect, authorize('administrador'), machineController.deleteMachine);
+router.delete('/:id', protect, canCreate, machineController.deleteMachine);
 
 module.exports = router;
 

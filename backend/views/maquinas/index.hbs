@@ -101,8 +101,6 @@
               <a href="/maquinas/editar/{{this._id}}" class="btn btn-sm btn-outline-primary" title="Editar máquina">
                 <i class="bi bi-pencil"></i>
               </a>
-              {{/if}}
-              {{#if (eq ../../usuario.rol 'administrador')}}
               <button class="btn btn-sm btn-outline-danger btn-eliminar-maquina" 
                 data-id="{{this._id}}"
                 data-codigo="{{this.codigo}}"
