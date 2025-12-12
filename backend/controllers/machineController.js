@@ -499,6 +499,43 @@ exports.deleteMachine = async (req, res) => {
   }
 };
 
+// @desc    Regenerar QR Code de una máquina
+// @route   POST /maquinas/:id/regenerar-qr
+// @access  Private (solo administradores)
+exports.regenerarQR = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const maquina = await Machine.findById(id);
+    
+    if (!maquina) {
+      return res.status(404).json({
+        success: false,
+        message: 'Máquina no encontrada'
+      });
+    }
+    
+    // Generar y guardar QR Code
+    await generarYGuardarQR(maquina, req);
+    
+    // Recargar la máquina para obtener el QR actualizado
+    await maquina.save();
+    const maquinaActualizada = await Machine.findById(id);
+    
+    res.json({
+      success: true,
+      message: 'QR Code regenerado correctamente',
+      qrCodeImage: maquinaActualizada.qrCodeImage
+    });
+  } catch (error) {
+    console.error('Error al regenerar QR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al regenerar el QR Code'
+    });
+  }
+};
+
 // @desc    Obtener productos disponibles para repuestos
 // @route   GET /api/maquinas/productos
 // @access  Private
