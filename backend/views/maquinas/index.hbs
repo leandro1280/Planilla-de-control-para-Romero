@@ -213,19 +213,22 @@ document.addEventListener('DOMContentLoaded', function() {
       try {
         const response = await fetch(`/maquinas/${id}`, {
           method: 'DELETE',
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
 
         const data = await response.json();
 
         if (data.success) {
+          alert('Máquina eliminada correctamente');
           location.reload();
         } else {
           alert('Error: ' + (data.message || 'No se pudo eliminar la máquina'));
         }
       } catch (error) {
-        console.error('Error:', error);
-        alert('Error al eliminar la máquina');
+        alert('Error al eliminar la máquina. Por favor, intenta nuevamente.');
       }
     });
   });
