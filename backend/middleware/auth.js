@@ -104,6 +104,64 @@ exports.canCreate = (req, res, next) => {
   return res.status(403).json({ success: false, message: 'No tiene permisos para crear' });
 };
 
+// Verificar permisos para crear máquinas (solo administradores)
+exports.canCreateMachine = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  if (req.user.rol === 'administrador') {
+    return next();
+  }
+
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({ success: false, message: 'Solo administradores pueden crear máquinas' });
+  }
+  return res.redirect('/maquinas');
+};
+
+// Verificar permisos para crear/modificar productos (administradores y supervisores)
+exports.canManageInventory = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  if (['administrador', 'supervisor'].includes(req.user.rol)) {
+    return next();
+  }
+
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({ success: false, message: 'No tiene permisos para gestionar inventario' });
+  }
+  return res.redirect('/inventario');
+};
+
+// Verificar permisos para hacer movimientos de egreso (todos los usuarios autenticados)
+exports.canCreateEgress = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  // Todos los usuarios autenticados pueden hacer egresos
+  return next();
+};
+
+// Bloquear acceso de supervisores a estadísticas
+exports.blockSupervisorsFromStats = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'No autorizado' });
+  }
+
+  if (req.user.rol === 'supervisor') {
+    if (req.path.startsWith('/api/')) {
+      return res.status(403).json({ success: false, message: 'No tiene permisos para ver estadísticas' });
+    }
+    return res.redirect('/dashboard');
+  }
+
+  return next();
+};
+
 exports.canDelete = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'No autorizado' });

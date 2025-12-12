@@ -8,7 +8,7 @@
         <p class="hero__subtitle mb-0 opacity-75 fs-5">Administra máquinas, repuestos y mantenimientos</p>
       </div>
       <div class="d-flex flex-wrap justify-content-center gap-2 hero__meta text-nowrap">
-        {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
+        {{#if (eq usuario.rol 'administrador')}}
         <a href="/maquinas/nueva" class="btn btn-light text-primary px-3 fw-semibold">
           <i class="bi bi-plus-circle me-1"></i>Nueva Máquina
         </a>
@@ -97,7 +97,7 @@
               <a href="/maquinas/qr/{{this.codigo}}" class="btn btn-sm btn-primary me-1" title="Ver detalles">
                 <i class="bi bi-eye"></i>
               </a>
-              {{#if (or (eq ../../usuario.rol 'administrador') (eq ../../usuario.rol 'supervisor'))}}
+              {{#if (eq ../../usuario.rol 'administrador')}}
               <a href="/maquinas/editar/{{this._id}}" class="btn btn-sm btn-outline-primary" title="Editar máquina">
                 <i class="bi bi-pencil"></i>
               </a>
@@ -124,7 +124,7 @@
             <td colspan="6" class="text-center text-muted py-4">
               <i class="bi bi-gear fs-1 d-block mb-3"></i>
               No hay máquinas registradas
-              {{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
+              {{#if (eq usuario.rol 'administrador')}}
               <br>
               <a href="/maquinas/nueva" class="btn btn-primary mt-3">
                 <i class="bi bi-plus-circle me-1"></i>Crear primera máquina

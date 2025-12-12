@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, blockOperarios } = require('../middleware/auth');
+const { protect, blockOperarios, blockSupervisorsFromStats } = require('../middleware/auth');
 const {
   getEstadisticasAvanzadas,
   getPrediccionStock
@@ -8,6 +8,7 @@ const {
 
 router.use(protect);
 router.use(blockOperarios); // Bloquear acceso de operarios a estadísticas
+router.use(blockSupervisorsFromStats); // Bloquear acceso de supervisores a estadísticas
 
 router.get('/avanzadas', getEstadisticasAvanzadas);
 router.get('/prediccion-stock', getPrediccionStock);

@@ -558,6 +558,14 @@ exports.deleteProduct = async (req, res) => {
 exports.createMovement = async (req, res) => {
   try {
     const { referencia, tipo, cantidad, costoUnitario, nota } = req.body;
+    
+    // Los operarios solo pueden hacer egresos
+    if (req.user.rol === 'operario' && tipo !== 'egreso') {
+      return res.status(403).json({
+        success: false,
+        message: 'Los operarios solo pueden registrar movimientos de egreso (descarga)'
+      });
+    }
 
     // Buscar producto
     const product = await Product.findOne({ referencia: referencia.toUpperCase() });

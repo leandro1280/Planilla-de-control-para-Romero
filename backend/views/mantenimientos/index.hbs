@@ -48,12 +48,14 @@
   </div>
 </section>
 
+{{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
 <div class="d-flex justify-content-end mb-4">
   <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
     data-bs-target="#modalMantenimiento">
     <i class="bi bi-plus-circle me-2"></i>Nuevo Mantenimiento
   </button>
 </div>
+{{/if}}
 
 <section class="panel card border-0 shadow-sm mb-4">
   <div class="card-body">

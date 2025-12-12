@@ -170,6 +170,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // Formulario de movimiento
   if (formularioMovimiento) {
     const tipoMovimiento = document.getElementById('movimiento-tipo');
+    
+    // Si el usuario es operario, solo puede hacer egresos
+    // Verificar si el select tiene solo la opción de egreso (ya viene del servidor)
+    if (tipoMovimiento && tipoMovimiento.options.length === 1 && tipoMovimiento.options[0].value === 'egreso') {
+      tipoMovimiento.disabled = true; // Deshabilitar el select ya que solo hay una opción
+    }
     const costoMovimiento = document.getElementById('movimiento-costo');
 
     if (tipoMovimiento) {

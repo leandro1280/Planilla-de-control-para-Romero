@@ -11,8 +11,7 @@ const {
 const router = express.Router();
 
 router.use(protect);
-router.use(blockOperarios); // Bloquear acceso de operarios a mantenimientos
-
+// Los operarios pueden ver mantenimientos, pero no crearlos
 router.get('/', getMaintenances);
 router.get('/productos', getProductsForMaintenance);
 router.post('/', canCreate, createMaintenance);
