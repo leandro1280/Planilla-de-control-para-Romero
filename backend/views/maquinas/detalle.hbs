@@ -324,79 +324,94 @@
 </div>
 
 <!-- Cargar librería QR directamente en esta vista para asegurar que esté disponible -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" 
+        onload="window.qrcodeLibraryLoaded = true;" 
+        onerror="window.qrcodeLibraryError = true;"></script>
 <script>
 // Esperar a que el DOM y la librería estén completamente cargados
-(function() {
-  const qrCanvas = document.getElementById('qr-canvas');
-  const btnDescargarQr = document.getElementById('btn-descargar-qr');
-  const btnImprimirQr = document.getElementById('btn-imprimir-qr');
-  const container = document.getElementById('qr-code-container');
-  
-  if (!qrCanvas || !container) {
-    return;
-  }
-  
-  // Función para generar el QR
-  function generarQRCode() {
-    // Generar URL del QR
-    const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    const qrCanvas = document.getElementById('qr-canvas');
+    const btnDescargarQr = document.getElementById('btn-descargar-qr');
+    const btnImprimirQr = document.getElementById('btn-imprimir-qr');
+    const container = document.getElementById('qr-code-container');
     
-    // Verificar que QRCode esté disponible
-    if (typeof QRCode === 'undefined') {
-      container.innerHTML = '<p class="text-danger">Error: La librería QR no está disponible. Por favor, recarga la página.</p>';
+    if (!qrCanvas || !container) {
       return;
     }
     
-    // Mostrar mensaje de carga
-    container.innerHTML = '<p class="text-muted">Generando código QR...</p>';
-    
-    // Generar QR
-    QRCode.toCanvas(qrCanvas, qrUrl, {
-      width: 250,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'M'
-    }, function (error) {
-      if (error) {
-        container.innerHTML = '<p class="text-danger">Error al generar el código QR: ' + error.message + '</p>';
-      } else {
-        // QR generado exitosamente
-        container.innerHTML = '';
-        container.appendChild(qrCanvas);
-        qrCanvas.style.display = 'block';
+    // Función para generar el QR
+    function generarQRCode() {
+      // Generar URL del QR
+      const baseUrl = window.location.origin;
+      const qrUrl = `${baseUrl}/maquinas/qr/{{maquina.codigo}}`;
+      
+      // Verificar que QRCode esté disponible
+      if (typeof QRCode === 'undefined') {
+        container.innerHTML = '<p class="text-danger">Error: La librería QR no está disponible. Por favor, recarga la página.</p>';
+        return;
       }
-    });
-  }
-  
-  // Función para intentar generar el QR - esperar a que la librería esté lista
-  function intentarGenerarQR(intentos = 0) {
-    if (typeof QRCode !== 'undefined') {
-      generarQRCode();
-    } else if (intentos < 50) {
-      // Intentar cada 100ms hasta 50 veces (5 segundos máximo)
-      setTimeout(function() {
-        intentarGenerarQR(intentos + 1);
-      }, 100);
-    } else {
-      container.innerHTML = '<p class="text-danger">Error: La librería QR no se cargó. Por favor, recarga la página.</p>';
+      
+      // Mostrar mensaje de carga
+      container.innerHTML = '<p class="text-muted">Generando código QR...</p>';
+      
+      // Generar QR
+      try {
+        QRCode.toCanvas(qrCanvas, qrUrl, {
+          width: 250,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          },
+          errorCorrectionLevel: 'M'
+        }, function (error) {
+          if (error) {
+            container.innerHTML = '<p class="text-danger">Error al generar el código QR: ' + error.message + '</p>';
+          } else {
+            // QR generado exitosamente
+            container.innerHTML = '';
+            container.appendChild(qrCanvas);
+            qrCanvas.style.display = 'block';
+          }
+        });
+      } catch (error) {
+        container.innerHTML = '<p class="text-danger">Error al generar el código QR: ' + error.message + '</p>';
+      }
     }
-  }
-  
-  // Iniciar cuando la página esté lista
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(intentarGenerarQR, 200);
-    });
-  } else {
-    setTimeout(intentarGenerarQR, 200);
-  }
-  
-  // Configurar botones de descargar e imprimir
+    
+    // Función para intentar generar el QR - esperar a que la librería esté lista
+    function intentarGenerarQR(intentos = 0) {
+      if (window.qrcodeLibraryError) {
+        container.innerHTML = '<p class="text-danger">Error: No se pudo cargar la librería QR. Verifica tu conexión a internet.</p>';
+        return;
+      }
+      
+      if (typeof QRCode !== 'undefined' || window.qrcodeLibraryLoaded) {
+        if (typeof QRCode !== 'undefined') {
+          generarQRCode();
+        } else if (intentos < 30) {
+          // Esperar un poco más si la librería dice que está cargada pero aún no está disponible
+          setTimeout(function() {
+            intentarGenerarQR(intentos + 1);
+          }, 100);
+        } else {
+          container.innerHTML = '<p class="text-danger">Error: La librería QR no se cargó correctamente. Por favor, recarga la página.</p>';
+        }
+      } else if (intentos < 50) {
+        // Intentar cada 100ms hasta 50 veces (5 segundos máximo)
+        setTimeout(function() {
+          intentarGenerarQR(intentos + 1);
+        }, 100);
+      } else {
+        container.innerHTML = '<p class="text-danger">Error: La librería QR no se cargó. Por favor, recarga la página.</p>';
+      }
+    }
+    
+    // Iniciar generación del QR
+    intentarGenerarQR();
+    
+    // Configurar botones de descargar e imprimir
   if (btnDescargarQr) {
     btnDescargarQr.addEventListener('click', function() {
       if (qrCanvas && qrCanvas.width > 0) {
@@ -460,15 +475,7 @@
       }
     });
   }
-  
-  // Iniciar cuando la página esté lista
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(intentarGenerarQR, 100);
-    });
-  } else {
-    setTimeout(intentarGenerarQR, 100);
-  }
-})();
+  }, 500); // Esperar 500ms después de que la página cargue completamente
+});
 </script>
 

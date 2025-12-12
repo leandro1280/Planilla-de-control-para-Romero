@@ -48,7 +48,7 @@
   </div>
 </section>
 
-{{#if (or (eq usuario.rol 'administrador') (eq usuario.rol 'supervisor'))}}
+{{#if (eq usuario.rol 'administrador')}}
 <div class="d-flex justify-content-end mb-4">
   <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
     data-bs-target="#modalMantenimiento">

@@ -97,8 +97,8 @@
               <a href="/maquinas/qr/{{this.codigo}}" class="btn btn-sm btn-primary me-1" title="Ver detalles">
                 <i class="bi bi-eye"></i>
               </a>
-              {{#if (eq ../../usuario.rol 'administrador')}}
-              <a href="/maquinas/editar/{{this._id}}" class="btn btn-sm btn-outline-primary" title="Editar máquina">
+              {{#if (eq usuario.rol 'administrador')}}
+              <a href="/maquinas/editar/{{this._id}}" class="btn btn-sm btn-outline-primary me-1" title="Editar máquina">
                 <i class="bi bi-pencil"></i>
               </a>
               <button class="btn btn-sm btn-outline-danger btn-eliminar-maquina" 
@@ -106,7 +106,7 @@
                 data-codigo="{{this.codigo}}"
                 data-nombre="{{this.nombre}}"
                 title="Eliminar máquina">
-                <i class="bi bi-trash"></i>
+                <i class="bi bi-trash me-1"></i>ELIMINAR
               </button>
               {{/if}}
             </td>
