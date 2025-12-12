@@ -3,8 +3,8 @@ const router = express.Router();
 const { protect, authorize, canCreate, canCreateMachine } = require('../middleware/auth');
 const machineController = require('../controllers/machineController');
 
-// Rutas públicas (requieren autenticación - todos los usuarios pueden ver)
-router.get('/', protect, machineController.getMachines);
+// Ruta de lista de máquinas - solo administradores pueden ver la lista
+router.get('/', protect, canCreateMachine, machineController.getMachines);
 // Ruta QR accesible para todos los usuarios autenticados (operarios, supervisores, administradores)
 router.get('/qr/:codigo', protect, machineController.getMachineByCode);
 // Crear/editar máquinas solo para administradores

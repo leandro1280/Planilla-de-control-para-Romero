@@ -99,6 +99,13 @@ exports.getMovements = async (req, res) => {
         rol: req.user.rol
       },
       title: 'Movimientos - Romero Panificados',
+      currentPage: 'movimientos',
+      usuario: {
+        _id: req.user._id,
+        nombre: req.user.nombre,
+        email: req.user.email,
+        rol: req.user.rol
+      },
       movements: movements || [],
       products,
       tipos,

@@ -323,7 +323,8 @@
   </div>
 </div>
 
-<!-- Usar la librería QRCode que ya está cargada en el layout -->
+<!-- Cargar librería QR directamente en esta vista para asegurar que esté disponible -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 // Esperar a que el DOM y la librería estén completamente cargados
 (function() {
@@ -372,19 +373,27 @@
     });
   }
   
-  // Función para intentar generar el QR - esperar a que la librería del layout esté lista
+  // Función para intentar generar el QR - esperar a que la librería esté lista
   function intentarGenerarQR(intentos = 0) {
     if (typeof QRCode !== 'undefined') {
       generarQRCode();
     } else if (intentos < 50) {
       // Intentar cada 100ms hasta 50 veces (5 segundos máximo)
-      // La librería se carga en el layout, puede tardar un momento
       setTimeout(function() {
         intentarGenerarQR(intentos + 1);
       }, 100);
     } else {
       container.innerHTML = '<p class="text-danger">Error: La librería QR no se cargó. Por favor, recarga la página.</p>';
     }
+  }
+  
+  // Iniciar cuando la página esté lista
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(intentarGenerarQR, 200);
+    });
+  } else {
+    setTimeout(intentarGenerarQR, 200);
   }
   
   // Configurar botones de descargar e imprimir
