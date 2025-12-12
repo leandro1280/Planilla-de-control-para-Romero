@@ -44,16 +44,50 @@
       
       <div class="mb-3">
         <label for="password" class="form-label fw-semibold">Contraseña</label>
-        <input 
-          type="password" 
-          class="form-control form-control-lg" 
-          id="password" 
-          name="password" 
-          required
-          placeholder="Mínimo 6 caracteres"
-          minlength="6"
-        >
+        <div class="input-group">
+          <input 
+            type="password" 
+            class="form-control form-control-lg" 
+            id="password" 
+            name="password" 
+            required
+            placeholder="Mínimo 6 caracteres"
+            minlength="6"
+          >
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button" 
+            id="togglePassword"
+            title="Mostrar/Ocultar contraseña"
+          >
+            <i class="bi bi-eye" id="togglePasswordIcon"></i>
+          </button>
+        </div>
         <small class="form-text text-muted">Debe contener al menos una mayúscula, una minúscula y un número</small>
+      </div>
+      
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label fw-semibold">Confirmar Contraseña</label>
+        <div class="input-group">
+          <input 
+            type="password" 
+            class="form-control form-control-lg" 
+            id="confirmPassword" 
+            name="confirmPassword" 
+            required
+            placeholder="Repite la contraseña"
+            minlength="6"
+          >
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button" 
+            id="toggleConfirmPassword"
+            title="Mostrar/Ocultar contraseña"
+          >
+            <i class="bi bi-eye" id="toggleConfirmPasswordIcon"></i>
+          </button>
+        </div>
+        <small class="form-text text-muted" id="passwordMatchMessage"></small>
       </div>
       
       <div class="mb-4">
@@ -87,11 +121,100 @@
 document.addEventListener('DOMContentLoaded', function() {
   const registerForm = document.getElementById('registerForm');
   const registerResult = document.getElementById('register-result');
+  const passwordInput = document.getElementById('password');
+  const confirmPasswordInput = document.getElementById('confirmPassword');
+  const passwordMatchMessage = document.getElementById('passwordMatchMessage');
+  const togglePasswordBtn = document.getElementById('togglePassword');
+  const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+  const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
+  const toggleConfirmPasswordIcon = document.getElementById('toggleConfirmPasswordIcon');
   
   if (!registerForm) {
     console.error('Formulario de registro no encontrado');
     return;
   }
+  
+  // Toggle mostrar/ocultar contraseña
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener('click', function() {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      togglePasswordIcon.classList.toggle('bi-eye');
+      togglePasswordIcon.classList.toggle('bi-eye-slash');
+    });
+  }
+  
+  // Toggle mostrar/ocultar confirmación de contraseña
+  if (toggleConfirmPasswordBtn) {
+    toggleConfirmPasswordBtn.addEventListener('click', function() {
+      const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      confirmPasswordInput.setAttribute('type', type);
+      toggleConfirmPasswordIcon.classList.toggle('bi-eye');
+      toggleConfirmPasswordIcon.classList.toggle('bi-eye-slash');
+    });
+  }
+  
+  // Validar que las contraseñas coincidan en tiempo real
+  function validatePasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (confirmPassword.length === 0) {
+      passwordMatchMessage.textContent = '';
+      confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+      return true;
+    }
+    
+    if (password === confirmPassword) {
+      passwordMatchMessage.textContent = '✓ Las contraseñas coinciden';
+      passwordMatchMessage.className = 'form-text text-success';
+      confirmPasswordInput.classList.remove('is-invalid');
+      confirmPasswordInput.classList.add('is-valid');
+      return true;
+    } else {
+      passwordMatchMessage.textContent = '✗ Las contraseñas no coinciden';
+      passwordMatchMessage.className = 'form-text text-danger';
+      confirmPasswordInput.classList.remove('is-valid');
+      confirmPasswordInput.classList.add('is-invalid');
+      return false;
+    }
+  }
+  
+  // Validar formato de contraseña
+  function validatePasswordFormat() {
+    const password = passwordInput.value;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    
+    if (password.length === 0) {
+      return true;
+    }
+    
+    if (password.length < 6) {
+      passwordInput.classList.remove('is-valid');
+      passwordInput.classList.add('is-invalid');
+      return false;
+    }
+    
+    if (!passwordRegex.test(password)) {
+      passwordInput.classList.remove('is-valid');
+      passwordInput.classList.add('is-invalid');
+      return false;
+    }
+    
+    passwordInput.classList.remove('is-invalid');
+    passwordInput.classList.add('is-valid');
+    return true;
+  }
+  
+  // Event listeners para validación en tiempo real
+  passwordInput.addEventListener('input', function() {
+    validatePasswordFormat();
+    validatePasswordMatch();
+  });
+  
+  confirmPasswordInput.addEventListener('input', function() {
+    validatePasswordMatch();
+  });
   
   registerForm.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -105,6 +228,26 @@ document.addEventListener('DOMContentLoaded', function() {
     registerResult.className = 'mt-3 d-none';
     registerResult.innerHTML = '';
     
+    // Validar formato de contraseña
+    if (!validatePasswordFormat()) {
+      registerResult.className = 'mt-3 alert alert-danger';
+      registerResult.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>La contraseña debe tener al menos 6 caracteres y contener una mayúscula, una minúscula y un número';
+      registerResult.classList.remove('d-none');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+      return;
+    }
+    
+    // Validar que las contraseñas coincidan
+    if (!validatePasswordMatch()) {
+      registerResult.className = 'mt-3 alert alert-danger';
+      registerResult.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Las contraseñas no coinciden';
+      registerResult.classList.remove('d-none');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+      return;
+    }
+    
     const formData = new FormData(this);
     const data = Object.fromEntries(formData);
     
@@ -117,6 +260,9 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBtn.innerHTML = originalBtnText;
       return;
     }
+    
+    // Remover confirmPassword del objeto antes de enviar (no se envía al servidor)
+    delete data.confirmPassword;
     
     try {
       const response = await fetch('/auth/register', {

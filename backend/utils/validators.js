@@ -32,6 +32,15 @@ exports.validateRegister = [
     .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('La contraseña debe contener al menos una mayúscula, una minúscula y un número'),
   
+  body('confirmPassword')
+    .notEmpty().withMessage('La confirmación de contraseña es obligatoria')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Las contraseñas no coinciden');
+      }
+      return true;
+    }),
+  
   body('rol')
     .optional()
     .isIn(['administrador', 'supervisor', 'operario']).withMessage('Rol inválido'),
